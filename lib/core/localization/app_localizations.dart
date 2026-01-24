@@ -24,6 +24,7 @@ class AppLocalizations {
       'nav_sleep': 'Sleep',
       'nav_records': 'Records',
       'nav_insights': 'Insights',
+      'nav_lulu': 'Lulu',
       'nav_more': 'More',
 
       // Home Screen
@@ -768,6 +769,7 @@ class AppLocalizations {
       'nav_sleep': '수면',
       'nav_records': '기록',
       'nav_insights': '분석',
+      'nav_lulu': '루루',
       'nav_more': '더보기',
 
       // Home Screen
@@ -1522,6 +1524,7 @@ class AppLocalizations {
   String get navSleep => translate('nav_sleep');
   String get navRecords => translate('nav_records');
   String get navInsights => translate('nav_insights');
+  String get navLulu => translate('nav_lulu');
   String get navMore => translate('nav_more');
   String get navSettings => translate('settings_title');
   String get navChat => translate('chat_title');

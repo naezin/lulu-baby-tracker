@@ -3,9 +3,8 @@ import '../../../core/localization/app_localizations.dart';
 import '../home/home_screen.dart';
 import '../records/records_screen.dart';
 import '../chat/chat_screen.dart';
-import '../insights/insights_screen.dart';
+import '../analysis/analysis_screen.dart';
 import '../settings/settings_screen.dart';
-import '../stats/statistics_screen.dart';
 import '../activities/log_sleep_screen.dart';
 import '../activities/log_feeding_screen.dart';
 import '../activities/log_diaper_screen.dart';
@@ -43,9 +42,9 @@ class _MainNavigationState extends State<MainNavigation> {
     _screens = [
       const HomeScreen(),
       const RecordsScreen(),
-      const InsightsScreen(),
+      const AnalysisScreen(),
       const ChatScreen(),
-      const StatisticsScreen(),
+      const SettingsScreen(),
     ];
   }
 
@@ -77,19 +76,19 @@ class _MainNavigationState extends State<MainNavigation> {
             label: l10n.navRecords,
           ),
           NavigationDestination(
-            icon: Icon(Icons.insights_outlined),
-            selectedIcon: Icon(Icons.insights),
+            icon: Icon(Icons.analytics_outlined),
+            selectedIcon: Icon(Icons.analytics),
             label: l10n.navInsights,
           ),
           NavigationDestination(
             icon: Icon(Icons.chat_bubble_outline),
             selectedIcon: Icon(Icons.chat_bubble),
-            label: l10n.navChat,
+            label: l10n.navLulu,
           ),
           NavigationDestination(
-            icon: Icon(Icons.bar_chart_outlined),
-            selectedIcon: Icon(Icons.bar_chart),
-            label: l10n.navStats,
+            icon: Icon(Icons.more_horiz_outlined),
+            selectedIcon: Icon(Icons.more_horiz),
+            label: l10n.navMore,
           ),
         ],
       ),

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import 'home/home_screen.dart';
-import 'sleep/sleep_tracking_screen.dart';
 import 'records/records_screen.dart';
 import 'analysis/analysis_screen.dart';
+import 'ai_chat/ai_chat_screen.dart';
 import 'settings/settings_screen.dart';
 
 /// 메인 탭바 네비게이션
@@ -26,9 +26,9 @@ class _MainNavigationState extends State<MainNavigation> {
     super.initState();
     _screens = [
       const HomeScreen(),
-      const SleepTrackingScreen(),
       const RecordsScreen(),
       const AnalysisScreen(),
+      const AIChatScreen(),
       const SettingsScreen(),
     ];
   }
@@ -75,21 +75,21 @@ class _MainNavigationState extends State<MainNavigation> {
               backgroundColor: AppTheme.surfaceDark,
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.nightlight_outlined),
-              activeIcon: Icon(Icons.nightlight),
-              label: localizations.navSleep,
-              backgroundColor: AppTheme.surfaceDark,
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.list_alt_outlined),
-              activeIcon: Icon(Icons.list_alt),
+              icon: Icon(Icons.edit_note_outlined),
+              activeIcon: Icon(Icons.edit_note),
               label: localizations.navRecords,
               backgroundColor: AppTheme.surfaceDark,
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.insights_outlined),
-              activeIcon: Icon(Icons.insights),
+              icon: Icon(Icons.analytics_outlined),
+              activeIcon: Icon(Icons.analytics),
               label: localizations.navInsights,
+              backgroundColor: AppTheme.surfaceDark,
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.chat_bubble_outline),
+              activeIcon: Icon(Icons.chat_bubble),
+              label: localizations.navLulu,
               backgroundColor: AppTheme.surfaceDark,
             ),
             BottomNavigationBarItem(

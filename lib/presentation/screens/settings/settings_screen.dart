@@ -5,7 +5,6 @@ import '../../providers/locale_provider.dart';
 import '../../providers/unit_preferences_provider.dart';
 import '../export/export_data_screen.dart';
 import '../import/import_data_screen.dart';
-import '../activities/activity_history_screen.dart';
 import '../demo_setup_screen.dart';
 import '../../../data/services/notification_service.dart';
 import 'widget_settings_screen.dart';
@@ -261,18 +260,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // Data Management Section
           _buildSectionHeader(context, l10n.dataManagement),
-          ListTile(
-            leading: const Icon(Icons.history),
-            title: Text(l10n.activityHistory),
-            subtitle: Text(l10n.viewAllRecordedActivities),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ActivityHistoryScreen()),
-              );
-            },
-          ),
           ListTile(
             leading: const Icon(Icons.download),
             title: Text(l10n.exportData),
