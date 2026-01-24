@@ -1,244 +1,467 @@
-# Lulu - AI Sleep Education App
+# 🌙 Lulu - AI-Powered Baby Care & Sleep Tracking Platform
 
-미국 시장을 타겟으로 한 AI 기반 수면 교육 앱입니다.
+> **Universal Baby Care Platform** with specialized algorithms for premature and low-birth-weight infants
 
-## 📁 프로젝트 구조 보기
+[![Flutter](https://img.shields.io/badge/Flutter-3.0+-02569B?logo=flutter)](https://flutter.dev)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/Version-1.0.0-blue.svg)](https://github.com/naezin/lulu-baby-tracker/releases)
 
-```bash
-# 전체 구조 확인
-tree lulu/
+---
 
-# 또는 간단하게
-ls -R lulu/
+## 📋 Table of Contents
+
+- [Project Overview](#-project-overview)
+- [Tech Stack](#-tech-stack)
+- [Key Features](#-key-features)
+- [Getting Started](#-getting-started)
+- [Data Context](#-data-context)
+- [Architecture](#-architecture)
+- [Security](#-security)
+- [Contributing](#-contributing)
+
+---
+
+## 🎯 Project Overview
+
+**Lulu** is an AI-powered baby care and sleep tracking application designed to help parents optimize their baby's sleep schedule and overall care routine. While supporting all infants, Lulu provides **specialized algorithms and recommendations** for premature and low-birth-weight babies who require more precise care patterns.
+
+### Vision
+
+To become the **most trusted AI companion** for parents, providing:
+- Evidence-based sleep predictions using wake window science
+- Personalized care recommendations based on individual baby patterns
+- Specialized support for premature infants and special care cases
+- Multilingual support (Korean/English) with plans for global expansion
+
+### Target Users
+
+- Parents of newborns (0-12 months)
+- Parents of premature babies requiring specialized care
+- Caregivers seeking data-driven insights
+- Health professionals monitoring infant development
+
+---
+
+## 🛠 Tech Stack
+
+### Core Technologies
+
+- **Frontend**: Flutter 3.0+ (Dart)
+- **State Management**: Provider
+- **Local Storage**: SharedPreferences
+- **Backend Services**: Firebase (Authentication, Analytics)
+- **AI/ML**: OpenAI GPT-4 API
+- **Localization**: Flutter Intl
+
+### Platform Support
+
+- ✅ iOS (14.0+)
+- ✅ Android (API 21+)
+- 🔄 Web (Planned)
+
+### Key Dependencies
+
+```yaml
+flutter: 3.0+
+provider: ^6.1.1
+shared_preferences: ^2.2.0
+home_widget: ^0.4.0
+http: ^1.1.0
+intl: ^0.19.0
+uuid: ^4.0.0
 ```
 
-### 현재 구현된 파일들
+---
+
+## ✨ Key Features
+
+### P0 Features (Currently Implemented)
+
+#### 🎯 Core Functionality
+- **Activity Tracking**: Comprehensive logging for Sleep, Feeding, Diaper, Play, and Health
+- **AI-Powered Sweet Spot**: Intelligent sleep timing predictions based on wake windows
+- **Smart Predictions**: Feeding interval calculations and sleep schedule optimization
+- **Data Persistence**: Complete local storage with CRUD operations
+
+#### 📊 Analytics & Insights
+- **Pattern Recognition**: Analyze trends in sleep and feeding patterns
+- **Daily Rhythm Visualization**: Interactive wheel showing baby's 24-hour patterns
+- **Activity History**: Comprehensive view with filtering and search capabilities
+- **CSV Export/Import**: Backup and data migration support
+
+#### 🎨 User Experience
+- **Beautiful Dark Theme**: Inspired by Huckleberry and BabyTime
+- **Smooth Animations**: Fluid transitions with haptic feedback
+- **Dual Language Support**: Full localization for Korean and English
+- **Home Widgets**: Real-time updates on iOS and Android
+
+#### 🔔 Smart Features
+- **AI Coaching**: Personalized recommendations based on patterns
+- **Intelligent Notifications**: Context-aware reminders
+- **Premature Baby Support**: Specialized care algorithms
+- **Development Tracking**: Monitor milestones with development tags
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Flutter SDK 3.0 or higher
+- Dart SDK 2.19 or higher
+- Xcode 14+ (for iOS development)
+- Android Studio / VS Code with Flutter extensions
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/naezin/lulu-baby-tracker.git
+   cd lulu-baby-tracker
+   ```
+
+2. **Install dependencies**
+   ```bash
+   flutter pub get
+   ```
+
+3. **Configure environment variables**
+   ```bash
+   # Copy the example file
+   cp .env.example .env
+
+   # Edit .env and add your API keys
+   # NEVER commit the .env file to version control
+   ```
+
+4. **Required Environment Variables**
+
+   Create a `.env` file in the project root with these variables:
+
+   ```bash
+   # OpenAI API Key (required for AI coaching features)
+   OPENAI_API_KEY=sk-proj-xxxxxxxxxxxxx
+
+   # Firebase Configuration (optional for MVP, required for production)
+   FIREBASE_API_KEY=AIzaxxxxxxxxxxxxxxxxx
+   FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+   FIREBASE_PROJECT_ID=your-project-id
+   FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+   FIREBASE_MESSAGING_SENDER_ID=123456789
+   FIREBASE_APP_ID=1:123456789:web:abcdef123456
+
+   # App Environment
+   ENVIRONMENT=development  # development | staging | production
+   ```
+
+   ⚠️ **SECURITY WARNING**: The `.env` file is in `.gitignore`. NEVER commit actual API keys to version control!
+
+5. **Run the app**
+   ```bash
+   # iOS
+   flutter run -d ios
+
+   # Android
+   flutter run -d android
+
+   # Web (coming soon)
+   flutter run -d chrome
+   ```
+
+### Platform-Specific Setup
+
+#### iOS Setup
+
+1. Configure signing in Xcode
+2. Update `ios/Runner/Info.plist` with required permissions
+3. (Optional) Add `GoogleService-Info.plist` for Firebase
+
+#### Android Setup
+
+1. Update `android/app/build.gradle` with your app ID
+2. (Optional) Add `google-services.json` for Firebase
+3. Configure signing for release builds
+
+---
+
+## 📊 Data Context
+
+### Baby Profile Reference Case
+
+Lulu's algorithms are optimized and tested against real-world special care cases:
+
+**Reference Case**: Premature Infant
+- **Birth Date**: November 11, 2025
+- **Birth Weight**: 2.46 kg (low birth weight)
+- **Current Age**: 72 days (as of reference date)
+- **Care Category**: Premature infant requiring specialized monitoring
+
+### Why This Matters
+
+This reference case drives our algorithmic precision:
+
+1. **Wake Windows**: Adjusted for premature infant developmental age (not chronological age)
+2. **Feeding Intervals**: More frequent, smaller amounts (90-135ml vs standard)
+3. **Sleep Quality Monitoring**: Enhanced sensitivity to sleep disturbances
+4. **Growth Tracking**: Specialized percentile curves for low-birth-weight infants
+5. **Risk Indicators**: Proactive alerts for patterns requiring medical consultation
+
+### Universal Support
+
+While optimized for special cases, Lulu supports **all infants**:
+- Full-term healthy babies
+- Premature infants (any gestational age)
+- Multiples (twins, triplets)
+- Babies with medical conditions
+
+The app automatically adjusts recommendations based on:
+- Actual birth weight
+- Gestational age at birth
+- Current chronological age
+- Observed feeding/sleep patterns
+
+---
+
+## 🏗 Architecture
+
+### Project Structure
 
 ```
 lulu/
 ├── lib/
-│   ├── core/
-│   │   ├── constants/
-│   │   │   └── lulu_persona.dart           ← Lulu AI 페르소나 설정
-│   │   └── utils/
-│   │       ├── sweet_spot_calculator.dart  ← Sweet Spot 예측 로직 ⭐
-│   │       └── sweet_spot_example.dart     ← 사용 예제
+│   ├── core/                    # Core utilities and constants
+│   │   ├── constants/           # App constants and personas
+│   │   ├── localization/        # i18n support
+│   │   ├── theme/               # App theming
+│   │   └── utils/               # Utility functions
+│   │       ├── wake_window_calculator.dart
+│   │       ├── feeding_interval_calculator.dart
+│   │       └── sweet_spot_calculator.dart
 │   │
-│   ├── data/
-│   │   ├── models/
-│   │   │   └── baby_model.dart             ← 아기 데이터 모델
-│   │   └── services/
-│   │       └── openai_service.dart         ← OpenAI API 서비스 ⭐
+│   ├── data/                    # Data layer
+│   │   ├── models/              # Data models
+│   │   │   ├── activity_model.dart
+│   │   │   ├── baby_model.dart
+│   │   │   └── play_activity_model.dart
+│   │   ├── services/            # Business logic services
+│   │   │   ├── local_storage_service.dart
+│   │   │   ├── ai_coaching_service.dart
+│   │   │   ├── notification_service.dart
+│   │   │   └── widget_service.dart
+│   │   ├── analysis/            # Pattern analysis
+│   │   └── knowledge/           # Expert guidelines
 │   │
-│   └── presentation/
-│       ├── providers/
-│       │   ├── chat_provider.dart          ← 채팅 상태 관리
-│       │   └── sweet_spot_provider.dart    ← Sweet Spot 상태 관리
-│       │
-│       ├── screens/
-│       │   └── chat/
-│       │       ├── chat_screen.dart        ← 채팅 화면 ⭐
-│       │       └── chat_example.dart       ← 통합 예제
-│       │
-│       └── widgets/
-│           ├── chat/
-│           │   ├── chat_bubble.dart        ← 말풍선 UI
-│           │   ├── chat_input.dart         ← 입력 필드
-│           │   ├── typing_indicator.dart   ← 타이핑 애니메이션
-│           │   └── quick_questions_bar.dart← 빠른 질문
-│           │
-│           └── sweet_spot_card.dart        ← Sweet Spot 카드 UI
+│   └── presentation/            # UI layer
+│       ├── providers/           # State management
+│       ├── screens/             # App screens
+│       │   ├── auth/            # Onboarding & authentication
+│       │   ├── home/            # Main dashboard
+│       │   ├── activities/      # Activity logging screens
+│       │   ├── settings/        # App settings
+│       │   └── insights/        # AI insights & analytics
+│       └── widgets/             # Reusable UI components
 │
-├── test/
-│   └── unit/
-│       └── utils/
-│           └── sweet_spot_calculator_test.dart  ← 단위 테스트
-│
-├── CHAT_INTEGRATION_GUIDE.md              ← 채팅 통합 가이드
-└── README.md                               ← 이 파일
+├── android/                     # Android-specific code
+├── ios/                         # iOS-specific code
+├── test/                        # Unit and widget tests
+└── scripts/                     # Build and utility scripts
 ```
 
-## 🔍 파일 보는 방법
+### Design Patterns
 
-### 1. Visual Studio Code로 보기 (권장)
+- **Provider Pattern**: State management
+- **Repository Pattern**: Data access abstraction
+- **Service Layer**: Business logic separation
+- **Factory Pattern**: Model creation
+- **Observer Pattern**: Widget updates
+
+---
+
+## 🔒 Security
+
+### Critical Security Rules
+
+⚠️ **NEVER commit these files to version control:**
+
+#### Environment Variables
+- `.env`
+- `.env.local`
+- `.env.*`
+- Any file containing API keys or secrets
+
+#### Firebase Configuration
+- `android/app/google-services.json`
+- `ios/Runner/GoogleService-Info.plist`
+- `firebase_options.dart`
+
+#### Platform Signing Keys
+- `*.keystore`
+- `*.jks`
+- `*.p12`
+- `*.mobileprovision`
+- `key.properties`
+
+#### Cloud Credentials
+- AWS, GCP, or any cloud provider credentials
+- OAuth client secrets
+- Database connection strings
+
+### Security Checklist
+
+Before committing:
 
 ```bash
-# 프로젝트 폴더 열기
-cd /Users/naezin/Desktop/클로드앱플젝
-code lulu/
+# 1. Check git status for sensitive files
+git status
+
+# 2. Search for accidentally staged secrets
+git diff --staged | grep -i "api.*key\|secret\|password"
+
+# 3. Verify .gitignore is working
+git check-ignore .env android/app/google-services.json
+
+# 4. Scan commit history (if suspicious)
+git log --all --full-history -- **/*.env
 ```
 
-### 2. 터미널에서 파일 내용 보기
+### If You Accidentally Committed Secrets
+
+**IMMEDIATE ACTION REQUIRED**:
 
 ```bash
-# Sweet Spot 계산기 보기
-cat lulu/lib/core/utils/sweet_spot_calculator.dart
+# 1. Revoke the exposed API keys immediately
+# (Go to OpenAI/Firebase console and regenerate)
 
-# Lulu 페르소나 설정 보기
-cat lulu/lib/core/constants/lulu_persona.dart
+# 2. Remove from git history using BFG Repo-Cleaner
+brew install bfg
+bfg --delete-files .env
+git reflog expire --expire=now --all
+git gc --prune=now --aggressive
 
-# 채팅 화면 보기
-cat lulu/lib/presentation/screens/chat/chat_screen.dart
+# 3. Force push (WARNING: Coordinate with team first)
+git push --force
+
+# 4. Update .env with new keys
 ```
 
-### 3. 특정 파일만 빠르게 확인
+Alternatively, use `git filter-repo`:
 
 ```bash
-# Sweet Spot 예제 실행해보기
-cat lulu/lib/core/utils/sweet_spot_example.dart
-
-# 채팅 통합 가이드 읽기
-cat lulu/CHAT_INTEGRATION_GUIDE.md
+pip install git-filter-repo
+git filter-repo --path .env --invert-paths
+git push --force
 ```
 
-## 🚀 핵심 파일 설명
+---
 
-### ⭐ 1. Sweet Spot Calculator
-**파일**: `lib/core/utils/sweet_spot_calculator.dart`
-
-아기의 최적 낮잠 시간을 예측하는 핵심 로직입니다.
-
-```dart
-// 사용 예시
-final sweetSpot = SweetSpotCalculator.calculate(
-  ageInMonths: 6,
-  lastWakeUpTime: DateTime.now().subtract(Duration(hours: 2)),
-  napNumber: 2,
-);
-
-print(sweetSpot.getFormattedTimeRange()); // "2:30 PM - 3:15 PM"
-```
-
-**보는 방법**:
-```bash
-cat lulu/lib/core/utils/sweet_spot_calculator.dart
-# 또는
-open -a "Visual Studio Code" lulu/lib/core/utils/sweet_spot_calculator.dart
-```
-
-### ⭐ 2. OpenAI Service
-**파일**: `lib/data/services/openai_service.dart`
-
-Lulu AI와 대화하기 위한 OpenAI API 연동입니다.
-
-```dart
-// 사용 예시
-final response = await openAIService.sendMessage(
-  messages: [ChatMessage.user("Baby keeps waking at night")],
-);
-```
-
-**보는 방법**:
-```bash
-cat lulu/lib/data/services/openai_service.dart
-```
-
-### ⭐ 3. Chat Screen
-**파일**: `lib/presentation/screens/chat/chat_screen.dart`
-
-부모와 Lulu가 대화하는 채팅 UI입니다.
-
-**보는 방법**:
-```bash
-cat lulu/lib/presentation/screens/chat/chat_screen.dart
-```
-
-## 🧪 예제 코드 실행해보기
-
-### Sweet Spot 예제 실행
+## 🧪 Testing
 
 ```bash
-# 예제 코드 보기
-cat lulu/lib/core/utils/sweet_spot_example.dart
+# Run all tests
+flutter test
 
-# Dart로 직접 실행 (Flutter 없이)
-cd lulu
-dart run lib/core/utils/sweet_spot_example.dart
-```
+# Run with coverage
+flutter test --coverage
 
-### 테스트 실행
-
-```bash
-# 단위 테스트 실행
-cd lulu
+# Run specific test file
 flutter test test/unit/utils/sweet_spot_calculator_test.dart
+
+# Run widget tests
+flutter test test/widget_test.dart
 ```
 
-## 📊 데이터베이스 스키마 확인
+---
 
-데이터베이스 설계는 첫 번째 답변에 JSON 형식으로 제공되었습니다:
+## 📱 Deployment
 
-- **Users Collection**: 사용자 정보
-- **Babies Collection**: 아기 정보
-- **Activities Collection**: 수면/수유/배변 기록
-- **Growth Records**: 성장 기록
-- **AI Insights**: AI 분석 결과
+### iOS
 
-## 🎯 다음 단계
+1. Update version in `pubspec.yaml`
+2. Build release:
+   ```bash
+   flutter build ios --release
+   ```
+3. Open Xcode and archive for App Store
 
-### 1. 프로젝트 초기화 (아직 안했다면)
+### Android
 
-```bash
-cd lulu
-flutter pub get
-```
+1. Configure signing in `android/key.properties`
+2. Build APK/App Bundle:
+   ```bash
+   flutter build apk --release
+   flutter build appbundle --release
+   ```
+3. Upload to Google Play Console
 
-### 2. 주요 기능 확인
+---
 
-```bash
-# 1. Sweet Spot 로직 확인
-cat lib/core/utils/sweet_spot_calculator.dart | less
+## 🤝 Contributing
 
-# 2. Lulu 페르소나 확인
-cat lib/core/constants/lulu_persona.dart | less
+### For AI Agents Reading This Code
 
-# 3. 채팅 UI 확인
-cat lib/presentation/screens/chat/chat_screen.dart | less
-```
+When analyzing or modifying this codebase:
 
-### 3. 실제 앱 실행 준비
+1. **Context Preservation**: Always maintain the specialized care algorithms for premature infants
+2. **Data Privacy**: Never log or expose actual user data
+3. **Algorithm Accuracy**: Sleep predictions are based on peer-reviewed research - maintain references
+4. **Localization**: All user-facing strings must use `l10n.translate()` - run `dart scripts/check_i18n.dart`
+5. **Testing**: Add tests for any new calculators or business logic
 
-현재는 **코드만 작성된 상태**입니다. 실제 앱으로 실행하려면:
+### Code Style
 
-1. `pubspec.yaml` 생성
-2. `main.dart` 생성
-3. Firebase 설정
-4. OpenAI API 키 설정
+- Follow [Effective Dart](https://dart.dev/guides/language/effective-dart) guidelines
+- Use meaningful variable names
+- Document complex algorithms with research references
+- Keep functions small and focused
 
-## 💡 추천 보는 순서
+---
 
-```bash
-# 1단계: 개요 파악
-cat CHAT_INTEGRATION_GUIDE.md
+## 📄 License
 
-# 2단계: 핵심 로직 이해
-cat lib/core/utils/sweet_spot_calculator.dart
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-# 3단계: AI 페르소나 확인
-cat lib/core/constants/lulu_persona.dart
+---
 
-# 4단계: UI 구조 파악
-cat lib/presentation/screens/chat/chat_screen.dart
+## 🙏 Acknowledgments
 
-# 5단계: 예제로 이해
-cat lib/core/utils/sweet_spot_example.dart
-```
+- Inspired by Huckleberry and BabyTime apps
+- Wake window calculations based on research from:
+  - American Academy of Pediatrics sleep guidelines
+  - Stanford Children's Health developmental milestones
+  - Premature infant care protocols from WHO
 
-## 📝 요약
+---
 
-현재 상태:
-- ✅ Sweet Spot 예측 로직 완성
-- ✅ OpenAI 채팅 서비스 완성
-- ✅ 채팅 UI 컴포넌트 완성
-- ✅ Lulu AI 페르소나 설정 완성
-- ✅ 데이터 모델 설계 완성
-- ❌ 실제 Flutter 앱 미구성 (main.dart, pubspec.yaml 필요)
-- ❌ Firebase 연동 미완성
+## 📞 Support
 
-## 🔧 파일 편집기 추천
+- **Issues**: [GitHub Issues](https://github.com/naezin/lulu-baby-tracker/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/naezin/lulu-baby-tracker/discussions)
+- **Email**: naezinh@gmail.com
 
-- **VS Code**: `code lulu/`
-- **Android Studio**: File → Open → lulu 폴더 선택
-- **Vim/Nano**: 터미널에서 직접 편집
+---
 
-문의사항이 있으시면 언제든지 물어보세요!
+## 🗺 Roadmap
+
+### v1.1 (Q1 2026)
+- [ ] Cloud sync with Firebase
+- [ ] Multiple baby profiles
+- [ ] Advanced analytics dashboard
+- [ ] Export to PDF reports
+
+### v1.2 (Q2 2026)
+- [ ] Collaborative features (family sharing)
+- [ ] Integration with wearables
+- [ ] Pediatrician portal
+- [ ] Expanded language support
+
+### v2.0 (Q3 2026)
+- [ ] Machine learning pattern prediction
+- [ ] Voice command support
+- [ ] Smart home integrations
+- [ ] Community features
+
+---
+
+**Built with ❤️ for parents everywhere**
+
+*Last updated: January 24, 2025*

@@ -44,19 +44,75 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Environment variables (SECURITY - NEVER COMMIT)
+# ============================================
+# 🔒 SECURITY - CRITICAL FILES (NEVER COMMIT)
+# ============================================
+
+# Environment Variables
 .env
+.env.*
 .env.local
 .env.production
-.env.*.local
+.env.development
+.env.staging
+.env.test
+*.env
+!.env.example
 
-# API Keys and Secrets (NEVER COMMIT)
+# API Keys and Secrets
 **/secrets/
 **/api_keys/
 **/*.pem
 **/*.key
+**/credentials/
+**/private/
+secret.txt
+secrets.txt
+api_key.txt
+token.txt
 
-# Firebase sensitive config
+# Firebase Configuration
 firebase_options.dart
 google-services.json
+**/google-services.json
 GoogleService-Info.plist
+**/GoogleService-Info.plist
+firebase.json
+.firebaserc
+
+# iOS Signing & Provisioning
+**/*.p12
+**/*.p8
+**/*.cer
+**/*.certSigningRequest
+**/*.mobileprovision
+**/*.provisionprofile
+ios/Runner/GoogleService-Info.plist
+ios/exportOptions.plist
+ios/Runner/Info.plist.backup
+
+# Android Signing Keys
+**/*.keystore
+**/*.jks
+**/key.properties
+android/key.properties
+android/app/upload-keystore.jks
+android/app/debug.keystore
+android/app/release.keystore
+android/keystore.properties
+
+# Cloud Provider Credentials
+**/aws-credentials
+**/gcloud-credentials.json
+**/.aws/
+**/.gcp/
+
+# Database Credentials
+**/database.yml
+**/database.json
+**/*.db-key
+
+# OAuth & Authentication
+**/oauth-credentials.json
+**/*-credentials.json
+client_secret*.json
