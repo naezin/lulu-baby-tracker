@@ -38,6 +38,17 @@ class AppTheme {
   static const Color emergencyRed = Color(0xFFFF6B6B);
   static const Color emergencyBackground = Color(0xFF2D1F1F);
 
+  // 📊 Activity Colors (Records V2)
+  static const Color sleepColor = Color(0xFF7BB8E8); // Soft blue
+  static const Color feedingColor = Color(0xFFE8B87E); // Soft orange
+  static const Color diaperColor = Color(0xFF9D8CD6); // Lavender
+  static const Color playColor = Color(0xFF5FB37B); // Soft green
+  static const Color healthColor = Color(0xFFE87878); // Soft red
+
+  // 🎨 UI Element Colors
+  static const Color glassBorder = Color(0xFF415A77); // Same as softBlue
+  static const Color primaryDark = Color(0xFF0D1B2A); // Same as midnightNavy
+
   /// 🌙 Midnight Blue Theme (Default)
   static ThemeData get darkTheme {
     return ThemeData(

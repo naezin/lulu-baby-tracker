@@ -53,7 +53,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
 
     // 진행 중인 수면 찾기
     final ongoing = todayActivities.where((a) =>
-        a.type == ActivityType.sleep && a.endTimestamp == null).firstOrNull;
+        a.type == ActivityType.sleep && a.endTime == null).firstOrNull;
 
     setState(() {
       _todayActivities = todayActivities;
@@ -78,12 +78,10 @@ class _RecordsScreenState extends State<RecordsScreen> {
 
     final activity = ActivityModel(
       id: now.millisecondsSinceEpoch.toString(),
-      visitorId: 'local',
-      babyId: 'default',
       type: type,
       timestamp: now.toIso8601String(),
-      // 수면은 endTimestamp 없이 시작 (진행 중)
-      endTimestamp: type == ActivityType.sleep ? null : now.toIso8601String(),
+      // 수면은 endTime 없이 시작 (진행 중)
+      endTime: type == ActivityType.sleep ? null : now.toIso8601String(),
       // 기본값 설정
       durationMinutes: type == ActivityType.sleep ? null : 0,
       amountMl: type == ActivityType.feeding ? 120 : null, // 기본 수유량
@@ -108,11 +106,9 @@ class _RecordsScreenState extends State<RecordsScreen> {
 
     final updated = ActivityModel(
       id: _ongoingActivity!.id,
-      visitorId: _ongoingActivity!.visitorId,
-      babyId: _ongoingActivity!.babyId,
       type: ActivityType.sleep,
       timestamp: _ongoingActivity!.timestamp,
-      endTimestamp: now.toIso8601String(),
+      endTime: now.toIso8601String(),
       durationMinutes: duration,
       sleepQuality: _ongoingActivity!.sleepQuality,
       sleepLocation: _ongoingActivity!.sleepLocation,
@@ -558,7 +554,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
     // 상세 정보 구성
     switch (activity.type) {
       case ActivityType.sleep:
-        if (activity.endTimestamp == null) {
+        if (activity.endTime == null) {
           isOngoing = true;
           final duration = DateTime.now().difference(time);
           subtitle = '⏱️ 진행 중 (${duration.inHours}h ${duration.inMinutes % 60}m)';
