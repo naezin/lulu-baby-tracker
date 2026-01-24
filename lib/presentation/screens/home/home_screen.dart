@@ -131,16 +131,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       // Sweet Spot Hero Card (Huckleberry-style)
                       const SweetSpotHeroCard(),
 
-                      const SizedBox(height: 16),
-
-                      // Today's Summary Section
-                      _buildTodaySummarySection(context, l10n),
-
-                      const SizedBox(height: 20),
-
-                      // Recent Activities
-                      _buildRecentActivitiesSection(context, l10n),
-
                       // Bottom padding for Quick Log Bar
                       const SizedBox(height: 100),
                     ],
