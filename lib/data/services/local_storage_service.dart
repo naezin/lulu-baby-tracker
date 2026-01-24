@@ -114,7 +114,7 @@ class LocalStorageService {
     final sleepActivities = activities.where((a) => a.type == ActivityType.sleep).toList();
 
     // 평균 밤 깨는 횟수 계산 (지난 7일)
-    final sevenDaysAgo = DateTime.now().subtract(Duration(days: 7));
+    final sevenDaysAgo = DateTime.now().subtract(const Duration(days: 7));
     final recentNightWakings = sleepActivities.where((activity) {
       final date = DateTime.parse(activity.timestamp);
       return date.isAfter(sevenDaysAgo) &&

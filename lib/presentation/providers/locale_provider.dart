@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// 언어 설정 Provider
 class LocaleProvider extends ChangeNotifier {
-  Locale _locale = Locale('ko', '');
+  Locale _locale = const Locale('ko', '');
 
   Locale get locale => _locale;
 
@@ -20,7 +20,7 @@ class LocaleProvider extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       // 오류 발생 시 기본값(한국어) 사용
-      _locale = Locale('ko', '');
+      _locale = const Locale('ko', '');
     }
   }
 
@@ -42,12 +42,12 @@ class LocaleProvider extends ChangeNotifier {
 
   /// 영어로 변경
   Future<void> setEnglish() async {
-    await setLocale(Locale('en', ''));
+    await setLocale(const Locale('en', ''));
   }
 
   /// 한국어로 변경
   Future<void> setKorean() async {
-    await setLocale(Locale('ko', ''));
+    await setLocale(const Locale('ko', ''));
   }
 
   /// 현재 언어가 한국어인지 확인

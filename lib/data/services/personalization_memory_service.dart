@@ -47,7 +47,7 @@ class PersonalizationMemoryService {
 
     return snapshot.docs
         .map((doc) => UserPreference.fromJson({
-              ...doc.data() as Map<String, dynamic>,
+              ...doc.data(),
               'id': doc.id,
             }))
         .toList();

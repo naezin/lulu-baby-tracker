@@ -3,11 +3,11 @@ import '../../../core/localization/app_localizations.dart';
 
 /// Notification Center - Shows received notifications
 class NotificationSettingsScreen extends StatelessWidget {
-  const NotificationSettingsScreen({Key? key}) : super(key: key);
+  const NotificationSettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     // Mock notification data
     final notifications = _getMockNotifications(context);
 
@@ -42,7 +42,7 @@ class NotificationSettingsScreen extends StatelessWidget {
   }
 
   Widget _buildEmptyState(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -119,7 +119,7 @@ class NotificationSettingsScreen extends StatelessWidget {
           ? Container(
               width: 8,
               height: 8,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: Colors.blue,
                 shape: BoxShape.circle,
               ),
@@ -132,7 +132,7 @@ class NotificationSettingsScreen extends StatelessWidget {
   }
 
   List<NotificationItem> _getMockNotifications(BuildContext context) {
-    final locale = AppLocalizations.of(context)!.locale;
+    final locale = AppLocalizations.of(context).locale;
     final isKorean = locale.languageCode == 'ko';
 
     return [

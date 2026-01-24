@@ -6,7 +6,7 @@ import '../../../data/services/widget_service.dart';
 /// Widget Settings Screen
 /// Configure home screen widgets with Apple-inspired UI
 class WidgetSettingsScreen extends StatefulWidget {
-  const WidgetSettingsScreen({Key? key}) : super(key: key);
+  const WidgetSettingsScreen({super.key});
 
   @override
   State<WidgetSettingsScreen> createState() => _WidgetSettingsScreenState();
@@ -18,7 +18,7 @@ class _WidgetSettingsScreenState extends State<WidgetSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -116,7 +116,7 @@ class _WidgetSettingsScreenState extends State<WidgetSettingsScreen> {
                 color: AppTheme.lavenderMist.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.widgets_rounded,
                 color: AppTheme.lavenderMist,
                 size: 28,
@@ -228,7 +228,7 @@ class _WidgetSettingsScreenState extends State<WidgetSettingsScreen> {
                     value: 0.65,
                     strokeWidth: 4,
                     backgroundColor: Colors.white.withOpacity(0.2),
-                    valueColor: AlwaysStoppedAnimation<Color>(
+                    valueColor: const AlwaysStoppedAnimation<Color>(
                       AppTheme.lavenderMist,
                     ),
                   ),
@@ -308,7 +308,7 @@ class _WidgetSettingsScreenState extends State<WidgetSettingsScreen> {
               color: Colors.white.withOpacity(0.2),
             ),
             const SizedBox(width: 16),
-            Column(
+            const Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
@@ -316,15 +316,15 @@ class _WidgetSettingsScreenState extends State<WidgetSettingsScreen> {
                   color: AppTheme.lavenderMist,
                   size: 32,
                 ),
-                const SizedBox(height: 8),
-                const Text(
+                SizedBox(height: 8),
+                Text(
                   'Sleep',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 12,
                   ),
                 ),
-                const Text(
+                Text(
                   'in 20m',
                   style: TextStyle(
                     color: Colors.white,
@@ -376,17 +376,17 @@ class _WidgetSettingsScreenState extends State<WidgetSettingsScreen> {
           width: 1,
         ),
       ),
-      child: Center(
+      child: const Center(
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               Icons.restaurant,
               color: Colors.white,
               size: 16,
             ),
-            const SizedBox(width: 8),
-            const Text(
+            SizedBox(width: 8),
+            Text(
               'Next Feed: ',
               style: TextStyle(
                 color: Colors.white,
@@ -419,7 +419,7 @@ class _WidgetSettingsScreenState extends State<WidgetSettingsScreen> {
         children: [
           Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.info_outline,
                 color: AppTheme.lavenderMist,
                 size: 20,
@@ -427,7 +427,7 @@ class _WidgetSettingsScreenState extends State<WidgetSettingsScreen> {
               const SizedBox(width: 8),
               Text(
                 l10n.translate('how_to_add_widget') ?? 'How to add widgets',
-                style: TextStyle(
+                style: const TextStyle(
                   color: AppTheme.lavenderMist,
                   fontWeight: FontWeight.bold,
                 ),
@@ -435,7 +435,7 @@ class _WidgetSettingsScreenState extends State<WidgetSettingsScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          Text(
+          const Text(
             '1. Long press on your home screen\n'
             '2. Tap the "+" button in the top corner\n'
             '3. Search for "Lulu"\n'
@@ -461,7 +461,7 @@ class _WidgetSettingsScreenState extends State<WidgetSettingsScreen> {
       await _widgetService.updateAllWidgets();
 
       if (mounted) {
-        final l10n = AppLocalizations.of(context)!;
+        final l10n = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(

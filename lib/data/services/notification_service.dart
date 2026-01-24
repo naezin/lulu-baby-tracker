@@ -75,7 +75,7 @@ class NotificationService {
     await initialize();
 
     // Sweet Spot 15분 전
-    final notificationTime = sweetSpotTime.subtract(Duration(minutes: 15));
+    final notificationTime = sweetSpotTime.subtract(const Duration(minutes: 15));
 
     // 과거 시간이면 스케줄링하지 않음
     if (notificationTime.isBefore(DateTime.now())) {
@@ -93,7 +93,7 @@ class NotificationService {
       importance: Importance.high,
       priority: Priority.high,
       icon: '@mipmap/ic_launcher',
-      sound: RawResourceAndroidNotificationSound('notification'),
+      sound: const RawResourceAndroidNotificationSound('notification'),
       enableVibration: true,
       playSound: true,
     );

@@ -14,9 +14,9 @@ class LogPlayScreen extends StatefulWidget {
   final PlayActivityType? preselectedType;
 
   const LogPlayScreen({
-    Key? key,
+    super.key,
     this.preselectedType,
-  }) : super(key: key);
+  });
 
   @override
   State<LogPlayScreen> createState() => _LogPlayScreenState();
@@ -57,7 +57,7 @@ class _LogPlayScreenState extends State<LogPlayScreen>
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppTheme.surfaceDark,
@@ -139,7 +139,7 @@ class _LogPlayScreenState extends State<LogPlayScreen>
   }
 
   Widget _buildActivityTypeGrid(BuildContext context, AppLocalizations l10n) {
-    final activities = PlayActivityType.values;
+    const activities = PlayActivityType.values;
 
     return GridView.builder(
       shrinkWrap: true,
@@ -220,9 +220,9 @@ class _LogPlayScreenState extends State<LogPlayScreen>
                         color: const Color(0xFF5FB37B),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: Text(
+                      child: const Text(
                         '⭐',
-                        style: const TextStyle(fontSize: 10),
+                        style: TextStyle(fontSize: 10),
                       ),
                     ),
                   ),
@@ -299,8 +299,8 @@ class _LogPlayScreenState extends State<LogPlayScreen>
                 ),
                 child: Text(
                   '${tag.emoji} ${l10n.translate('dev_tag_${tag.name}') ?? tag.name}',
-                  style: TextStyle(
-                    color: const Color(0xFF5FB37B),
+                  style: const TextStyle(
+                    color: Color(0xFF5FB37B),
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -323,7 +323,7 @@ class _LogPlayScreenState extends State<LogPlayScreen>
           builder: (context, child) {
             return Theme(
               data: Theme.of(context).copyWith(
-                timePickerTheme: TimePickerThemeData(
+                timePickerTheme: const TimePickerThemeData(
                   backgroundColor: AppTheme.surfaceCard,
                   dialBackgroundColor: AppTheme.surfaceElevated,
                   hourMinuteTextColor: AppTheme.textPrimary,
@@ -358,7 +358,7 @@ class _LogPlayScreenState extends State<LogPlayScreen>
         ),
         child: Row(
           children: [
-            Icon(
+            const Icon(
               Icons.access_time_rounded,
               color: AppTheme.lavenderMist,
               size: 24,
@@ -373,7 +373,7 @@ class _LogPlayScreenState extends State<LogPlayScreen>
                     ),
               ),
             ),
-            Icon(
+            const Icon(
               Icons.arrow_forward_ios_rounded,
               size: 16,
               color: AppTheme.textTertiary,
@@ -414,7 +414,7 @@ class _LogPlayScreenState extends State<LogPlayScreen>
               ),
             ),
             child: Text(
-              l10n.locale.languageCode == 'ko' ? '${duration}분' : '${duration}min',
+              l10n.locale.languageCode == 'ko' ? '$duration분' : '${duration}min',
               style: TextStyle(
                 color: isSelected
                     ? const Color(0xFF5FB37B)
@@ -432,7 +432,7 @@ class _LogPlayScreenState extends State<LogPlayScreen>
   Widget _buildNotesInput(BuildContext context, AppLocalizations l10n) {
     return TextField(
       maxLines: 4,
-      style: TextStyle(color: AppTheme.textPrimary),
+      style: const TextStyle(color: AppTheme.textPrimary),
       decoration: InputDecoration(
         hintText: l10n.translate('activity_notes_hint') ?? 'Add notes...',
         filled: true,
@@ -500,7 +500,7 @@ class _LogPlayScreenState extends State<LogPlayScreen>
 
     Navigator.pop(context, true);
 
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(l10n.locale.languageCode == 'ko' ? '활동이 기록되었습니다! 🎉' : 'Activity logged successfully! 🎉'),

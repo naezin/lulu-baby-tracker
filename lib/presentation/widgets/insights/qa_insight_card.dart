@@ -12,13 +12,13 @@ class QAInsightCard extends StatelessWidget {
   final VoidCallback? onAction;
 
   const QAInsightCard({
-    Key? key,
+    super.key,
     required this.question,
     required this.answer,
     required this.metrics,
     this.actionLabel,
     this.onAction,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +46,7 @@ class QAInsightCard extends StatelessWidget {
           // Question Header
           Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.help_outline_rounded,
                 color: AppTheme.lavenderMist,
                 size: 20,
@@ -55,7 +55,7 @@ class QAInsightCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   question,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: AppTheme.textSecondary,
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
@@ -90,7 +90,7 @@ class QAInsightCard extends StatelessWidget {
                         children: [
                           Text(
                             answer.title,
-                            style: TextStyle(
+                            style: const TextStyle(
                               color: AppTheme.textPrimary,
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
@@ -101,7 +101,7 @@ class QAInsightCard extends StatelessWidget {
                             const SizedBox(height: 4),
                             Text(
                               answer.subtitle!,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 color: AppTheme.textSecondary,
                                 fontSize: 13,
                                 height: 1.4,
@@ -139,7 +139,7 @@ class QAInsightCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         metric.label,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: AppTheme.textSecondary,
                           fontSize: 13,
                         ),
@@ -151,7 +151,7 @@ class QAInsightCard extends StatelessWidget {
                       children: [
                         Text(
                           metric.value,
-                          style: TextStyle(
+                          style: const TextStyle(
                             color: AppTheme.textPrimary,
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -192,14 +192,14 @@ class QAInsightCard extends StatelessWidget {
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: onAction,
-                icon: Icon(
+                icon: const Icon(
                   Icons.arrow_forward_rounded,
                   size: 16,
                   color: AppTheme.lavenderGlow,
                 ),
                 label: Text(
                   actionLabel!,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: AppTheme.lavenderGlow,
                     fontWeight: FontWeight.w600,
                   ),

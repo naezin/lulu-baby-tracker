@@ -6,9 +6,9 @@ class QuickQuestionsBar extends StatelessWidget {
   final Function(QuickQuestion) onQuestionSelected;
 
   const QuickQuestionsBar({
-    Key? key,
+    super.key,
     required this.onQuestionSelected,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

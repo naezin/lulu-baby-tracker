@@ -9,7 +9,7 @@ import 'onboarding/baby_setup_screen.dart';
 /// 🌙 Login Screen with Midnight Blue Theme
 /// Calming design for tired parents
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  const LoginScreen({super.key});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -45,7 +45,7 @@ class _LoginScreenState extends State<LoginScreen>
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       body: Stack(
@@ -100,16 +100,16 @@ class _LoginScreenState extends State<LoginScreen>
 
   Widget _buildBackground() {
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFF0D0F1E), // Darker Midnight Blue
-            const Color(0xFF1A1F3A),
-            const Color(0xFF2D3351),
+            Color(0xFF0D0F1E), // Darker Midnight Blue
+            Color(0xFF1A1F3A),
+            Color(0xFF2D3351),
           ],
-          stops: const [0.0, 0.5, 1.0],
+          stops: [0.0, 0.5, 1.0],
         ),
       ),
     );
@@ -142,7 +142,7 @@ class _LoginScreenState extends State<LoginScreen>
               ],
             ),
           ),
-          child: Icon(
+          child: const Icon(
             Icons.bedtime_rounded,
             size: 64,
             color: AppTheme.lavenderMist,
@@ -252,7 +252,7 @@ class _LoginScreenState extends State<LoginScreen>
                 onPressed: _handleForgotPassword,
                 child: Text(
                   l10n.translate('forgot_password') ?? 'Forgot password?',
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: AppTheme.lavenderMist,
                     fontSize: 14,
                   ),
@@ -327,7 +327,7 @@ class _LoginScreenState extends State<LoginScreen>
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
+          borderSide: const BorderSide(
             color: AppTheme.lavenderMist,
             width: 2,
           ),
@@ -441,7 +441,7 @@ class _LoginScreenState extends State<LoginScreen>
           },
           child: Text(
             l10n.translate('sign_up') ?? 'Sign Up',
-            style: TextStyle(
+            style: const TextStyle(
               color: AppTheme.lavenderMist,
               fontSize: 14,
               fontWeight: FontWeight.bold,
@@ -465,7 +465,7 @@ class _LoginScreenState extends State<LoginScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CircularProgressIndicator(
+              const CircularProgressIndicator(
                 valueColor: AlwaysStoppedAnimation(AppTheme.lavenderMist),
               ),
               const SizedBox(height: 16),

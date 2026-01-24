@@ -6,7 +6,7 @@ import 'onboarding/baby_setup_screen.dart';
 
 /// 📝 Sign Up Screen
 class SignUpScreen extends StatefulWidget {
-  const SignUpScreen({Key? key}) : super(key: key);
+  const SignUpScreen({super.key});
 
   @override
   State<SignUpScreen> createState() => _SignUpScreenState();
@@ -36,21 +36,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       body: Stack(
         children: [
           // Background
           Container(
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  const Color(0xFF0D0F1E),
-                  const Color(0xFF1A1F3A),
-                  const Color(0xFF2D3351),
+                  Color(0xFF0D0F1E),
+                  Color(0xFF1A1F3A),
+                  Color(0xFF2D3351),
                 ],
               ),
             ),
@@ -231,7 +231,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   onChanged: (value) {
                                     setState(() => _agreeToTerms = value ?? false);
                                   },
-                                  fillColor: MaterialStateProperty.all(
+                                  fillColor: WidgetStateProperty.all(
                                     _agreeToTerms
                                         ? AppTheme.lavenderMist
                                         : Colors.white.withOpacity(0.2),
@@ -250,7 +250,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                         TextSpan(
                                           text: l10n.translate('terms_of_service') ??
                                               'Terms of Service',
-                                          style: TextStyle(
+                                          style: const TextStyle(
                                             color: AppTheme.lavenderMist,
                                             decoration: TextDecoration.underline,
                                           ),
@@ -261,7 +261,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                         TextSpan(
                                           text: l10n.translate('privacy_policy') ??
                                               'Privacy Policy',
-                                          style: TextStyle(
+                                          style: const TextStyle(
                                             color: AppTheme.lavenderMist,
                                             decoration: TextDecoration.underline,
                                           ),
@@ -319,7 +319,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           onPressed: () => Navigator.pop(context),
                           child: Text(
                             l10n.translate('sign_in') ?? 'Sign In',
-                            style: TextStyle(
+                            style: const TextStyle(
                               color: AppTheme.lavenderMist,
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
@@ -338,7 +338,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           if (_isLoading)
             Container(
               color: Colors.black.withOpacity(0.5),
-              child: Center(
+              child: const Center(
                 child: CircularProgressIndicator(
                   valueColor: AlwaysStoppedAnimation(AppTheme.lavenderMist),
                 ),
@@ -388,7 +388,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
+          borderSide: const BorderSide(
             color: AppTheme.lavenderMist,
             width: 2,
           ),

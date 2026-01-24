@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../data/models/ai_insight_model.dart';
 import '../../data/services/ai_coaching_service.dart';
-import 'dart:io' show Platform;
 
 /// AI 인사이트 바텀시트
 class AIInsightBottomSheet extends StatefulWidget {
@@ -12,11 +11,11 @@ class AIInsightBottomSheet extends StatefulWidget {
   final VoidCallback? onExportPDF;
 
   const AIInsightBottomSheet({
-    Key? key,
+    super.key,
     required this.insight,
     required this.babyId,
     this.onExportPDF,
-  }) : super(key: key);
+  });
 
   @override
   State<AIInsightBottomSheet> createState() => _AIInsightBottomSheetState();
@@ -53,7 +52,7 @@ class _AIInsightBottomSheetState extends State<AIInsightBottomSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     final isRiskCritical = widget.insight.riskLevel == RiskLevel.critical;
 
     return DraggableScrollableSheet(
@@ -64,12 +63,12 @@ class _AIInsightBottomSheetState extends State<AIInsightBottomSheet> {
         return Container(
           decoration: BoxDecoration(
             color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.1),
                 blurRadius: 10,
-                offset: Offset(0, -2),
+                offset: const Offset(0, -2),
               ),
             ],
           ),
@@ -77,7 +76,7 @@ class _AIInsightBottomSheetState extends State<AIInsightBottomSheet> {
             children: [
               // Drag Handle
               Container(
-                margin: EdgeInsets.only(top: 12, bottom: 4),
+                margin: const EdgeInsets.only(top: 12, bottom: 4),
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
@@ -90,17 +89,17 @@ class _AIInsightBottomSheetState extends State<AIInsightBottomSheet> {
               Expanded(
                 child: ListView(
                   controller: scrollController,
-                  padding: EdgeInsets.fromLTRB(24, 8, 24, 24),
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
                   children: [
                     // Header
                     _buildHeader(theme, l10n, isRiskCritical),
 
-                    SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
                     // 위험 수준이 높으면 전문가 상담 권고
                     if (isRiskCritical) ...[
                       _buildCriticalWarningCard(theme, l10n),
-                      SizedBox(height: 24),
+                      const SizedBox(height: 24),
                     ],
 
                     // 공감 메시지
@@ -112,7 +111,7 @@ class _AIInsightBottomSheetState extends State<AIInsightBottomSheet> {
                       content: widget.insight.content.empathyMessage,
                     ),
 
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
                     // 데이터 통찰
                     _buildSection(
@@ -123,7 +122,7 @@ class _AIInsightBottomSheetState extends State<AIInsightBottomSheet> {
                       content: widget.insight.content.dataInsight,
                     ),
 
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
                     // 오늘의 행동 지침
                     _buildSection(
@@ -136,7 +135,7 @@ class _AIInsightBottomSheetState extends State<AIInsightBottomSheet> {
 
                     // 전문가 조언 (있는 경우)
                     if (widget.insight.content.expertAdvice != null) ...[
-                      SizedBox(height: 20),
+                      const SizedBox(height: 20),
                       _buildSection(
                         theme: theme,
                         icon: Icons.medical_services_outlined,
@@ -146,12 +145,12 @@ class _AIInsightBottomSheetState extends State<AIInsightBottomSheet> {
                       ),
                     ],
 
-                    SizedBox(height: 32),
+                    const SizedBox(height: 32),
 
                     // 피드백 섹션
                     _buildFeedbackSection(theme, l10n),
 
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
                     // 타임스탬프
                     _buildTimestamp(theme),
@@ -170,7 +169,7 @@ class _AIInsightBottomSheetState extends State<AIInsightBottomSheet> {
     return Row(
       children: [
         Container(
-          padding: EdgeInsets.all(12),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: isRiskCritical
                 ? Colors.red.withOpacity(0.1)
@@ -185,7 +184,7 @@ class _AIInsightBottomSheetState extends State<AIInsightBottomSheet> {
             size: 28,
           ),
         ),
-        SizedBox(width: 16),
+        const SizedBox(width: 16),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -196,7 +195,7 @@ class _AIInsightBottomSheetState extends State<AIInsightBottomSheet> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              SizedBox(height: 4),
+              const SizedBox(height: 4),
               Text(
                 isRiskCritical
                     ? '즉시 확인이 필요합니다'
@@ -209,7 +208,7 @@ class _AIInsightBottomSheetState extends State<AIInsightBottomSheet> {
           ),
         ),
         IconButton(
-          icon: Icon(Icons.close),
+          icon: const Icon(Icons.close),
           onPressed: () => Navigator.pop(context),
         ),
       ],
@@ -219,7 +218,7 @@ class _AIInsightBottomSheetState extends State<AIInsightBottomSheet> {
   /// 위험 경고 카드
   Widget _buildCriticalWarningCard(ThemeData theme, AppLocalizations l10n) {
     return Container(
-      padding: EdgeInsets.all(20),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.red.shade50,
         borderRadius: BorderRadius.circular(16),
@@ -233,12 +232,12 @@ class _AIInsightBottomSheetState extends State<AIInsightBottomSheet> {
         children: [
           Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.local_hospital,
                 color: Colors.red,
                 size: 24,
               ),
-              SizedBox(width: 12),
+              const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   l10n.criticalAlertTitle,
@@ -250,7 +249,7 @@ class _AIInsightBottomSheetState extends State<AIInsightBottomSheet> {
               ),
             ],
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           Text(
             l10n.criticalAlertMessage,
             style: theme.textTheme.bodyMedium?.copyWith(
@@ -258,17 +257,17 @@ class _AIInsightBottomSheetState extends State<AIInsightBottomSheet> {
               height: 1.5,
             ),
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
               onPressed: widget.onExportPDF,
-              icon: Icon(Icons.picture_as_pdf),
+              icon: const Icon(Icons.picture_as_pdf),
               label: Text(l10n.generatePDFReport),
               style: FilledButton.styleFrom(
                 backgroundColor: Colors.red,
                 foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(vertical: 16),
+                padding: const EdgeInsets.symmetric(vertical: 16),
               ),
             ),
           ),
@@ -291,7 +290,7 @@ class _AIInsightBottomSheetState extends State<AIInsightBottomSheet> {
         Row(
           children: [
             Container(
-              padding: EdgeInsets.all(8),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: iconColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
@@ -302,7 +301,7 @@ class _AIInsightBottomSheetState extends State<AIInsightBottomSheet> {
                 size: 20,
               ),
             ),
-            SizedBox(width: 12),
+            const SizedBox(width: 12),
             Text(
               title,
               style: theme.textTheme.titleMedium?.copyWith(
@@ -311,10 +310,10 @@ class _AIInsightBottomSheetState extends State<AIInsightBottomSheet> {
             ),
           ],
         ),
-        SizedBox(height: 12),
+        const SizedBox(height: 12),
         Container(
           width: double.infinity,
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
             borderRadius: BorderRadius.circular(12),
@@ -336,14 +335,14 @@ class _AIInsightBottomSheetState extends State<AIInsightBottomSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Divider(height: 32),
+        const Divider(height: 32),
         Text(
           l10n.aiCoachingFeedbackQuestion,
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
           ),
         ),
-        SizedBox(height: 16),
+        const SizedBox(height: 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -355,7 +354,7 @@ class _AIInsightBottomSheetState extends State<AIInsightBottomSheet> {
               label: l10n.aiCoachingFeedbackPositive,
               isSelected: _feedbackRating == 'positive',
             ),
-            SizedBox(width: 16),
+            const SizedBox(width: 16),
             _buildFeedbackButton(
               theme: theme,
               l10n: l10n,
@@ -367,7 +366,7 @@ class _AIInsightBottomSheetState extends State<AIInsightBottomSheet> {
           ],
         ),
         if (_feedbackRating != null) ...[
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           Center(
             child: Text(
               l10n.aiCoachingFeedbackThanks,
@@ -400,7 +399,7 @@ class _AIInsightBottomSheetState extends State<AIInsightBottomSheet> {
         ),
         label: Text(label),
         style: OutlinedButton.styleFrom(
-          padding: EdgeInsets.symmetric(vertical: 16),
+          padding: const EdgeInsets.symmetric(vertical: 16),
           backgroundColor: isSelected
               ? theme.colorScheme.primaryContainer
               : null,
@@ -434,7 +433,7 @@ class _AIInsightBottomSheetState extends State<AIInsightBottomSheet> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('피드백이 저장되었습니다'),
             duration: Duration(seconds: 2),
           ),

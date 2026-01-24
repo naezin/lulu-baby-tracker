@@ -1,6 +1,7 @@
 /// OpenAI Chat 사용 예제
 ///
 /// 실제 앱에서 ChatScreen을 사용하는 방법
+library;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -9,7 +10,7 @@ import '../../providers/chat_provider.dart';
 import 'chat_screen.dart';
 
 class ChatExample extends StatelessWidget {
-  const ChatExample({Key? key}) : super(key: key);
+  const ChatExample({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +31,7 @@ class ChatExample extends StatelessWidget {
 
 /// 아기 컨텍스트와 함께 사용하는 예제
 class ChatWithContextExample extends StatelessWidget {
-  const ChatWithContextExample({Key? key}) : super(key: key);
+  const ChatWithContextExample({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -142,7 +143,7 @@ void conversationExample() async {
 
 /// 실제 앱 통합 예제 (main.dart에서 사용)
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {

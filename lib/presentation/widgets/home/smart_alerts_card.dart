@@ -109,7 +109,7 @@ class SmartAlert {
         type: AlertType.warning,
         emoji: '⚠️',
         title: '어젯밤 깬 횟수가 평소보다 많아요',
-        subtitle: '$count회 (평소 ${avgCount}회 대비 +$diff회)',
+        subtitle: '$count회 (평소 $avgCount회 대비 +$diff회)',
         actionLabel: '원인 분석',
         color: Colors.orange,
       );
@@ -118,7 +118,7 @@ class SmartAlert {
       type: AlertType.success,
       emoji: '🎉',
       title: '어젯밤 깬 횟수가 줄었어요!',
-      subtitle: '$count회 (평소 ${avgCount}회 대비 ${diff.abs()}회↓)',
+      subtitle: '$count회 (평소 $avgCount회 대비 ${diff.abs()}회↓)',
       color: Colors.green,
     );
   }
@@ -173,7 +173,7 @@ class SmartAlert {
         type: AlertType.success,
         emoji: '🏆',
         title: '$activityName 목표 달성!',
-        subtitle: '오늘 ${currentMinutes}분 완료',
+        subtitle: '오늘 $currentMinutes분 완료',
         color: Colors.green,
       );
     }
@@ -181,7 +181,7 @@ class SmartAlert {
       return SmartAlert(
         type: AlertType.tip,
         emoji: '💪',
-        title: '$activityName ${remaining}분 더 하면 목표 달성!',
+        title: '$activityName $remaining분 더 하면 목표 달성!',
         subtitle: '현재 $percent% 완료',
         actionLabel: '기록하기',
         color: Colors.purple,
@@ -190,7 +190,7 @@ class SmartAlert {
     return SmartAlert(
       type: AlertType.tip,
       emoji: '🎯',
-      title: '$activityName 목표까지 ${remaining}분 남았어요',
+      title: '$activityName 목표까지 $remaining분 남았어요',
       subtitle: '현재 $percent% 완료',
       color: Colors.purple,
     );
@@ -225,10 +225,10 @@ class SmartAlertsCard extends StatelessWidget {
   final VoidCallback? onViewAll;
 
   const SmartAlertsCard({
-    Key? key,
+    super.key,
     required this.alerts,
     this.onViewAll,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -245,15 +245,15 @@ class SmartAlertsCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
+              const Row(
                 children: [
                   Icon(
                     Icons.notifications_active_outlined,
                     color: AppTheme.lavenderMist,
                     size: 20,
                   ),
-                  const SizedBox(width: 8),
-                  const Text(
+                  SizedBox(width: 8),
+                  Text(
                     '스마트 알림',
                     style: TextStyle(
                       color: AppTheme.textPrimary,
@@ -266,7 +266,7 @@ class SmartAlertsCard extends StatelessWidget {
               if (onViewAll != null && alerts.length > 1)
                 TextButton(
                   onPressed: onViewAll,
-                  child: Text(
+                  child: const Text(
                     '전체 보기',
                     style: TextStyle(
                       color: AppTheme.lavenderGlow,
@@ -332,7 +332,7 @@ class SmartAlertsCard extends StatelessWidget {
                 children: [
                   Text(
                     alert.title,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppTheme.textPrimary,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -341,7 +341,7 @@ class SmartAlertsCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     alert.message,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppTheme.textSecondary,
                       fontSize: 13,
                       height: 1.4,
@@ -354,7 +354,7 @@ class SmartAlertsCard extends StatelessWidget {
             ),
 
             // Chevron
-            Icon(
+            const Icon(
               Icons.arrow_forward_ios_rounded,
               color: AppTheme.textTertiary,
               size: 14,

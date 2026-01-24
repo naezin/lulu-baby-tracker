@@ -24,6 +24,7 @@ class AppLocalizations {
       'nav_sleep': 'Sleep',
       'nav_records': 'Records',
       'nav_insights': 'Insights',
+      'nav_lulu': 'Lulu',
       'nav_more': 'More',
 
       // Home Screen
@@ -768,6 +769,7 @@ class AppLocalizations {
       'nav_sleep': '수면',
       'nav_records': '기록',
       'nav_insights': '분석',
+      'nav_lulu': '루루',
       'nav_more': '더보기',
 
       // Home Screen
@@ -1522,6 +1524,7 @@ class AppLocalizations {
   String get navSleep => translate('nav_sleep');
   String get navRecords => translate('nav_records');
   String get navInsights => translate('nav_insights');
+  String get navLulu => translate('nav_lulu');
   String get navMore => translate('nav_more');
   String get navSettings => translate('settings_title');
   String get navChat => translate('chat_title');
@@ -1698,14 +1701,14 @@ class AppLocalizations {
   String medicationLabel(String name) => locale.languageCode == 'ko' ? '약물: $name' : 'Medication: $name';
   String babyWeightLabel(String weight) => locale.languageCode == 'ko' ? '아기 체중: $weight kg' : 'Baby\'s Weight: $weight kg';
   String get recommendedDosage => locale.languageCode == 'ko' ? '권장 투여량:' : 'Recommended Dosage:';
-  String frequencyEveryHours(int hours) => locale.languageCode == 'ko' ? '빈도: ${hours}시간마다' : 'Frequency: Every $hours hours';
+  String frequencyEveryHours(int hours) => locale.languageCode == 'ko' ? '빈도: $hours시간마다' : 'Frequency: Every $hours hours';
   String maxDailyMg(String mg) => locale.languageCode == 'ko' ? '일일 최대: $mg mg' : 'Max Daily: $mg mg';
   String concentrationLabel(String concentration) => locale.languageCode == 'ko' ? '농도: $concentration' : 'Concentration: $concentration';
   String get safetyWarnings => locale.languageCode == 'ko' ? '안전 경고:' : 'Safety Warnings:';
   String get guidelineDisclaimer => locale.languageCode == 'ko' ? 'ℹ️ 이것은 가이드일 뿐입니다. 항상 소아과 의사나 약사와 상담하세요.' : 'ℹ️ This is a guideline only. Always consult your pediatrician or pharmacist.';
   String get selectMedication => locale.languageCode == 'ko' ? '약물을 선택하세요' : 'Please select a medication';
   String get medicationRecorded => locale.languageCode == 'ko' ? '투약이 기록되었습니다!' : 'Medication recorded!';
-  String medicationRecordedNextDose(int hours) => locale.languageCode == 'ko' ? '투약이 기록되었습니다! 다음 투여는 ${hours}시간 후' : 'Medication recorded! Next dose in $hours hours';
+  String medicationRecordedNextDose(int hours) => locale.languageCode == 'ko' ? '투약이 기록되었습니다! 다음 투여는 $hours시간 후' : 'Medication recorded! Next dose in $hours hours';
   String get emergencyWarning => locale.languageCode == 'ko' ? '🚨 긴급 의료 조치 필요' : '🚨 URGENT MEDICAL ATTENTION NEEDED';
   String emergencyFeverMessage(String temp, String unit) => locale.languageCode == 'ko' ? '아기가 3개월 미만이며 체온이 $temp°$unit입니다.' : 'Your baby is under 3 months old with a fever of $temp°$unit.';
   String get immediateEvaluation => locale.languageCode == 'ko' ? '⚠️ 소아과 의사의 즉각적인 진찰이 필요합니다.' : '⚠️ This requires IMMEDIATE evaluation by a pediatrician.';

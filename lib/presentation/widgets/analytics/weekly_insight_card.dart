@@ -12,13 +12,13 @@ class WeeklyInsightCard extends StatelessWidget {
   final VoidCallback? onTap;
 
   const WeeklyInsightCard({
-    Key? key,
+    super.key,
     required this.title,
     required this.insight,
     this.trend,
     required this.metrics,
     this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +59,7 @@ class WeeklyInsightCard extends StatelessWidget {
             // Insight
             Text(
               insight,
-              style: TextStyle(
+              style: const TextStyle(
                 color: AppTheme.textSecondary,
                 fontSize: 14,
                 height: 1.5,
@@ -76,7 +76,7 @@ class WeeklyInsightCard extends StatelessWidget {
 
             if (onTap != null) ...[
               const SizedBox(height: 16),
-              Row(
+              const Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   Text(
@@ -87,7 +87,7 @@ class WeeklyInsightCard extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(width: 4),
+                  SizedBox(width: 4),
                   Icon(
                     Icons.arrow_forward_ios_rounded,
                     color: AppTheme.lavenderGlow,
@@ -175,7 +175,7 @@ class WeeklyInsightCard extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             metric.label,
-            style: TextStyle(
+            style: const TextStyle(
               color: AppTheme.textPrimary,
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -184,7 +184,7 @@ class WeeklyInsightCard extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             metric.value,
-            style: TextStyle(
+            style: const TextStyle(
               color: AppTheme.textSecondary,
               fontSize: 12,
             ),

@@ -11,11 +11,11 @@ class ActivityInsightCard extends StatelessWidget {
   final InsightType type;
 
   const ActivityInsightCard({
-    Key? key,
+    super.key,
     required this.activity,
     this.insight,
     this.type = InsightType.neutral,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +46,7 @@ class ActivityInsightCard extends StatelessWidget {
           Expanded(
             child: Text(
               insight!,
-              style: TextStyle(
+              style: const TextStyle(
                 color: AppTheme.textPrimary,
                 fontSize: 13,
                 height: 1.4,

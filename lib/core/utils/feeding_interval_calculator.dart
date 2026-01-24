@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 
 /// Feeding Interval Calculator for predicting next feeding time
 /// Uses last feeding amount to calculate variable intervals

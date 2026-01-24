@@ -1,4 +1,5 @@
 /// SweetSpot Calculator 사용 예제
+library;
 
 import 'sweet_spot_calculator.dart';
 
@@ -8,7 +9,7 @@ void main() {
   // ========================================
   print('=== Example 1: 3-month-old baby ===');
 
-  final babyAge = 3; // 3개월
+  const babyAge = 3; // 3개월
   final lastWakeUp = DateTime.now().subtract(const Duration(hours: 1, minutes: 30));
 
   final sweetSpot = SweetSpotCalculator.calculate(
@@ -59,7 +60,7 @@ void main() {
   // ========================================
   print('=== Example 3: Newborn (1 month old) ===');
 
-  final newbornAge = 1;
+  const newbornAge = 1;
   final newbornLastWakeUp = DateTime.now().subtract(const Duration(minutes: 45));
 
   final newbornSweetSpot = SweetSpotCalculator.calculate(

@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 // import 'package:firebase_auth/firebase_auth.dart'; // Temporarily disabled for web
-import '../screens/auth/login_screen.dart';
 import '../screens/main/main_navigation.dart';
 
 /// 🔐 Auth Wrapper
 /// Automatically routes to login or home based on authentication state
 class AuthWrapper extends StatelessWidget {
-  const AuthWrapper({Key? key}) : super(key: key);
+  const AuthWrapper({super.key});
 
   @override
   Widget build(BuildContext context) {

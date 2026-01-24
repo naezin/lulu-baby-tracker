@@ -55,7 +55,7 @@ class OpenAIService {
       // API 요청 메시지 구성
       final apiMessages = [
         {'role': 'system', 'content': systemPrompt},
-        ...messages.map((msg) => msg.toJson()).toList(),
+        ...messages.map((msg) => msg.toJson()),
       ];
 
       // API 호출
@@ -114,7 +114,7 @@ class OpenAIService {
 
       final apiMessages = [
         {'role': 'system', 'content': systemPrompt},
-        ...messages.map((msg) => msg.toJson()).toList(),
+        ...messages.map((msg) => msg.toJson()),
       ];
 
       final request = http.Request(

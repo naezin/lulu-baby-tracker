@@ -70,7 +70,7 @@ class AwakeTimeRange {
     required this.optimal,
   });
 
-  String get displayRange => '${min}-${max}분';
+  String get displayRange => '$min-$max분';
 }
 
 /// 깨시 상태

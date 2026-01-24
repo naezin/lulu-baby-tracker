@@ -15,7 +15,7 @@ import '../activities/log_health_screen.dart';
 /// 📝 Records V2 - 원탭 기록 화면
 /// 핵심 원칙: "1초 안에 기록 완료"
 class RecordsScreen extends StatefulWidget {
-  const RecordsScreen({Key? key}) : super(key: key);
+  const RecordsScreen({super.key});
 
   @override
   State<RecordsScreen> createState() => _RecordsScreenState();
@@ -206,7 +206,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
   }
 
   String _getLabel(ActivityType type) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     switch (type) {
       case ActivityType.sleep: return l10n.translate('sleep') ?? '수면';
       case ActivityType.feeding: return l10n.translate('feeding') ?? '수유';
@@ -230,14 +230,14 @@ class _RecordsScreenState extends State<RecordsScreen> {
     final hours = minutes ~/ 60;
     final mins = minutes % 60;
     if (hours > 0) {
-      return '${hours}시간 ${mins}분';
+      return '$hours시간 $mins분';
     }
-    return '${mins}분';
+    return '$mins분';
   }
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppTheme.surfaceDark,

@@ -9,7 +9,7 @@ import '../../core/theme/app_theme.dart';
 /// 🌟 Sweet Spot Hero Card - Huckleberry-inspired
 /// Prominently displays sleep prediction at dashboard center
 class SweetSpotHeroCard extends StatefulWidget {
-  const SweetSpotHeroCard({Key? key}) : super(key: key);
+  const SweetSpotHeroCard({super.key});
 
   @override
   State<SweetSpotHeroCard> createState() => _SweetSpotHeroCardState();
@@ -64,62 +64,12 @@ class _SweetSpotHeroCardState extends State<SweetSpotHeroCard>
   }
 
   Widget _buildEmptyState(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: ScaleTransition(
-        scale: _scaleAnimation,
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          padding: const EdgeInsets.all(32),
-          decoration: BoxDecoration(
-            color: AppTheme.surfaceCard,
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(
-              color: AppTheme.softBlue.withOpacity(0.3),
-              width: 1,
-            ),
-          ),
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppTheme.lavenderMist.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.bedtime_outlined,
-                  size: 48,
-                  color: AppTheme.lavenderMist,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                l10n.translate('empty_state_track_sleep_sweet_spot'),
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: AppTheme.textPrimary,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                l10n.translate('empty_state_wake_up_hint_detailed'),
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.textTertiary,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    // Don't show anything if there's no sweet spot data
+    return const SizedBox.shrink();
   }
 
   Widget _buildHeroCard(BuildContext context, SweetSpotResult sweetSpot) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     final urgency = sweetSpot.urgencyLevel;
     final colorScheme = _getColorScheme(urgency);
 
@@ -322,7 +272,7 @@ class _SweetSpotHeroCardState extends State<SweetSpotHeroCard>
           child: LinearProgressIndicator(
             value: progress,
             backgroundColor: Colors.white.withOpacity(0.2),
-            valueColor: AlwaysStoppedAnimation<Color>(
+            valueColor: const AlwaysStoppedAnimation<Color>(
               Colors.white,
             ),
             minHeight: 6,

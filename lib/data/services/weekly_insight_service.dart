@@ -38,13 +38,13 @@ class WeeklyInsightService {
       String? trend;
 
       if (avgSleepMinutes >= 60) {
-        insight = '이번 주 아기가 잘 잤어요! 평균 ${avgSleepMinutes}분씩 ${sleepCount}번 잤습니다.';
+        insight = '이번 주 아기가 잘 잤어요! 평균 $avgSleepMinutes분씩 $sleepCount번 잤습니다.';
         trend = 'improving';
       } else if (avgSleepMinutes < 30) {
         insight = '이번 주 수면 시간이 짧았어요. 수면 환경을 개선해보세요.';
         trend = 'declining';
       } else {
-        insight = '이번 주 수면 패턴이 안정적이에요. 평균 ${avgSleepMinutes}분씩 잤습니다.';
+        insight = '이번 주 수면 패턴이 안정적이에요. 평균 $avgSleepMinutes분씩 잤습니다.';
         trend = 'stable';
       }
 
@@ -52,7 +52,7 @@ class WeeklyInsightService {
         InsightMetric(
           icon: Icons.bedtime_rounded,
           label: '평균 수면',
-          value: '${avgSleepMinutes}분',
+          value: '$avgSleepMinutes분',
         ),
         InsightMetric(
           icon: Icons.calendar_today_outlined,
@@ -102,7 +102,7 @@ class WeeklyInsightService {
       String? trend;
 
       if (dailyAvg >= 6) {
-        insight = '이번 주 수유가 규칙적이에요! 하루 평균 ${dailyAvg}회, ${avgAmount}ml씩 먹었어요.';
+        insight = '이번 주 수유가 규칙적이에요! 하루 평균 $dailyAvg회, ${avgAmount}ml씩 먹었어요.';
         trend = 'stable';
       } else if (dailyAvg < 4) {
         insight = '이번 주 수유 횟수가 적었어요. 수유량을 확인해보세요.';
@@ -121,7 +121,7 @@ class WeeklyInsightService {
         InsightMetric(
           icon: Icons.calendar_today_outlined,
           label: '하루 평균',
-          value: '${dailyAvg}회',
+          value: '$dailyAvg회',
         ),
       ];
 

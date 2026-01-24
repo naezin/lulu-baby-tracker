@@ -5,7 +5,7 @@ void main() {
   group('SweetSpotCalculator', () {
     test('should calculate correct sweet spot for 3-month-old baby', () {
       // Arrange
-      final ageInMonths = 3;
+      const ageInMonths = 3;
       final lastWakeUp = DateTime(2026, 1, 22, 10, 0); // 10:00 AM
 
       // Act
@@ -23,7 +23,7 @@ void main() {
 
     test('should calculate correct sweet spot for 6-month-old baby', () {
       // Arrange
-      final ageInMonths = 6;
+      const ageInMonths = 6;
       final lastWakeUp = DateTime(2026, 1, 22, 9, 0); // 9:00 AM
 
       // Act
@@ -41,9 +41,9 @@ void main() {
 
     test('should adjust wake window for first nap (10% reduction)', () {
       // Arrange
-      final ageInMonths = 4;
+      const ageInMonths = 4;
       final lastWakeUp = DateTime(2026, 1, 22, 7, 0); // 7:00 AM
-      final napNumber = 1;
+      const napNumber = 1;
 
       // Act
       final result = SweetSpotCalculator.calculate(
@@ -62,9 +62,9 @@ void main() {
 
     test('should adjust wake window for last nap (15% increase)', () {
       // Arrange
-      final ageInMonths = 6;
+      const ageInMonths = 6;
       final lastWakeUp = DateTime(2026, 1, 22, 15, 0); // 3:00 PM
-      final napNumber = 3; // 3번째 낮잠 (6개월은 권장 3회)
+      const napNumber = 3; // 3번째 낮잠 (6개월은 권장 3회)
 
       // Act
       final result = SweetSpotCalculator.calculate(
@@ -83,7 +83,7 @@ void main() {
 
     test('should detect urgency level: too early', () {
       // Arrange
-      final ageInMonths = 5;
+      const ageInMonths = 5;
       final lastWakeUp = DateTime.now().subtract(const Duration(minutes: 30));
 
       // Act
@@ -100,7 +100,7 @@ void main() {
 
     test('should detect urgency level: approaching', () {
       // Arrange
-      final ageInMonths = 4;
+      const ageInMonths = 4;
       // Wake Window: 1.75 - 2.5h
       // 1.75h = 105분, approaching은 시작 30분 전부터
       // 따라서 105 - 30 = 75분 전에 깨어났다면 approaching
@@ -118,7 +118,7 @@ void main() {
 
     test('should detect urgency level: optimal', () {
       // Arrange
-      final ageInMonths = 3;
+      const ageInMonths = 3;
       // Wake Window: 1.5 - 2.0h = 90 - 120분
       final lastWakeUp = DateTime.now().subtract(const Duration(minutes: 100));
 
@@ -135,7 +135,7 @@ void main() {
 
     test('should detect urgency level: overtired', () {
       // Arrange
-      final ageInMonths = 4;
+      const ageInMonths = 4;
       // Wake Window: 1.75 - 2.5h = 150분
       final lastWakeUp = DateTime.now().subtract(const Duration(minutes: 180));
 
@@ -152,7 +152,7 @@ void main() {
 
     test('should generate daily nap schedule for 4-month-old', () {
       // Arrange
-      final ageInMonths = 4;
+      const ageInMonths = 4;
       final morningWakeUp = DateTime(2026, 1, 22, 7, 0); // 7:00 AM
 
       // Act
@@ -175,7 +175,7 @@ void main() {
 
     test('should generate daily nap schedule for newborn (0 month)', () {
       // Arrange
-      final ageInMonths = 0;
+      const ageInMonths = 0;
       final morningWakeUp = DateTime(2026, 1, 22, 7, 0);
 
       // Act
@@ -191,7 +191,7 @@ void main() {
 
     test('should handle age interpolation correctly', () {
       // Arrange
-      final ageInMonths = 10; // 테이블에 없는 월령
+      const ageInMonths = 10; // 테이블에 없는 월령
       final lastWakeUp = DateTime(2026, 1, 22, 10, 0);
 
       // Act
@@ -209,7 +209,7 @@ void main() {
 
     test('should format time range correctly in 12-hour format', () {
       // Arrange
-      final ageInMonths = 3;
+      const ageInMonths = 3;
       final lastWakeUp = DateTime(2026, 1, 22, 14, 30); // 2:30 PM
 
       // Act
@@ -225,7 +225,7 @@ void main() {
 
     test('should format time range correctly in 24-hour format', () {
       // Arrange
-      final ageInMonths = 3;
+      const ageInMonths = 3;
       final lastWakeUp = DateTime(2026, 1, 22, 14, 30); // 14:30
 
       // Act
@@ -241,7 +241,7 @@ void main() {
 
     test('should export to JSON correctly', () {
       // Arrange
-      final ageInMonths = 6;
+      const ageInMonths = 6;
       final lastWakeUp = DateTime(2026, 1, 22, 9, 0);
 
       // Act

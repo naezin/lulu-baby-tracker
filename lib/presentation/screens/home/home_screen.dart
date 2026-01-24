@@ -27,7 +27,7 @@ import '../settings/notification_settings_screen.dart';
 /// 🏠 Home Screen - Huckleberry + BabyTime Inspired Dashboard
 /// Features: Sweet Spot prediction, Quick Log, Baby context (72 days, 2.46kg)
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -64,7 +64,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppTheme.surfaceDark,
@@ -123,23 +123,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
                       const SizedBox(height: 16),
 
-                      // Baby Context Card (72 days, 2.46kg premature girl)
-                      _buildBabyContextCard(context, l10n),
-
-                      const SizedBox(height: 16),
-
                       // Sweet Spot Hero Card (Huckleberry-style)
                       const SweetSpotHeroCard(),
-
-                      const SizedBox(height: 16),
-
-                      // Today's Summary Section
-                      _buildTodaySummarySection(context, l10n),
-
-                      const SizedBox(height: 20),
-
-                      // Recent Activities
-                      _buildRecentActivitiesSection(context, l10n),
 
                       // Bottom padding for Quick Log Bar
                       const SizedBox(height: 100),
@@ -180,9 +165,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         title: Row(
           children: [
             // Moon icon
-            Text(
+            const Text(
               '🌙',
-              style: const TextStyle(fontSize: 24),
+              style: TextStyle(fontSize: 24),
             ),
             const SizedBox(width: 8),
             // App name
@@ -275,10 +260,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   color: AppTheme.lavenderMist.withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
-                child: Center(
+                child: const Center(
                   child: Text(
                     '👶',
-                    style: const TextStyle(fontSize: 28),
+                    style: TextStyle(fontSize: 28),
                   ),
                 ),
               ),
@@ -309,7 +294,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       const SizedBox(height: 2),
                       Row(
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.favorite,
                             size: 12,
                             color: AppTheme.errorSoft,
@@ -336,7 +321,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   color: AppTheme.successSoft.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Row(
+                child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
@@ -344,7 +329,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       size: 14,
                       color: AppTheme.successSoft,
                     ),
-                    const SizedBox(width: 4),
+                    SizedBox(width: 4),
                     Text(
                       'Growing',
                       style: TextStyle(
@@ -469,7 +454,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           const SizedBox(height: 8),
           Text(
             value,
-            style: TextStyle(
+            style: const TextStyle(
               color: AppTheme.textPrimary,
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -479,7 +464,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           const SizedBox(height: 2),
           Text(
             label,
-            style: TextStyle(
+            style: const TextStyle(
               color: AppTheme.textTertiary,
               fontSize: 12,
               letterSpacing: -0.1,
@@ -517,7 +502,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 },
                 child: Text(
                   l10n.locale.languageCode == 'ko' ? '전체 보기' : 'View All',
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: AppTheme.lavenderGlow,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -586,7 +571,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               children: [
                 Text(
                   title,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: AppTheme.textPrimary,
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
@@ -596,7 +581,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 const SizedBox(height: 4),
                 Text(
                   duration,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: AppTheme.textSecondary,
                     fontSize: 13,
                     letterSpacing: -0.1,
@@ -607,7 +592,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ),
           Text(
             time,
-            style: TextStyle(
+            style: const TextStyle(
               color: AppTheme.textTertiary,
               fontSize: 13,
               fontWeight: FontWeight.w500,
@@ -741,7 +726,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(Icons.bedtime_rounded, color: AppTheme.lavenderMist, size: 20),
+                const Icon(Icons.bedtime_rounded, color: AppTheme.lavenderMist, size: 20),
                 Container(
                   width: 8,
                   height: 8,
@@ -755,7 +740,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             const SizedBox(height: 8),
             Text(
               prediction != null ? '${prediction.standardWakeWindow}m' : '--',
-              style: TextStyle(
+              style: const TextStyle(
                 color: AppTheme.textPrimary,
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -765,7 +750,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             const SizedBox(height: 2),
             Text(
               l10n.locale.languageCode == 'ko' ? '수면' : 'Sleep',
-              style: TextStyle(
+              style: const TextStyle(
                 color: AppTheme.textTertiary,
                 fontSize: 11,
                 letterSpacing: -0.1,
@@ -780,7 +765,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               ),
               child: Text(
                 '${l10n.translate('next_sweet_spot') ?? 'Next'} $timeStr',
-                style: TextStyle(
+                style: const TextStyle(
                   color: AppTheme.lavenderMist,
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
@@ -816,7 +801,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               ),
             ),
             const SizedBox(height: 20),
-            Icon(Icons.bedtime_rounded, color: AppTheme.lavenderMist, size: 48),
+            const Icon(Icons.bedtime_rounded, color: AppTheme.lavenderMist, size: 48),
             const SizedBox(height: 16),
             Text(
               l10n.translate('sleep_prediction') ?? '수면 예측',
@@ -903,7 +888,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(Icons.restaurant_rounded, color: const Color(0xFFE8B87E), size: 20),
+              const Icon(Icons.restaurant_rounded, color: Color(0xFFE8B87E), size: 20),
               Container(
                 width: 8,
                 height: 8,
@@ -915,7 +900,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ],
           ),
           const SizedBox(height: 8),
-          Text(
+          const Text(
             '6',
             style: TextStyle(
               color: AppTheme.textPrimary,
@@ -927,7 +912,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           const SizedBox(height: 2),
           Text(
             l10n.locale.languageCode == 'ko' ? '수유' : 'Feeds',
-            style: TextStyle(
+            style: const TextStyle(
               color: AppTheme.textTertiary,
               fontSize: 11,
               letterSpacing: -0.1,
@@ -942,8 +927,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ),
             child: Text(
               feedingText,
-              style: TextStyle(
-                color: const Color(0xFFE8B87E),
+              style: const TextStyle(
+                color: Color(0xFFE8B87E),
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
               ),
@@ -978,11 +963,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(Icons.toys_outlined, color: const Color(0xFF5FB37B), size: 20),
+              const Icon(Icons.toys_outlined, color: Color(0xFF5FB37B), size: 20),
               Container(
                 width: 8,
                 height: 8,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: AppTheme.successSoft,
                   shape: BoxShape.circle,
                 ),
@@ -990,7 +975,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ],
           ),
           const SizedBox(height: 8),
-          Text(
+          const Text(
             '50%',
             style: TextStyle(
               color: AppTheme.textPrimary,
@@ -1002,7 +987,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           const SizedBox(height: 2),
           Text(
             l10n.locale.languageCode == 'ko' ? '활동 목표' : 'Activity',
-            style: TextStyle(
+            style: const TextStyle(
               color: AppTheme.textTertiary,
               fontSize: 11,
               letterSpacing: -0.1,
@@ -1014,7 +999,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             child: LinearProgressIndicator(
               value: tummyTimeProgress,
               backgroundColor: AppTheme.surfaceElevated,
-              valueColor: AlwaysStoppedAnimation<Color>(const Color(0xFF5FB37B)),
+              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF5FB37B)),
               minHeight: 6,
             ),
           ),
@@ -1060,7 +1045,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           Expanded(
             child: Text(
               message,
-              style: TextStyle(
+              style: const TextStyle(
                 color: AppTheme.textPrimary,
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
@@ -1167,7 +1152,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               color: AppTheme.lavenderMist.withOpacity(0.15),
               shape: BoxShape.circle,
             ),
-            child: Icon(
+            child: const Icon(
               Icons.auto_awesome,
               size: 40,
               color: AppTheme.lavenderMist,

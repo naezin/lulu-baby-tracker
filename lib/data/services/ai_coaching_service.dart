@@ -1,9 +1,7 @@
 import '../../../data/services/firestore_stub.dart';
 // import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:convert';
 import '../models/activity_model.dart';
 import '../models/ai_insight_model.dart';
-import '../models/baby_model.dart';
 import 'openai_service.dart';
 import 'personalization_memory_service.dart';
 import '../analysis/cross_correlation_analyzer.dart';
@@ -100,8 +98,8 @@ class AICoachingService {
     required int babyAgeInDays,
     required String activityType,
   }) async {
-    final startTime = eventTime.subtract(Duration(hours: 6));
-    final endTime = eventTime.add(Duration(hours: 6));
+    final startTime = eventTime.subtract(const Duration(hours: 6));
+    final endTime = eventTime.add(const Duration(hours: 6));
 
     final activitiesSnapshot = await _firestore
         .collection('babies')
@@ -452,7 +450,7 @@ class AICoachingService {
     final snapshot = await query.limit(limit).get();
 
     return snapshot.docs
-        .map((doc) => AIInsightModel.fromJson({...doc.data() as Map<String, dynamic>, 'id': doc.id}))
+        .map((doc) => AIInsightModel.fromJson({...doc.data(), 'id': doc.id}))
         .toList();
   }
 }

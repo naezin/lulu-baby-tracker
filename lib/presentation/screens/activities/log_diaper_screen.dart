@@ -7,7 +7,7 @@ import '../../../core/localization/app_localizations.dart';
 
 /// 배변 기록 화면
 class LogDiaperScreen extends StatefulWidget {
-  const LogDiaperScreen({Key? key}) : super(key: key);
+  const LogDiaperScreen({super.key});
 
   @override
   State<LogDiaperScreen> createState() => _LogDiaperScreenState();
@@ -29,36 +29,36 @@ class _LogDiaperScreenState extends State<LogDiaperScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.translate('log_diaper')),
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header
             Card(
               child: Padding(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
-                    Icon(Icons.baby_changing_station, size: 32, color: Colors.green),
-                    SizedBox(width: 16),
+                    const Icon(Icons.baby_changing_station, size: 32, color: Colors.green),
+                    const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             l10n.translate('record_diaper_change'),
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          SizedBox(height: 4),
+                          const SizedBox(height: 4),
                           Text(
                             l10n.translate('track_diaper_types'),
                             style: TextStyle(color: Colors.grey[600]),
@@ -71,33 +71,33 @@ class _LogDiaperScreenState extends State<LogDiaperScreen> {
               ),
             ),
 
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
 
             // Diaper Time
             _buildSectionTitle(l10n.translate('diaper_change_time')),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             _buildTimeSelector(),
 
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
 
             // Diaper Type
             _buildSectionTitle(l10n.translate('diaper_type')),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Column(
               children: [
                 _buildTypeCard('wet', '💧', l10n.translate('wet_desc'), l10n.translate('urineOnly')),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 _buildTypeCard('dirty', '💩', l10n.translate('dirty_desc'), l10n.translate('bowelMovement')),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 _buildTypeCard('both', '💧💩', l10n.translate('both_desc'), l10n.translate('wet_and_dirty')),
               ],
             ),
 
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
 
             // Notes
             _buildSectionTitle(l10n.translate('notes_optional')),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             TextField(
               controller: _notesController,
               maxLines: 3,
@@ -111,7 +111,7 @@ class _LogDiaperScreenState extends State<LogDiaperScreen> {
               ),
             ),
 
-            SizedBox(height: 32),
+            const SizedBox(height: 32),
 
             // Save Button
             SizedBox(
@@ -119,10 +119,10 @@ class _LogDiaperScreenState extends State<LogDiaperScreen> {
               height: 50,
               child: ElevatedButton.icon(
                 onPressed: _saveDiaper,
-                icon: Icon(Icons.check),
+                icon: const Icon(Icons.check),
                 label: Text(
                   l10n.translate('save_diaper_record'),
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
@@ -139,7 +139,7 @@ class _LogDiaperScreenState extends State<LogDiaperScreen> {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: TextStyle(
+      style: const TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.bold,
       ),
@@ -150,7 +150,7 @@ class _LogDiaperScreenState extends State<LogDiaperScreen> {
     return InkWell(
       onTap: _selectTime,
       child: Container(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.grey[100],
           borderRadius: BorderRadius.circular(12),
@@ -158,11 +158,11 @@ class _LogDiaperScreenState extends State<LogDiaperScreen> {
         ),
         child: Row(
           children: [
-            Icon(Icons.access_time, color: Colors.green),
-            SizedBox(width: 16),
+            const Icon(Icons.access_time, color: Colors.green),
+            const SizedBox(width: 16),
             Text(
               DateFormat('MMM d, yyyy  h:mm a').format(_diaperTime),
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
               ),
@@ -184,7 +184,7 @@ class _LogDiaperScreenState extends State<LogDiaperScreen> {
       },
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: isSelected ? Colors.green[50] : Colors.grey[50],
           borderRadius: BorderRadius.circular(12),
@@ -203,10 +203,10 @@ class _LogDiaperScreenState extends State<LogDiaperScreen> {
                 shape: BoxShape.circle,
               ),
               child: Center(
-                child: Text(emoji, style: TextStyle(fontSize: 24)),
+                child: Text(emoji, style: const TextStyle(fontSize: 24)),
               ),
             ),
-            SizedBox(width: 16),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -219,7 +219,7 @@ class _LogDiaperScreenState extends State<LogDiaperScreen> {
                       color: isSelected ? Colors.green[900] : Colors.black,
                     ),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
                     subtitle,
                     style: TextStyle(
@@ -231,7 +231,7 @@ class _LogDiaperScreenState extends State<LogDiaperScreen> {
               ),
             ),
             if (isSelected)
-              Icon(Icons.check_circle, color: Colors.green, size: 28),
+              const Icon(Icons.check_circle, color: Colors.green, size: 28),
           ],
         ),
       ),
@@ -242,8 +242,8 @@ class _LogDiaperScreenState extends State<LogDiaperScreen> {
     final date = await showDatePicker(
       context: context,
       initialDate: _diaperTime,
-      firstDate: DateTime.now().subtract(Duration(days: 7)),
-      lastDate: DateTime.now().add(Duration(days: 1)),
+      firstDate: DateTime.now().subtract(const Duration(days: 7)),
+      lastDate: DateTime.now().add(const Duration(days: 1)),
     );
 
     if (date == null) return;
@@ -282,7 +282,7 @@ class _LogDiaperScreenState extends State<LogDiaperScreen> {
     await _widgetService.updateAllWidgets();
 
     if (mounted) {
-      final l10n = AppLocalizations.of(context)!;
+      final l10n = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(l10n.translate('diaper_recorded_success')),

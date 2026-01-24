@@ -11,7 +11,7 @@ import '../../../../data/services/widget_service.dart';
 /// 👶 Baby Setup Screen (Onboarding)
 /// Collect baby information with special care mode for low birth weight
 class BabySetupScreen extends StatefulWidget {
-  const BabySetupScreen({Key? key}) : super(key: key);
+  const BabySetupScreen({super.key});
 
   @override
   State<BabySetupScreen> createState() => _BabySetupScreenState();
@@ -39,18 +39,18 @@ class _BabySetupScreenState extends State<BabySetupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              const Color(0xFF0D0F1E),
-              const Color(0xFF1A1F3A),
-              const Color(0xFF2D3351),
+              Color(0xFF0D0F1E),
+              Color(0xFF1A1F3A),
+              Color(0xFF2D3351),
             ],
           ),
         ),
@@ -118,7 +118,7 @@ class _BabySetupScreenState extends State<BabySetupScreen> {
     return Column(
       children: [
         const SizedBox(height: 40),
-        Icon(
+        const Icon(
           Icons.child_care_rounded,
           size: 80,
           color: AppTheme.lavenderMist,
@@ -246,7 +246,7 @@ class _BabySetupScreenState extends State<BabySetupScreen> {
               ),
               child: Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.calendar_today,
                     color: AppTheme.lavenderMist,
                     size: 20,
@@ -305,7 +305,7 @@ class _BabySetupScreenState extends State<BabySetupScreen> {
           TextFormField(
             controller: _weightController,
             style: const TextStyle(color: Colors.white),
-            keyboardType: TextInputType.numberWithOptions(decimal: true),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: _buildInputDecoration(
               l10n.translate('enter_weight') ?? 'e.g., 2.46',
             ),
@@ -336,7 +336,7 @@ class _BabySetupScreenState extends State<BabySetupScreen> {
               ),
               child: Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.info_outline,
                     color: AppTheme.warningSoft,
                     size: 24,
@@ -381,7 +381,7 @@ class _BabySetupScreenState extends State<BabySetupScreen> {
           ),
           child: Column(
             children: [
-              Icon(
+              const Icon(
                 Icons.favorite,
                 size: 64,
                 color: AppTheme.lavenderMist,
@@ -478,7 +478,7 @@ class _BabySetupScreenState extends State<BabySetupScreen> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(
+        borderSide: const BorderSide(
           color: AppTheme.lavenderMist,
           width: 2,
         ),
@@ -592,10 +592,10 @@ class _BabySetupScreenState extends State<BabySetupScreen> {
       builder: (context, child) {
         return Theme(
           data: ThemeData.dark().copyWith(
-            colorScheme: ColorScheme.dark(
+            colorScheme: const ColorScheme.dark(
               primary: AppTheme.lavenderMist,
               onPrimary: Colors.white,
-              surface: const Color(0xFF1A1F3A),
+              surface: Color(0xFF1A1F3A),
               onSurface: Colors.white,
             ),
           ),
@@ -630,7 +630,7 @@ class _BabySetupScreenState extends State<BabySetupScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => Center(
+      builder: (context) => const Center(
         child: CircularProgressIndicator(
           color: AppTheme.lavenderMist,
         ),

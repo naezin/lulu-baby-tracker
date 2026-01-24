@@ -136,9 +136,7 @@ class ActivityModel {
     String? quality,
     String? notes,
   }) {
-    final duration = endTime != null
-        ? endTime.difference(startTime).inMinutes
-        : null;
+    final duration = endTime?.difference(startTime).inMinutes;
 
     return ActivityModel(
       id: id,

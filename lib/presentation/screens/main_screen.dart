@@ -9,7 +9,7 @@ import 'settings/settings_screen.dart';
 
 /// 메인 화면 - Bottom Navigation Bar
 class MainScreen extends StatefulWidget {
-  const MainScreen({Key? key}) : super(key: key);
+  const MainScreen({super.key});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -47,7 +47,7 @@ class _MainScreenState extends State<MainScreen> {
             BoxShadow(
               color: Colors.black.withOpacity(0.05),
               blurRadius: 10,
-              offset: Offset(0, -5),
+              offset: const Offset(0, -5),
             ),
           ],
         ),
@@ -64,11 +64,11 @@ class _MainScreenState extends State<MainScreen> {
           unselectedItemColor: AppTheme.textTertiary,
           selectedFontSize: 12,
           unselectedFontSize: 12,
-          selectedLabelStyle: TextStyle(
+          selectedLabelStyle: const TextStyle(
             fontWeight: FontWeight.w600,
             letterSpacing: 0.5,
           ),
-          unselectedLabelStyle: TextStyle(
+          unselectedLabelStyle: const TextStyle(
             fontWeight: FontWeight.w500,
           ),
           items: [
@@ -77,7 +77,7 @@ class _MainScreenState extends State<MainScreen> {
                 icon: Icons.home_outlined,
                 isSelected: _currentIndex == 0,
               ),
-              activeIcon: _NavIcon(
+              activeIcon: const _NavIcon(
                 icon: Icons.home,
                 isSelected: true,
               ),
@@ -88,7 +88,7 @@ class _MainScreenState extends State<MainScreen> {
                 icon: Icons.nightlight_outlined,
                 isSelected: _currentIndex == 1,
               ),
-              activeIcon: _NavIcon(
+              activeIcon: const _NavIcon(
                 icon: Icons.nightlight,
                 isSelected: true,
               ),
@@ -99,7 +99,7 @@ class _MainScreenState extends State<MainScreen> {
                 icon: Icons.analytics_outlined,
                 isSelected: _currentIndex == 2,
               ),
-              activeIcon: _NavIcon(
+              activeIcon: const _NavIcon(
                 icon: Icons.analytics,
                 isSelected: true,
               ),
@@ -110,7 +110,7 @@ class _MainScreenState extends State<MainScreen> {
                 icon: Icons.chat_bubble_outline,
                 isSelected: _currentIndex == 3,
               ),
-              activeIcon: _NavIcon(
+              activeIcon: const _NavIcon(
                 icon: Icons.chat_bubble,
                 isSelected: true,
               ),
@@ -121,7 +121,7 @@ class _MainScreenState extends State<MainScreen> {
                 icon: Icons.settings_outlined,
                 isSelected: _currentIndex == 4,
               ),
-              activeIcon: _NavIcon(
+              activeIcon: const _NavIcon(
                 icon: Icons.settings,
                 isSelected: true,
               ),
@@ -147,7 +147,7 @@ class _NavIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(8),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: isSelected
             ? AppTheme.lavenderMist.withOpacity(0.15)

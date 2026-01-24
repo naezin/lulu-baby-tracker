@@ -10,12 +10,12 @@ class RecordsFilterBar extends StatelessWidget {
   final String? searchQuery;
 
   const RecordsFilterBar({
-    Key? key,
+    super.key,
     this.dateRange,
     required this.onDateFilterTap,
     this.onSearchTap,
     this.searchQuery,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -146,7 +146,7 @@ Future<DateTimeRange?> showDateRangePicker({
     builder: (context, child) {
       return Theme(
         data: Theme.of(context).copyWith(
-          colorScheme: ColorScheme.light(
+          colorScheme: const ColorScheme.light(
             primary: AppTheme.lavenderMist,
             onPrimary: Colors.white,
             surface: Colors.white,
