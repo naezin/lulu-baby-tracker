@@ -1,0 +1,1310 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import '../../../core/localization/app_localizations.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/wake_window_calculator.dart';
+import '../../../core/utils/feeding_interval_calculator.dart';
+import '../../../data/services/local_storage_service.dart';
+import '../../../data/models/activity_model.dart';
+import '../../widgets/sweet_spot_hero_card.dart';
+import '../../widgets/quick_log_bar.dart';
+import '../../providers/sweet_spot_provider.dart';
+import '../activities/log_sleep_screen.dart';
+import '../activities/log_feeding_screen.dart';
+import '../activities/log_diaper_screen.dart';
+import '../activities/log_play_screen.dart';
+import '../activities/log_health_screen.dart';
+import '../records/records_screen.dart';
+import '../settings/settings_screen.dart';
+import '../settings/notification_settings_screen.dart';
+
+/// 🏠 Home Screen - Huckleberry + BabyTime Inspired Dashboard
+/// Features: Sweet Spot prediction, Quick Log, Baby context (72 days, 2.46kg)
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({Key? key}) : super(key: key);
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeIn,
+    );
+    _fadeController.forward();
+
+    // Load Sweet Spot on init
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   Provider.of<SweetSpotProvider>(context, listen: false).refreshSweetSpot();
+    // });
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return Scaffold(
+      backgroundColor: AppTheme.surfaceDark,
+      body: Stack(
+        children: [
+          // Main scrollable content
+          CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              // App Bar
+              _buildAppBar(context, l10n),
+
+              // Content
+              SliverToBoxAdapter(
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 8),
+
+                      // Baby Context Card (72 days, 2.46kg premature girl)
+                      _buildBabyContextCard(context, l10n),
+
+                      const SizedBox(height: 16),
+
+                      // Sweet Spot Hero Card (Huckleberry-style)
+                      const SweetSpotHeroCard(),
+
+                      const SizedBox(height: 16),
+
+                      // Today's Summary Section
+                      _buildTodaySummarySection(context, l10n),
+
+                      const SizedBox(height: 20),
+
+                      // Recent Activities
+                      _buildRecentActivitiesSection(context, l10n),
+
+                      // Bottom padding for Quick Log Bar
+                      const SizedBox(height: 100),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          // Quick Log Bar (BabyTime-style, fixed at bottom)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: QuickLogBar(
+              onQuickLog: (activityType) => _handleQuickLog(context, activityType),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAppBar(BuildContext context, AppLocalizations l10n) {
+    return SliverAppBar(
+      expandedHeight: 70,
+      floating: true,
+      snap: true,
+      backgroundColor: AppTheme.surfaceDark,
+      elevation: 0,
+      systemOverlayStyle: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+      ),
+      flexibleSpace: FlexibleSpaceBar(
+        titlePadding: const EdgeInsets.only(left: 20, bottom: 16, right: 20),
+        title: Row(
+          children: [
+            // Moon icon
+            Text(
+              '🌙',
+              style: const TextStyle(fontSize: 24),
+            ),
+            const SizedBox(width: 8),
+            // App name
+            Text(
+              l10n.appName,
+              style: const TextStyle(
+                color: AppTheme.textPrimary,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                letterSpacing: -0.5,
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        // Notification button
+        IconButton(
+          icon: const Icon(Icons.notifications_outlined, color: AppTheme.lavenderMist),
+          onPressed: () {
+            _triggerHaptic();
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const NotificationSettingsScreen()),
+            );
+          },
+        ),
+        // Settings button
+        IconButton(
+          icon: const Icon(Icons.settings_outlined, color: AppTheme.lavenderMist),
+          onPressed: () {
+            _triggerHaptic();
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBabyContextCard(BuildContext context, AppLocalizations l10n) {
+    final storage = LocalStorageService();
+
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: storage.getBaby(),
+      builder: (context, snapshot) {
+        String babyName = 'Baby';
+        DateTime birthDate = DateTime(2025, 11, 11);
+        double? birthWeight;
+        bool isPremature = false;
+
+        if (snapshot.hasData && snapshot.data != null) {
+          final babyData = snapshot.data!;
+          babyName = babyData['name'] as String? ?? 'Baby';
+          final birthDateStr = babyData['birthDate'] as String?;
+          if (birthDateStr != null) {
+            birthDate = DateTime.parse(birthDateStr);
+          }
+          birthWeight = babyData['birthWeightKg'] as double?;
+          isPremature = babyData['isPremature'] as bool? ?? false;
+        }
+
+        final ageInDays = DateTime.now().difference(birthDate).inDays;
+        final weightText = birthWeight != null ? '${birthWeight}kg at birth' : '';
+
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppTheme.lavenderMist.withOpacity(0.15),
+                AppTheme.lavenderMist.withOpacity(0.05),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: AppTheme.lavenderMist.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              // Avatar
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: AppTheme.lavenderMist.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    '👶',
+                    style: const TextStyle(fontSize: 28),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+
+              // Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      babyName,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            color: AppTheme.textPrimary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      weightText.isNotEmpty
+                          ? '$ageInDays days old • $weightText'
+                          : '$ageInDays days old',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppTheme.textSecondary,
+                          ),
+                    ),
+                    if (isPremature) ...[
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.favorite,
+                            size: 12,
+                            color: AppTheme.errorSoft,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Premature baby care',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: AppTheme.textTertiary,
+                                  fontSize: 11,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+
+              // Growth indicator
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppTheme.successSoft.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.trending_up_rounded,
+                      size: 14,
+                      color: AppTheme.successSoft,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Growing',
+                      style: TextStyle(
+                        color: AppTheme.successSoft,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildTodaySummarySection(BuildContext context, AppLocalizations l10n) {
+    final storage = LocalStorageService();
+    const ageInDays = 72; // Baby's age
+
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _getPredictiveData(storage, ageInDays),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          // Show empty state while loading
+          return _buildEmptyState(context, l10n);
+        }
+
+        final data = snapshot.data!;
+        final sleepPrediction = data['sleep'] as WakeWindowPrediction?;
+        final feedingPrediction = data['feeding'] as FeedingPrediction?;
+        final activityProgress = data['activity'] as double?;
+        final hasAnyData = data['hasData'] as bool;
+
+        if (!hasAnyData) {
+          return _buildEmptyState(context, l10n);
+        }
+
+        // Determine urgency and coaching message
+        final isSleepUrgent = sleepPrediction?.isUrgent ?? false;
+        final isFeedingUrgent = feedingPrediction?.isUrgent ?? false;
+
+        String coachingMessage = l10n.translate('ai_coaching_all_good') ?? 'Everything looks good!';
+        if (isSleepUrgent) {
+          coachingMessage = l10n.translate('ai_coaching_sleepy') ?? 'Baby might be getting sleepy.';
+        } else if (isFeedingUrgent) {
+          coachingMessage = l10n.translate('ai_coaching_feeding_soon') ?? 'Feeding time approaching.';
+        } else if (sleepPrediction != null && sleepPrediction.minutesUntilSweetSpot < 15) {
+          coachingMessage = l10n.translate('ai_coaching_awake_too_long') ?? 'Watch for sleep cues.';
+        }
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.translate('today_summary') ?? 'Today\'s Summary',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: AppTheme.textPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildPredictiveSleepCard(
+                      context,
+                      l10n,
+                      sleepPrediction,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildPredictiveFeedingCard(
+                      context,
+                      l10n,
+                      feedingPrediction,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildPredictiveActivityCard(
+                      context,
+                      l10n,
+                      activityProgress ?? 0.0,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              _buildAICoachingBanner(context, l10n, coachingMessage, isSleepUrgent || isFeedingUrgent),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSummaryCard({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              color: AppTheme.textPrimary,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: TextStyle(
+              color: AppTheme.textTertiary,
+              fontSize: 12,
+              letterSpacing: -0.1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  Widget _buildRecentActivitiesSection(BuildContext context, AppLocalizations l10n) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                l10n.locale.languageCode == 'ko' ? '최근 활동' : 'Recent Activities',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: AppTheme.textPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              TextButton(
+                onPressed: () {
+                  _triggerHaptic();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const RecordsScreen()),
+                  );
+                },
+                child: Text(
+                  l10n.locale.languageCode == 'ko' ? '전체 보기' : 'View All',
+                  style: TextStyle(
+                    color: AppTheme.lavenderGlow,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _buildActivityItem(
+            icon: Icons.bedtime_rounded,
+            color: AppTheme.lavenderMist,
+            title: l10n.locale.languageCode == 'ko' ? '낮잠 종료' : 'Nap ended',
+            time: '2:30 PM',
+            duration: '1h 15m',
+          ),
+          const SizedBox(height: 12),
+          _buildActivityItem(
+            icon: Icons.restaurant_rounded,
+            color: const Color(0xFFE8B87E),
+            title: l10n.locale.languageCode == 'ko' ? '분유 수유' : 'Formula feeding',
+            time: '12:45 PM',
+            duration: '120ml',
+          ),
+          const SizedBox(height: 12),
+          _buildActivityItem(
+            icon: Icons.child_care_rounded,
+            color: const Color(0xFF7BB8E8),
+            title: l10n.locale.languageCode == 'ko' ? '기저귀 교체' : 'Diaper change',
+            time: '11:20 AM',
+            duration: l10n.locale.languageCode == 'ko' ? '소변' : 'Wet',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActivityItem({
+    required IconData icon,
+    required Color color,
+    required String title,
+    required String time,
+    required String duration,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceCard,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: color, size: 22),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  duration,
+                  style: TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 13,
+                    letterSpacing: -0.1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            time,
+            style: TextStyle(
+              color: AppTheme.textTertiary,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getGreeting(AppLocalizations l10n) {
+    final hour = DateTime.now().hour;
+    if (hour < 6) {
+      return '🌙 Late night';
+    } else if (hour < 12) {
+      return '☀️ Good morning';
+    } else if (hour < 18) {
+      return '🌤️ Good afternoon';
+    } else {
+      return '🌆 Good evening';
+    }
+  }
+
+  void _handleQuickLog(BuildContext context, String activityType) {
+    HapticFeedback.mediumImpact();
+
+    switch (activityType) {
+      case 'sleep':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const LogSleepScreen()),
+        );
+        break;
+      case 'feeding':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const LogFeedingScreen()),
+        );
+        break;
+      case 'diaper':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const LogDiaperScreen()),
+        );
+        break;
+      case 'play':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const LogPlayScreen()),
+        );
+        break;
+      case 'health':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const LogHealthScreen()),
+        );
+        break;
+    }
+  }
+
+
+  void _showSleepSuggestion(BuildContext context, AppLocalizations l10n) {
+    // Show notification or alert that baby should sleep
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.bedtime_rounded, color: Colors.white, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                l10n.translate('awake_time_sleep_suggestion') ??
+                    'Baby has been awake for too long. Consider putting them to sleep.',
+                style: const TextStyle(fontSize: 14),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: AppTheme.errorSoft,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        duration: const Duration(seconds: 5),
+      ),
+    );
+  }
+
+  void _triggerHaptic() {
+    HapticFeedback.lightImpact();
+  }
+
+  // Predictive Sleep Card with Next Sweet Spot
+  Widget _buildPredictiveSleepCard(
+    BuildContext context,
+    AppLocalizations l10n,
+    WakeWindowPrediction? prediction,
+  ) {
+    final isUrgent = prediction?.isUrgent ?? false;
+    final timeStr = prediction != null
+        ? '${prediction.nextSweetSpot.hour}:${prediction.nextSweetSpot.minute.toString().padLeft(2, '0')}'
+        : '--:--';
+
+    return GestureDetector(
+      onTap: () {
+        if (prediction != null) {
+          _showSleepQuickAction(context, l10n, prediction);
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceCard,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isUrgent ? AppTheme.lavenderMist : AppTheme.lavenderMist.withOpacity(0.3),
+            width: isUrgent ? 2 : 1,
+          ),
+          boxShadow: isUrgent
+              ? [
+                  BoxShadow(
+                    color: AppTheme.lavenderMist.withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
+        ),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Icon(Icons.bedtime_rounded, color: AppTheme.lavenderMist, size: 20),
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: isUrgent ? AppTheme.errorSoft : AppTheme.successSoft,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              prediction != null ? '${prediction.standardWakeWindow}m' : '--',
+              style: TextStyle(
+                color: AppTheme.textPrimary,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                letterSpacing: -0.5,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              l10n.locale.languageCode == 'ko' ? '수면' : 'Sleep',
+              style: TextStyle(
+                color: AppTheme.textTertiary,
+                fontSize: 11,
+                letterSpacing: -0.1,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppTheme.lavenderMist.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                '${l10n.translate('next_sweet_spot') ?? 'Next'} $timeStr',
+                style: TextStyle(
+                  color: AppTheme.lavenderMist,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showSleepQuickAction(BuildContext context, AppLocalizations l10n, WakeWindowPrediction prediction) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Icon(Icons.bedtime_rounded, color: AppTheme.lavenderMist, size: 48),
+            const SizedBox(height: 16),
+            Text(
+              l10n.translate('sleep_prediction') ?? '수면 예측',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '${l10n.translate('next_sweet_spot') ?? 'Next Sweet Spot'}: ${prediction.nextSweetSpot.hour}:${prediction.nextSweetSpot.minute.toString().padLeft(2, '0')}',
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const LogSleepScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.play_arrow_rounded),
+              label: Text(l10n.translate('start_sleep_now') ?? '지금 수면 시작'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.lavenderMist,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+            SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Predictive Feeding Card with Countdown
+  Widget _buildPredictiveFeedingCard(
+    BuildContext context,
+    AppLocalizations l10n,
+    FeedingPrediction? prediction,
+  ) {
+    final isUrgent = prediction?.isUrgent ?? false;
+    final minutesUntilFeed = prediction?.minutesUntilFeeding ?? 0;
+
+    String feedingText;
+    if (prediction == null) {
+      feedingText = '--';
+    } else if (minutesUntilFeed < 0) {
+      feedingText = l10n.translate('feeding_overdue') ?? 'Overdue';
+    } else if (minutesUntilFeed < 60) {
+      feedingText = '${l10n.translate('next_feeding_in') ?? 'In'} ${minutesUntilFeed}m';
+    } else {
+      final hours = minutesUntilFeed ~/ 60;
+      final mins = minutesUntilFeed % 60;
+      feedingText = '${l10n.translate('next_feeding_in') ?? 'In'} ${hours}h ${mins}m';
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isUrgent ? const Color(0xFFE8B87E) : const Color(0xFFE8B87E).withOpacity(0.3),
+          width: isUrgent ? 2 : 1,
+        ),
+        boxShadow: isUrgent ? [
+          BoxShadow(
+            color: const Color(0xFFE8B87E).withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ] : null,
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Icon(Icons.restaurant_rounded, color: const Color(0xFFE8B87E), size: 20),
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: isUrgent ? const Color(0xFFFFB74D) : AppTheme.successSoft,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '6',
+            style: TextStyle(
+              color: AppTheme.textPrimary,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            l10n.locale.languageCode == 'ko' ? '수유' : 'Feeds',
+            style: TextStyle(
+              color: AppTheme.textTertiary,
+              fontSize: 11,
+              letterSpacing: -0.1,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE8B87E).withOpacity(0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              feedingText,
+              style: TextStyle(
+                color: const Color(0xFFE8B87E),
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Predictive Activity Card with Progress
+  Widget _buildPredictiveActivityCard(
+    BuildContext context,
+    AppLocalizations l10n,
+    double progress,
+  ) {
+    final tummyTimeProgress = progress;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFF5FB37B).withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Icon(Icons.toys_outlined, color: const Color(0xFF5FB37B), size: 20),
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: AppTheme.successSoft,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '50%',
+            style: TextStyle(
+              color: AppTheme.textPrimary,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            l10n.locale.languageCode == 'ko' ? '활동 목표' : 'Activity',
+            style: TextStyle(
+              color: AppTheme.textTertiary,
+              fontSize: 11,
+              letterSpacing: -0.1,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: tummyTimeProgress,
+              backgroundColor: AppTheme.surfaceElevated,
+              valueColor: AlwaysStoppedAnimation<Color>(const Color(0xFF5FB37B)),
+              minHeight: 6,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // AI Coaching Banner
+  Widget _buildAICoachingBanner(BuildContext context, AppLocalizations l10n, String message, bool isUrgent) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            (isUrgent ? AppTheme.warningSoft : AppTheme.lavenderMist).withOpacity(0.15),
+            (isUrgent ? AppTheme.warningSoft : AppTheme.lavenderMist).withOpacity(0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: (isUrgent ? AppTheme.warningSoft : AppTheme.lavenderMist).withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: (isUrgent ? AppTheme.warningSoft : AppTheme.lavenderMist).withOpacity(0.2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              isUrgent ? Icons.lightbulb : Icons.auto_awesome,
+              color: isUrgent ? AppTheme.warningSoft : AppTheme.lavenderMist,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                color: AppTheme.textPrimary,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Get predictive data from storage
+  Future<Map<String, dynamic>> _getPredictiveData(LocalStorageService storage, int ageInDays) async {
+    try {
+      // Get last wake up time
+      final lastWakeTime = await storage.getLastWakeUpTime();
+
+      // Get last feeding
+      final feedingActivities = await storage.getActivitiesByType(ActivityType.feeding);
+      feedingActivities.sort((a, b) =>
+          DateTime.parse(b.timestamp).compareTo(DateTime.parse(a.timestamp)));
+
+      // Get today's play activities
+      final playActivities = await storage.getActivitiesByType(ActivityType.play);
+      final todayPlay = playActivities.where((a) {
+        final activityDate = DateTime.parse(a.timestamp);
+        final today = DateTime.now();
+        return activityDate.year == today.year &&
+            activityDate.month == today.month &&
+            activityDate.day == today.day;
+      }).toList();
+
+      // Calculate sleep prediction
+      WakeWindowPrediction? sleepPrediction;
+      if (lastWakeTime != null) {
+        sleepPrediction = WakeWindowCalculator.calculateNextSleepTime(
+          lastWakeTime: lastWakeTime,
+          ageInDays: ageInDays,
+        );
+      }
+
+      // Calculate feeding prediction
+      FeedingPrediction? feedingPrediction;
+      if (feedingActivities.isNotEmpty) {
+        final lastFeeding = feedingActivities.first;
+        final lastFeedTime = DateTime.parse(lastFeeding.timestamp);
+        final amountMl = lastFeeding.amountMl ?? 135.0; // Default for 72 days
+
+        feedingPrediction = FeedingIntervalCalculator.calculateNextFeedingTime(
+          lastFeedingTime: lastFeedTime,
+          lastFeedingAmountMl: amountMl,
+          ageInDays: ageInDays,
+        );
+      }
+
+      // Calculate activity progress (goal: 3 play sessions per day)
+      final activityProgress = (todayPlay.length / 3.0).clamp(0.0, 1.0);
+
+      final hasData = lastWakeTime != null || feedingActivities.isNotEmpty;
+
+      return {
+        'sleep': sleepPrediction,
+        'feeding': feedingPrediction,
+        'activity': activityProgress,
+        'hasData': hasData,
+      };
+    } catch (e) {
+      return {
+        'sleep': null,
+        'feeding': null,
+        'activity': 0.0,
+        'hasData': false,
+      };
+    }
+  }
+
+  // Empty state UI
+  Widget _buildEmptyState(BuildContext context, AppLocalizations l10n) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppTheme.lavenderMist.withOpacity(0.1),
+            AppTheme.lavenderGlow.withOpacity(0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: AppTheme.lavenderMist.withOpacity(0.2),
+          width: 1.5,
+        ),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: AppTheme.lavenderMist.withOpacity(0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.auto_awesome,
+              size: 40,
+              color: AppTheme.lavenderMist,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            l10n.translate('first_record_prompt') ?? '아기의 첫 기록을 남겨주세요',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textPrimary,
+                ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            l10n.translate('first_record_description') ??
+                '수면, 수유, 활동을 기록하면\nAI가 아기의 패턴을 분석해드려요',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.textSecondary,
+                  height: 1.5,
+                ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: () {
+              // Show quick log sheet
+              _showQuickLogSheet(context, l10n);
+            },
+            icon: const Icon(Icons.add_rounded),
+            label: Text(l10n.translate('start_first_record') ?? '첫 기록 시작하기'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.lavenderMist,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Show quick log bottom sheet
+  void _showQuickLogSheet(BuildContext context, AppLocalizations l10n) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              l10n.translate('quick_log') ?? '빠른 기록',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 24),
+            _buildQuickLogOption(
+              context,
+              l10n,
+              Icons.bedtime_rounded,
+              l10n.translate('log_sleep') ?? '수면',
+              AppTheme.lavenderMist,
+              () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LogSleepScreen()),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+            _buildQuickLogOption(
+              context,
+              l10n,
+              Icons.restaurant_rounded,
+              l10n.translate('log_feeding') ?? '수유',
+              const Color(0xFFE8B87E),
+              () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LogFeedingScreen()),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+            _buildQuickLogOption(
+              context,
+              l10n,
+              Icons.toys_rounded,
+              l10n.translate('log_play') ?? '활동',
+              const Color(0xFF5FB37B),
+              () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LogPlayScreen()),
+                );
+              },
+            ),
+            SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickLogOption(
+    BuildContext context,
+    AppLocalizations l10n,
+    IconData icon,
+    String label,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: color.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                label,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 16,
+              color: Colors.grey[400],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

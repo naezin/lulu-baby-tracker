@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Medium Widget Layout (4x2) - Daily Summary -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:orientation="horizontal"
+    android:padding="16dp"
+    android:weightSum="2">
+
+    <!-- Left Side: Today's Summary -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Today"
+            android:textColor="#B3FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-medium" />
+
+        <!-- Sleep -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🛏️"
+                android:textSize="12sp"
+                android:layout_marginEnd="4dp" />
+
+            <TextView
+                android:id="@+id/sleep_hours_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="12.5h"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-medium" />
+        </LinearLayout>
+
+        <!-- Feeding -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🍼"
+                android:textSize="12sp"
+                android:layout_marginEnd="4dp" />
+
+            <TextView
+                android:id="@+id/feeding_count_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="8×"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-medium" />
+        </LinearLayout>
+
+        <!-- Diaper -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="✨"
+                android:textSize="12sp"
+                android:layout_marginEnd="4dp" />
+
+            <TextView
+                android:id="@+id/diaper_count_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="6×"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-medium" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Divider -->
+    <View
+        android:layout_width="1dp"
+        android:layout_height="match_parent"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:background="#33FFFFFF" />
+
+    <!-- Right Side: Next Action -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <TextView
+            android:id="@+id/next_action_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Next Sleep"
+            android:textColor="#B3FFFFFF"
+            android:textSize="12sp"
+            android:fontFamily="sans-serif" />
+
+        <TextView
+            android:id="@+id/next_action_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="14:30"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-medium" />
+
+        <TextView
+            android:id="@+id/next_action_minutes"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="in 52m"
+            android:textColor="#CCFFFFFF"
+            android:textSize="14sp"
+            android:fontFamily="sans-serif" />
+
+        <!-- Action Buttons -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/sleep_button"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="@drawable/action_button_background"
+                android:src="@drawable/ic_sleep"
+                android:contentDescription="Log Sleep"
+                android:scaleType="centerInside"
+                android:layout_marginEnd="8dp" />
+
+            <ImageButton
+                android:id="@+id/feeding_button"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="@drawable/action_button_background"
+                android:src="@drawable/ic_feeding"
+                android:contentDescription="Log Feeding"
+                android:scaleType="centerInside"
+                android:layout_marginEnd="8dp" />
+
+            <ImageButton
+                android:id="@+id/diaper_button"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="@drawable/action_button_background"
+                android:src="@drawable/ic_diaper"
+                android:contentDescription="Log Diaper"
+                android:scaleType="centerInside" />
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>

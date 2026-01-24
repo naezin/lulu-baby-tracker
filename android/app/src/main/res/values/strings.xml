@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Lulu</string>
+    <string name="widget_description">Track your baby\'s next sweet spot and daily activities</string>
+    <string name="widget_small_name">Next Sweet Spot</string>
+    <string name="widget_medium_name">Daily Summary</string>
+</resources>
