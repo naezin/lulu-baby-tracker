@@ -10,6 +10,7 @@ class AppTheme {
   static const Color softBlue = Color(0xFF415A77); // Secondary elements
   static const Color lavenderMist = Color(0xFF9D8CD6); // Accent (soft lavender)
   static const Color lavenderGlow = Color(0xFFB4A5E6); // Lighter accent
+  static const Color primaryPurple = Color(0xFF9D8CD6); // Alias for lavenderMist
 
   // 🎨 Surface Colors
   static const Color surfaceDark = Color(0xFF0D1B2A);

@@ -1,4 +1,5 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../data/services/firestore_stub.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/activity_model.dart';
 import '../../core/localization/app_localizations.dart';
 

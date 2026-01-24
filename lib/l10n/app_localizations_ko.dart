@@ -276,4 +276,131 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get retry => '다시 시도';
+
+  @override
+  String get actionZoneCardTitle => '지금 뭘 하면 좋을까요?';
+
+  @override
+  String get actionZoneNoDataMessage => '수면을 기록하면 추천을 받을 수 있어요';
+
+  @override
+  String get actionZoneSweetSpotPassedMessage => '스위트 스팟 지났어요 - 지금 재우세요!';
+
+  @override
+  String get actionZoneSweetSpotNowMessage => '지금이 재우기 딱 좋은 시간이에요!';
+
+  @override
+  String get actionZoneSweetSpotUpcomingMessage => '이 시간까지 재우면 좋아요';
+
+  @override
+  String get actionZoneSleepNowButton => '지금 재우기';
+
+  @override
+  String get actionZoneSetAlarmButton => '알림 설정';
+
+  @override
+  String get todaysSnapshotTitle => '오늘의 스냅샷';
+
+  @override
+  String get todaysSnapshotSleep => '수면';
+
+  @override
+  String get todaysSnapshotTotalTime => '총 시간';
+
+  @override
+  String get todaysSnapshotFeeding => '수유';
+
+  @override
+  String get smartAlertsTitle => '스마트 알림';
+
+  @override
+  String get smartAlertsViewAll => '전체 보기';
+
+  @override
+  String get alertSleepUrgentTitle => '아기가 너무 오래 깨어있어요!';
+
+  @override
+  String alertSleepUrgentMessage(int minutes) {
+    return '$minutes분 초과했습니다. 지금 재우는 것을 권장해요.';
+  }
+
+  @override
+  String get alertSleepWarningTitle => '곧 재울 시간이에요';
+
+  @override
+  String alertSleepWarningMessage(int minutes) {
+    return '$minutes분 후에 재우는 것이 좋아요.';
+  }
+
+  @override
+  String get alertFeedingUrgentTitle => '수유 시간이 지났어요!';
+
+  @override
+  String alertFeedingUrgentMessage(int minutes) {
+    return '$minutes분 지연되었습니다.';
+  }
+
+  @override
+  String get alertFeedingWarningTitle => '곧 수유 시간이에요';
+
+  @override
+  String alertFeedingWarningMessage(int minutes) {
+    return '$minutes분 후 수유 예정입니다.';
+  }
+
+  @override
+  String get alertDiaperWarningTitle => '기저귀를 확인해주세요';
+
+  @override
+  String alertDiaperWarningMessage(int hours) {
+    return '마지막 교체 후 $hours시간이 지났어요.';
+  }
+
+  @override
+  String get recordsFilterAllPeriod => '전체 기간';
+
+  @override
+  String get recordsFilterSearch => '검색';
+
+  @override
+  String get insightPositive => '좋음';
+
+  @override
+  String get insightWarning => '주의';
+
+  @override
+  String get insightConcern => '우려';
+
+  @override
+  String get insightNeutral => '정보';
+
+  @override
+  String get weeklyInsightsTitle => '이번 주 인사이트';
+
+  @override
+  String get weeklyInsightsNoData => '데이터를 기록하면 주간 인사이트를 볼 수 있어요';
+
+  @override
+  String get trendImproving => '개선';
+
+  @override
+  String get trendDeclining => '주의';
+
+  @override
+  String get trendStable => '안정';
+
+  @override
+  String get viewDetails => '자세히 보기';
+
+  @override
+  String get averageSleep => '평균 수면';
+
+  @override
+  String get sleepCount => '수면 횟수';
+
+  @override
+  String get averageFeeding => '평균 수유량';
+
+  @override
+  String get dailyAverage => '하루 평균';
 }

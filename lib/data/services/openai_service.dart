@@ -1,17 +1,32 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../core/constants/lulu_persona.dart';
+import '../../core/utils/environment_validator.dart';
 
 /// OpenAI GPT API Service
 class OpenAIService {
-  final String apiKey;
+  final String? _apiKey;
   final String model;
   static const String baseUrl = 'https://api.openai.com/v1';
 
   OpenAIService({
-    required this.apiKey,
-    this.model = 'gpt-4o', // or 'gpt-4o-mini' for cost efficiency
-  });
+    String? apiKey,
+    this.model = 'gpt-4o-mini',
+  }) : _apiKey = apiKey ?? EnvironmentValidator.openAIApiKey;
+
+  /// API Key 유효성 확인
+  bool get isConfigured => _apiKey != null && _apiKey!.isNotEmpty && _apiKey != 'demo-mode';
+
+  /// 안전한 API Key 접근
+  String get apiKey {
+    if (!isConfigured) {
+      throw OpenAINotConfiguredException(
+        'OpenAI API Key가 설정되지 않았습니다. '
+        '--dart-define=OPENAI_API_KEY=xxx 옵션으로 실행해주세요.',
+      );
+    }
+    return _apiKey!;
+  }
 
   /// 채팅 메시지 전송
   ///
@@ -23,6 +38,13 @@ class OpenAIService {
     BabyContext? babyContext,
     bool useShortPrompt = false,
   }) async {
+    if (!isConfigured) {
+      throw OpenAINotConfiguredException(
+        'OpenAI API Key가 설정되지 않았습니다. '
+        '--dart-define=OPENAI_API_KEY=xxx 옵션으로 실행해주세요.',
+      );
+    }
+
     try {
       // 시스템 프롬프트 구성
       final systemPrompt = _buildSystemPrompt(
@@ -77,6 +99,13 @@ class OpenAIService {
     BabyContext? babyContext,
     bool useShortPrompt = false,
   }) async* {
+    if (!isConfigured) {
+      throw OpenAINotConfiguredException(
+        'OpenAI API Key가 설정되지 않았습니다. '
+        '--dart-define=OPENAI_API_KEY=xxx 옵션으로 실행해주세요.',
+      );
+    }
+
     try {
       final systemPrompt = _buildSystemPrompt(
         babyContext: babyContext,
@@ -288,4 +317,13 @@ class OpenAIException implements Exception {
   String toString() {
     return 'OpenAIException (Status: $statusCode): $message';
   }
+}
+
+/// OpenAI 설정 예외
+class OpenAINotConfiguredException implements Exception {
+  final String message;
+  OpenAINotConfiguredException(this.message);
+
+  @override
+  String toString() => message;
 }

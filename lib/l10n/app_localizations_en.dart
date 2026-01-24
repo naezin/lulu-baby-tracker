@@ -279,4 +279,133 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get retry => 'Retry';
+
+  @override
+  String get actionZoneCardTitle => 'What should I do now?';
+
+  @override
+  String get actionZoneNoDataMessage => 'Record sleep to get recommendations';
+
+  @override
+  String get actionZoneSweetSpotPassedMessage =>
+      'Sweet spot passed - put baby to sleep now!';
+
+  @override
+  String get actionZoneSweetSpotNowMessage =>
+      'Perfect time to put baby to sleep!';
+
+  @override
+  String get actionZoneSweetSpotUpcomingMessage => 'Put to sleep by this time';
+
+  @override
+  String get actionZoneSleepNowButton => 'Sleep Now';
+
+  @override
+  String get actionZoneSetAlarmButton => 'Set Alarm';
+
+  @override
+  String get todaysSnapshotTitle => 'Today\'s Snapshot';
+
+  @override
+  String get todaysSnapshotSleep => 'Sleep';
+
+  @override
+  String get todaysSnapshotTotalTime => 'Total Time';
+
+  @override
+  String get todaysSnapshotFeeding => 'Feeding';
+
+  @override
+  String get smartAlertsTitle => 'Smart Alerts';
+
+  @override
+  String get smartAlertsViewAll => 'View All';
+
+  @override
+  String get alertSleepUrgentTitle => 'Baby has been awake too long!';
+
+  @override
+  String alertSleepUrgentMessage(int minutes) {
+    return '${minutes}min over recommended. Put to sleep now.';
+  }
+
+  @override
+  String get alertSleepWarningTitle => 'Almost time for sleep';
+
+  @override
+  String alertSleepWarningMessage(int minutes) {
+    return 'Put to sleep in ${minutes}min.';
+  }
+
+  @override
+  String get alertFeedingUrgentTitle => 'Feeding time overdue!';
+
+  @override
+  String alertFeedingUrgentMessage(int minutes) {
+    return '${minutes}min delayed.';
+  }
+
+  @override
+  String get alertFeedingWarningTitle => 'Feeding time soon';
+
+  @override
+  String alertFeedingWarningMessage(int minutes) {
+    return 'Feed in ${minutes}min.';
+  }
+
+  @override
+  String get alertDiaperWarningTitle => 'Check diaper';
+
+  @override
+  String alertDiaperWarningMessage(int hours) {
+    return '${hours}h since last change.';
+  }
+
+  @override
+  String get recordsFilterAllPeriod => 'All Time';
+
+  @override
+  String get recordsFilterSearch => 'Search';
+
+  @override
+  String get insightPositive => 'Good';
+
+  @override
+  String get insightWarning => 'Warning';
+
+  @override
+  String get insightConcern => 'Concern';
+
+  @override
+  String get insightNeutral => 'Info';
+
+  @override
+  String get weeklyInsightsTitle => 'This Week\'s Insights';
+
+  @override
+  String get weeklyInsightsNoData => 'Record data to see weekly insights';
+
+  @override
+  String get trendImproving => 'Improving';
+
+  @override
+  String get trendDeclining => 'Declining';
+
+  @override
+  String get trendStable => 'Stable';
+
+  @override
+  String get viewDetails => 'View Details';
+
+  @override
+  String get averageSleep => 'Average Sleep';
+
+  @override
+  String get sleepCount => 'Sleep Count';
+
+  @override
+  String get averageFeeding => 'Average Feeding';
+
+  @override
+  String get dailyAverage => 'Daily Average';
 }

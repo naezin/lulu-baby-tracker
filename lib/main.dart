@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_core/firebase_core.dart';
+// import 'package:firebase_core/firebase_core.dart'; // Temporarily disabled for web
 import 'package:home_widget/home_widget.dart';
 import 'core/theme/app_theme.dart';
 import 'core/localization/app_localizations.dart';
+import 'core/utils/environment_validator.dart';
 import 'data/services/openai_service.dart';
 import 'data/services/widget_service.dart';
 import 'presentation/providers/chat_provider.dart';
@@ -23,34 +25,57 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  try {
-    await Firebase.initializeApp(
-      options: const FirebaseOptions(
-        apiKey: "AIzaSyDemo-Key-Replace-With-Real-Key",
-        authDomain: "lulu-demo.firebaseapp.com",
-        projectId: "lulu-demo",
-        storageBucket: "lulu-demo.appspot.com",
-        messagingSenderId: "123456789",
-        appId: "1:123456789:web:abcdef123456",
-      ),
-    );
-  } catch (e) {
-    // Firebase already initialized or initialization failed
-    debugPrint('Firebase initialization: $e');
+  // 환경 변수 검증
+  final validation = EnvironmentValidator.validate();
+  if (!validation.isValid) {
+    debugPrint(validation.errorMessage);
+    // 개발 모드에서는 경고만, Production에서는 차단
+    if (EnvironmentValidator.isProduction) {
+      throw Exception('필수 환경 변수가 설정되지 않았습니다');
+    }
   }
 
-  // Initialize widget service
-  final widgetService = WidgetService();
+  // Skip Firebase initialization on web due to compatibility issues
+  // if (!kIsWeb) {
+  //   try {
+  //     await Firebase.initializeApp(
+  //       options: const FirebaseOptions(
+  //         apiKey: "AIzaSyDemo-Key-Replace-With-Real-Key",
+  //         authDomain: "lulu-demo.firebaseapp.com",
+  //         projectId: "lulu-demo",
+  //         storageBucket: "lulu-demo.appspot.com",
+  //         messagingSenderId: "123456789",
+  //         appId: "1:123456789:web:abcdef123456",
+  //       ),
+  //     );
+  //   } catch (e) {
+  //     // Firebase already initialized or initialization failed
+  //     debugPrint('Firebase initialization: $e');
+  //   }
+  // }
 
-  // Set up widget interaction listener
-  HomeWidget.widgetClicked.listen((Uri? uri) {
-    if (uri != null) {
-      _handleWidgetAction(uri.toString());
+  // Initialize widget service (only on non-web platforms)
+  if (!kIsWeb) {
+    try {
+      // Set App Group ID for iOS widgets (required for shared data storage)
+      await HomeWidget.setAppGroupId('group.com.lulu.babytracker');
+
+      final widgetService = WidgetService();
+
+      // Set up widget interaction listener
+      HomeWidget.widgetClicked.listen((Uri? uri) {
+        if (uri != null) {
+          _handleWidgetAction(uri.toString());
+        }
+      });
+
+      // Update widgets with initial data
+      widgetService.updateAllWidgets();
+    } catch (e) {
+      // Widget initialization failed (e.g., on Android or if not configured)
+      debugPrint('Widget initialization: $e');
     }
-  });
-
-  // Update widgets with initial data
-  widgetService.updateAllWidgets();
+  }
 
   runApp(const LuluApp());
 }

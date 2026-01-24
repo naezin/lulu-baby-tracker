@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart'; // Temporarily disabled for web
+import '../../../data/services/firestore_stub.dart';
 import 'package:intl/intl.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/activity_model.dart';
+import '../../../data/services/insights_service.dart';
+import '../../../data/services/local_storage_service.dart';
+import '../../widgets/insights/qa_insight_card.dart';
 import '../activities/log_sleep_screen.dart';
 import '../activities/log_feeding_screen.dart';
 import '../activities/log_diaper_screen.dart';
@@ -173,16 +177,94 @@ class _RecordsScreenState extends State<RecordsScreen> with SingleTickerProvider
                 }))
             .toList();
 
-        return ListView.builder(
-          padding: EdgeInsets.all(8),
-          itemCount: activities.length,
-          itemBuilder: (context, index) {
-            final activity = activities[index];
-            return _buildActivityCard(activity);
-          },
+        return CustomScrollView(
+          slivers: [
+            // Insights Section
+            SliverToBoxAdapter(
+              child: FutureBuilder<List<QAInsight>>(
+                future: _loadInsights(type),
+                builder: (context, insightSnapshot) {
+                  if (insightSnapshot.hasData && insightSnapshot.data!.isNotEmpty) {
+                    final insights = insightSnapshot.data!;
+                    final relevantInsight = _getRelevantInsight(insights, type);
+
+                    if (relevantInsight != null) {
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: QAInsightCard(
+                          question: relevantInsight.question,
+                          answer: relevantInsight.answer,
+                          metrics: relevantInsight.metrics,
+                          actionLabel: relevantInsight.actionLabel,
+                          onAction: relevantInsight.onAction,
+                        ),
+                      );
+                    }
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
+            ),
+
+            // Activity List
+            SliverPadding(
+              padding: EdgeInsets.all(8),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final activity = activities[index];
+                    return _buildActivityCard(activity);
+                  },
+                  childCount: activities.length,
+                ),
+              ),
+            ),
+          ],
         );
       },
     );
+  }
+
+  /// Load insights based on baby age
+  Future<List<QAInsight>> _loadInsights(ActivityType? type) async {
+    final insightsService = InsightsService();
+    // Default baby age - in production, get from user profile
+    const babyAgeInDays = 60; // 2 months old
+    return await insightsService.getMainInsights(babyAgeInDays: babyAgeInDays);
+  }
+
+  /// Get most relevant insight for the current tab
+  QAInsight? _getRelevantInsight(List<QAInsight> insights, ActivityType? type) {
+    if (type == null) {
+      // "All" tab - show first insight
+      return insights.isNotEmpty ? insights.first : null;
+    }
+
+    // Find insight most relevant to the current activity type
+    for (final insight in insights) {
+      switch (type) {
+        case ActivityType.sleep:
+          if (insight.question.contains('수면') || insight.question.contains('밤잠')) {
+            return insight;
+          }
+          break;
+        case ActivityType.feeding:
+          if (insight.question.contains('수유')) {
+            return insight;
+          }
+          break;
+        case ActivityType.play:
+          if (insight.question.contains('터미타임') || insight.question.contains('발달')) {
+            return insight;
+          }
+          break;
+        default:
+          break;
+      }
+    }
+
+    // If no type-specific insight found, show the first one
+    return insights.isNotEmpty ? insights.first : null;
   }
 
   Widget _buildActivityCard(ActivityModel activity) {

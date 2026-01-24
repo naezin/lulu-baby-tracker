@@ -1,7 +1,8 @@
 import 'dart:io';
 import 'package:csv/csv.dart';
 import 'package:intl/intl.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart'; // Temporarily disabled for web
+import 'firestore_stub.dart';
 
 /// CSV Import 결과
 class ImportResult {

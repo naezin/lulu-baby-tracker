@@ -1,4 +1,5 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../data/services/firestore_stub.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// 개인화 메모리 서비스
 class PersonalizationMemoryService {

@@ -1,6 +1,7 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+// import 'package:firebase_auth/firebase_auth.dart'; // Temporarily disabled for web
+// import 'package:google_sign_in/google_sign_in.dart'; // Temporarily disabled for web
 import 'package:flutter/foundation.dart';
+import 'firestore_stub.dart';
 
 /// 🔐 Authentication Service
 /// Handles all authentication operations with Firebase

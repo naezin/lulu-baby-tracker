@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+// import 'package:firebase_auth/firebase_auth.dart'; // Temporarily disabled for web
 import '../screens/auth/login_screen.dart';
 import '../screens/main/main_navigation.dart';
 
@@ -10,26 +11,32 @@ class AuthWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (context, snapshot) {
-        // Show loading while checking auth state
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
-          );
-        }
+    // On web, skip Firebase Auth and go directly to main navigation
+    // For mobile, we would check Firebase Auth here
+    return const MainNavigation();
 
-        // User is signed in
-        if (snapshot.hasData && snapshot.data != null) {
-          return const MainNavigation();
-        }
-
-        // User is not signed in
-        return const LoginScreen();
-      },
-    );
+    // TODO: Re-enable Firebase Auth when web compatibility is fixed
+    // if (kIsWeb) {
+    //   return const MainNavigation();
+    // }
+    //
+    // return StreamBuilder<User?>(
+    //   stream: FirebaseAuth.instance.authStateChanges(),
+    //   builder: (context, snapshot) {
+    //     if (snapshot.connectionState == ConnectionState.waiting) {
+    //       return const Scaffold(
+    //         body: Center(
+    //           child: CircularProgressIndicator(),
+    //         ),
+    //       );
+    //     }
+    //
+    //     if (snapshot.hasData && snapshot.data != null) {
+    //       return const MainNavigation();
+    //     }
+    //
+    //     return const LoginScreen();
+    //   },
+    // );
   }
 }

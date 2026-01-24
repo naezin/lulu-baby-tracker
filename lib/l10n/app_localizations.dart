@@ -625,6 +625,240 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Retry'**
   String get retry;
+
+  /// No description provided for @actionZoneCardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What should I do now?'**
+  String get actionZoneCardTitle;
+
+  /// No description provided for @actionZoneNoDataMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Record sleep to get recommendations'**
+  String get actionZoneNoDataMessage;
+
+  /// No description provided for @actionZoneSweetSpotPassedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Sweet spot passed - put baby to sleep now!'**
+  String get actionZoneSweetSpotPassedMessage;
+
+  /// No description provided for @actionZoneSweetSpotNowMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Perfect time to put baby to sleep!'**
+  String get actionZoneSweetSpotNowMessage;
+
+  /// No description provided for @actionZoneSweetSpotUpcomingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Put to sleep by this time'**
+  String get actionZoneSweetSpotUpcomingMessage;
+
+  /// No description provided for @actionZoneSleepNowButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Sleep Now'**
+  String get actionZoneSleepNowButton;
+
+  /// No description provided for @actionZoneSetAlarmButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Set Alarm'**
+  String get actionZoneSetAlarmButton;
+
+  /// No description provided for @todaysSnapshotTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s Snapshot'**
+  String get todaysSnapshotTitle;
+
+  /// No description provided for @todaysSnapshotSleep.
+  ///
+  /// In en, this message translates to:
+  /// **'Sleep'**
+  String get todaysSnapshotSleep;
+
+  /// No description provided for @todaysSnapshotTotalTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Time'**
+  String get todaysSnapshotTotalTime;
+
+  /// No description provided for @todaysSnapshotFeeding.
+  ///
+  /// In en, this message translates to:
+  /// **'Feeding'**
+  String get todaysSnapshotFeeding;
+
+  /// No description provided for @smartAlertsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart Alerts'**
+  String get smartAlertsTitle;
+
+  /// No description provided for @smartAlertsViewAll.
+  ///
+  /// In en, this message translates to:
+  /// **'View All'**
+  String get smartAlertsViewAll;
+
+  /// No description provided for @alertSleepUrgentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Baby has been awake too long!'**
+  String get alertSleepUrgentTitle;
+
+  /// No description provided for @alertSleepUrgentMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes}min over recommended. Put to sleep now.'**
+  String alertSleepUrgentMessage(int minutes);
+
+  /// No description provided for @alertSleepWarningTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Almost time for sleep'**
+  String get alertSleepWarningTitle;
+
+  /// No description provided for @alertSleepWarningMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Put to sleep in {minutes}min.'**
+  String alertSleepWarningMessage(int minutes);
+
+  /// No description provided for @alertFeedingUrgentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Feeding time overdue!'**
+  String get alertFeedingUrgentTitle;
+
+  /// No description provided for @alertFeedingUrgentMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes}min delayed.'**
+  String alertFeedingUrgentMessage(int minutes);
+
+  /// No description provided for @alertFeedingWarningTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Feeding time soon'**
+  String get alertFeedingWarningTitle;
+
+  /// No description provided for @alertFeedingWarningMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Feed in {minutes}min.'**
+  String alertFeedingWarningMessage(int minutes);
+
+  /// No description provided for @alertDiaperWarningTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Check diaper'**
+  String get alertDiaperWarningTitle;
+
+  /// No description provided for @alertDiaperWarningMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}h since last change.'**
+  String alertDiaperWarningMessage(int hours);
+
+  /// No description provided for @recordsFilterAllPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'All Time'**
+  String get recordsFilterAllPeriod;
+
+  /// No description provided for @recordsFilterSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get recordsFilterSearch;
+
+  /// No description provided for @insightPositive.
+  ///
+  /// In en, this message translates to:
+  /// **'Good'**
+  String get insightPositive;
+
+  /// No description provided for @insightWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Warning'**
+  String get insightWarning;
+
+  /// No description provided for @insightConcern.
+  ///
+  /// In en, this message translates to:
+  /// **'Concern'**
+  String get insightConcern;
+
+  /// No description provided for @insightNeutral.
+  ///
+  /// In en, this message translates to:
+  /// **'Info'**
+  String get insightNeutral;
+
+  /// No description provided for @weeklyInsightsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This Week\'s Insights'**
+  String get weeklyInsightsTitle;
+
+  /// No description provided for @weeklyInsightsNoData.
+  ///
+  /// In en, this message translates to:
+  /// **'Record data to see weekly insights'**
+  String get weeklyInsightsNoData;
+
+  /// No description provided for @trendImproving.
+  ///
+  /// In en, this message translates to:
+  /// **'Improving'**
+  String get trendImproving;
+
+  /// No description provided for @trendDeclining.
+  ///
+  /// In en, this message translates to:
+  /// **'Declining'**
+  String get trendDeclining;
+
+  /// No description provided for @trendStable.
+  ///
+  /// In en, this message translates to:
+  /// **'Stable'**
+  String get trendStable;
+
+  /// No description provided for @viewDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'View Details'**
+  String get viewDetails;
+
+  /// No description provided for @averageSleep.
+  ///
+  /// In en, this message translates to:
+  /// **'Average Sleep'**
+  String get averageSleep;
+
+  /// No description provided for @sleepCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Sleep Count'**
+  String get sleepCount;
+
+  /// No description provided for @averageFeeding.
+  ///
+  /// In en, this message translates to:
+  /// **'Average Feeding'**
+  String get averageFeeding;
+
+  /// No description provided for @dailyAverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily Average'**
+  String get dailyAverage;
 }
 
 class _AppLocalizationsDelegate

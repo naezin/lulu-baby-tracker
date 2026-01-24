@@ -1,10 +1,11 @@
+import '../../../data/services/firestore_stub.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'package:csv/csv.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/localization/app_localizations.dart';
 
 /// 진행률 콜백 타입

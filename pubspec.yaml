@@ -37,12 +37,13 @@ dependencies:
   path_provider: ^2.1.0
   file_picker: ^6.1.0
 
-  # Firebase (for authentication and data)
-  cloud_firestore: ^4.14.0
+  # Firebase (for authentication and data) - Temporarily disabled for web
+  # firebase_core: ^2.24.2
+  # cloud_firestore: ^4.14.0
 
-  # Authentication
-  firebase_auth: ^4.16.0
-  google_sign_in: ^6.2.1
+  # Authentication - Temporarily disabled for web
+  # firebase_auth: ^4.16.0
+  # google_sign_in: ^6.2.1
 
   # Icons
   cupertino_icons: ^1.0.2

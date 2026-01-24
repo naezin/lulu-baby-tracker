@@ -33,6 +33,20 @@ class AppLocalizations {
       'home_recent_activities': 'Recent Activities',
       'home_ai_tips': 'AI Tips',
 
+      // Action Zone Card
+      'action_zone_title': 'What to do now?',
+      'action_zone_no_data': 'Log sleep to get recommendations',
+      'action_zone_past_window': 'Sweet spot passed - sleep now!',
+      'action_zone_in_window': 'Perfect time to sleep!',
+      'action_zone_before_window': 'Best time to sleep by',
+      'action_sleep_now': 'Sleep Now',
+      'action_set_alarm': 'Set Alarm',
+      'minutes_remaining': ' min left',
+
+      // Smart Alerts
+      'smart_alerts_title': 'Smart Alerts',
+      'view_all': 'View All',
+
       // Sleep Tracking
       'sleep_title': 'Sleep Tracking',
       'sleep_start': 'Start Sleep',
@@ -233,7 +247,6 @@ class AppLocalizations {
       'start_time': 'Start Time',
       'end_time': 'End Time',
       'end_time_wake_up': 'End Time (Wake Up)',
-      'sleep_location': 'Sleep Location',
       'car_seat': 'Car Seat',
       'sleep_quality': 'Sleep Quality',
       'notes_optional': 'Notes (Optional)',
@@ -332,6 +345,7 @@ class AppLocalizations {
       'activity_history': 'Activity History',
       'refresh': 'Refresh',
       'all': 'All',
+      'todays_snapshot_title': "Today's Snapshot",
       'sleep': 'Sleep',
       'feed': 'Feed',
       'feeding': 'Feeding',
@@ -722,6 +736,20 @@ class AppLocalizations {
       'home_recent_activities': '최근 활동',
       'home_ai_tips': 'AI 팁',
 
+      // Action Zone Card
+      'action_zone_title': '지금 뭘 하면 좋을까요?',
+      'action_zone_no_data': '수면을 기록하면 추천을 받을 수 있어요',
+      'action_zone_past_window': '스위트 스팟 지났어요 - 지금 재우세요!',
+      'action_zone_in_window': '지금이 재우기 딱 좋은 시간이에요!',
+      'action_zone_before_window': '이 시간까지 재우면 좋아요',
+      'action_sleep_now': '지금 재우기',
+      'action_set_alarm': '알림 설정',
+      'minutes_remaining': '분 남음',
+
+      // Smart Alerts
+      'smart_alerts_title': '스마트 알림',
+      'view_all': '전체 보기',
+
       // Sleep Tracking
       'sleep_title': '수면 기록',
       'sleep_start': '수면 시작',
@@ -922,7 +950,6 @@ class AppLocalizations {
       'start_time': '시작 시간',
       'end_time': '종료 시간',
       'end_time_wake_up': '종료 시간 (기상)',
-      'sleep_location': '수면 장소',
       'car_seat': '카시트',
       'sleep_quality': '수면 품질',
       'notes_optional': '메모 (선택사항)',
@@ -1021,6 +1048,7 @@ class AppLocalizations {
       'activity_history': '활동 기록',
       'refresh': '새로고침',
       'all': '전체',
+      'todays_snapshot_title': '오늘의 스냅샷',
       'sleep': '수면',
       'feed': '수유',
       'feeding': '수유',

@@ -1,4 +1,5 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../data/services/firestore_stub.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// AI 인사이트 리포트 모델
 class AIInsightModel {

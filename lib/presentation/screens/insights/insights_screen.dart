@@ -8,6 +8,8 @@ import '../../widgets/daily_rhythm_wheel.dart';
 import '../../widgets/weekly_sleep_chart.dart';
 import '../../widgets/awake_time_tracker.dart';
 import '../../widgets/activity_recommendations_card.dart';
+import '../../widgets/analytics/weekly_insight_card.dart';
+import '../../../data/services/weekly_insight_service.dart';
 import '../activities/log_play_screen.dart';
 
 class InsightsScreen extends StatefulWidget {
@@ -38,6 +40,10 @@ class _InsightsScreenState extends State<InsightsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // 📊 NEW: Weekly Insights Section
+            _buildWeeklyInsights(context),
+            SizedBox(height: 16),
+
             // AI Sleep Insight Card
             _buildAIInsightCard(context),
             SizedBox(height: 16),
@@ -464,5 +470,63 @@ class _InsightsScreenState extends State<InsightsScreen> {
         _selectedDate = picked;
       });
     }
+  }
+
+  /// 📊 주간 인사이트 섹션
+  Widget _buildWeeklyInsights(BuildContext context) {
+    final insightService = WeeklyInsightService();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Text(
+            '이번 주 인사이트',
+            style: TextStyle(
+              color: AppTheme.textPrimary,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        FutureBuilder<List<WeeklyInsightData>>(
+          future: insightService.getAllInsights(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: AppTheme.surfaceCard,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Center(
+                  child: Text(
+                    '데이터를 기록하면 주간 인사이트를 볼 수 있어요',
+                    style: TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: 14,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              );
+            }
+
+            return Column(
+              children: snapshot.data!
+                  .map((insight) => WeeklyInsightCard(
+                        title: insight.title,
+                        insight: insight.insight,
+                        trend: insight.trend,
+                        metrics: insight.metrics,
+                      ))
+                  .toList(),
+            );
+          },
+        ),
+      ],
+    );
   }
 }

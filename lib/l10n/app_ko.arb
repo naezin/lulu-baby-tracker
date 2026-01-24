@@ -97,5 +97,69 @@
   "edit": "수정",
   "delete": "삭제",
   "loading": "로딩 중...",
-  "retry": "다시 시도"
+  "retry": "다시 시도",
+  "actionZoneCardTitle": "지금 뭘 하면 좋을까요?",
+  "actionZoneNoDataMessage": "수면을 기록하면 추천을 받을 수 있어요",
+  "actionZoneSweetSpotPassedMessage": "스위트 스팟 지났어요 - 지금 재우세요!",
+  "actionZoneSweetSpotNowMessage": "지금이 재우기 딱 좋은 시간이에요!",
+  "actionZoneSweetSpotUpcomingMessage": "이 시간까지 재우면 좋아요",
+  "actionZoneSleepNowButton": "지금 재우기",
+  "actionZoneSetAlarmButton": "알림 설정",
+  "todaysSnapshotTitle": "오늘의 스냅샷",
+  "todaysSnapshotSleep": "수면",
+  "todaysSnapshotTotalTime": "총 시간",
+  "todaysSnapshotFeeding": "수유",
+  "smartAlertsTitle": "스마트 알림",
+  "smartAlertsViewAll": "전체 보기",
+  "alertSleepUrgentTitle": "아기가 너무 오래 깨어있어요!",
+  "alertSleepUrgentMessage": "{minutes}분 초과했습니다. 지금 재우는 것을 권장해요.",
+  "@alertSleepUrgentMessage": {
+    "placeholders": {
+      "minutes": {"type": "int"}
+    }
+  },
+  "alertSleepWarningTitle": "곧 재울 시간이에요",
+  "alertSleepWarningMessage": "{minutes}분 후에 재우는 것이 좋아요.",
+  "@alertSleepWarningMessage": {
+    "placeholders": {
+      "minutes": {"type": "int"}
+    }
+  },
+  "alertFeedingUrgentTitle": "수유 시간이 지났어요!",
+  "alertFeedingUrgentMessage": "{minutes}분 지연되었습니다.",
+  "@alertFeedingUrgentMessage": {
+    "placeholders": {
+      "minutes": {"type": "int"}
+    }
+  },
+  "alertFeedingWarningTitle": "곧 수유 시간이에요",
+  "alertFeedingWarningMessage": "{minutes}분 후 수유 예정입니다.",
+  "@alertFeedingWarningMessage": {
+    "placeholders": {
+      "minutes": {"type": "int"}
+    }
+  },
+  "alertDiaperWarningTitle": "기저귀를 확인해주세요",
+  "alertDiaperWarningMessage": "마지막 교체 후 {hours}시간이 지났어요.",
+  "@alertDiaperWarningMessage": {
+    "placeholders": {
+      "hours": {"type": "int"}
+    }
+  },
+  "recordsFilterAllPeriod": "전체 기간",
+  "recordsFilterSearch": "검색",
+  "insightPositive": "좋음",
+  "insightWarning": "주의",
+  "insightConcern": "우려",
+  "insightNeutral": "정보",
+  "weeklyInsightsTitle": "이번 주 인사이트",
+  "weeklyInsightsNoData": "데이터를 기록하면 주간 인사이트를 볼 수 있어요",
+  "trendImproving": "개선",
+  "trendDeclining": "주의",
+  "trendStable": "안정",
+  "viewDetails": "자세히 보기",
+  "averageSleep": "평균 수면",
+  "sleepCount": "수면 횟수",
+  "averageFeeding": "평균 수유량",
+  "dailyAverage": "하루 평균"
 }

@@ -97,5 +97,69 @@
   "edit": "Edit",
   "delete": "Delete",
   "loading": "Loading...",
-  "retry": "Retry"
+  "retry": "Retry",
+  "actionZoneCardTitle": "What should I do now?",
+  "actionZoneNoDataMessage": "Record sleep to get recommendations",
+  "actionZoneSweetSpotPassedMessage": "Sweet spot passed - put baby to sleep now!",
+  "actionZoneSweetSpotNowMessage": "Perfect time to put baby to sleep!",
+  "actionZoneSweetSpotUpcomingMessage": "Put to sleep by this time",
+  "actionZoneSleepNowButton": "Sleep Now",
+  "actionZoneSetAlarmButton": "Set Alarm",
+  "todaysSnapshotTitle": "Today's Snapshot",
+  "todaysSnapshotSleep": "Sleep",
+  "todaysSnapshotTotalTime": "Total Time",
+  "todaysSnapshotFeeding": "Feeding",
+  "smartAlertsTitle": "Smart Alerts",
+  "smartAlertsViewAll": "View All",
+  "alertSleepUrgentTitle": "Baby has been awake too long!",
+  "alertSleepUrgentMessage": "{minutes}min over recommended. Put to sleep now.",
+  "@alertSleepUrgentMessage": {
+    "placeholders": {
+      "minutes": {"type": "int"}
+    }
+  },
+  "alertSleepWarningTitle": "Almost time for sleep",
+  "alertSleepWarningMessage": "Put to sleep in {minutes}min.",
+  "@alertSleepWarningMessage": {
+    "placeholders": {
+      "minutes": {"type": "int"}
+    }
+  },
+  "alertFeedingUrgentTitle": "Feeding time overdue!",
+  "alertFeedingUrgentMessage": "{minutes}min delayed.",
+  "@alertFeedingUrgentMessage": {
+    "placeholders": {
+      "minutes": {"type": "int"}
+    }
+  },
+  "alertFeedingWarningTitle": "Feeding time soon",
+  "alertFeedingWarningMessage": "Feed in {minutes}min.",
+  "@alertFeedingWarningMessage": {
+    "placeholders": {
+      "minutes": {"type": "int"}
+    }
+  },
+  "alertDiaperWarningTitle": "Check diaper",
+  "alertDiaperWarningMessage": "{hours}h since last change.",
+  "@alertDiaperWarningMessage": {
+    "placeholders": {
+      "hours": {"type": "int"}
+    }
+  },
+  "recordsFilterAllPeriod": "All Time",
+  "recordsFilterSearch": "Search",
+  "insightPositive": "Good",
+  "insightWarning": "Warning",
+  "insightConcern": "Concern",
+  "insightNeutral": "Info",
+  "weeklyInsightsTitle": "This Week's Insights",
+  "weeklyInsightsNoData": "Record data to see weekly insights",
+  "trendImproving": "Improving",
+  "trendDeclining": "Declining",
+  "trendStable": "Stable",
+  "viewDetails": "View Details",
+  "averageSleep": "Average Sleep",
+  "sleepCount": "Sleep Count",
+  "averageFeeding": "Average Feeding",
+  "dailyAverage": "Daily Average"
 }

@@ -4,6 +4,8 @@ import '../../../data/models/activity_model.dart';
 import '../../../data/services/local_storage_service.dart';
 import '../../../data/services/widget_service.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../../widgets/log/context_hint_card.dart';
+import '../../widgets/log/post_record_feedback.dart';
 
 /// 수면 기록 화면
 class LogSleepScreen extends StatefulWidget {
@@ -43,6 +45,22 @@ class _LogSleepScreenState extends State<LogSleepScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Context Hint
+            FutureBuilder<ContextHintData>(
+              future: _buildContextHint(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) return const SizedBox.shrink();
+                final data = snapshot.data!;
+                return ContextHintCard(
+                  title: '수면 기록 전 참고하세요',
+                  hints: data.hints,
+                  status: data.status,
+                );
+              },
+            ),
+
+            SizedBox(height: 16),
+
             // Sleep Status
             Card(
               child: Padding(
@@ -351,14 +369,139 @@ class _LogSleepScreenState extends State<LogSleepScreen> {
     await _widgetService.updateAllWidgets();
 
     if (mounted) {
-      final l10n = AppLocalizations.of(context)!;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.translate('sleep_recorded_success')),
-          backgroundColor: Colors.green,
-        ),
+      // Post-Record Feedback 표시
+      final totalToday = await _calculateTodaySleepTotal();
+      final yesterdayTotal = await _calculateYesterdaySleepTotal();
+      final diff = totalToday - yesterdayTotal;
+
+      await PostRecordFeedback.show(
+        context,
+        title: '수면 기록 완료! 😴',
+        items: [
+          FeedbackItem(
+            emoji: '⏱️',
+            label: '오늘 총 수면',
+            value: '${totalToday ~/ 60}시간 ${totalToday % 60}분',
+            trend: diff > 0 ? '+${diff}분' : diff < 0 ? '${diff}분' : '평균',
+            color: Colors.purple,
+            trendColor: diff >= 0 ? Colors.green : Colors.orange,
+          ),
+          FeedbackItem(
+            emoji: '🎯',
+            label: '방금 기록한 수면',
+            value: _endTime != null
+                ? '${_endTime!.difference(_startTime).inMinutes}분'
+                : '진행 중',
+            color: Colors.blue,
+          ),
+        ],
+        nextAction: '인사이트 보기',
+        onNextActionTap: () {
+          Navigator.pop(context);
+          // TODO: Navigate to insights
+        },
       );
+
       Navigator.pop(context, true); // true = data was saved
     }
   }
+
+  /// Context Hint 데이터 생성
+  Future<ContextHintData> _buildContextHint() async {
+    final activities = await _storage.getActivities();
+    final now = DateTime.now();
+
+    // 마지막 수면 찾기
+    final lastSleep = activities
+        .where((a) => a.type == ActivityType.sleep)
+        .toList()
+      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+    final hints = <ContextHintItem>[];
+    ContextStatus status = ContextStatus.neutral;
+
+    if (lastSleep.isNotEmpty) {
+      final lastSleepTime = DateTime.parse(lastSleep.first.timestamp);
+      final awakeMinutes = now.difference(lastSleepTime).inMinutes;
+      final lastDuration = lastSleep.first.durationMinutes ?? 0;
+
+      hints.add(ContextHintItem(
+        emoji: '⏰',
+        text: '마지막 수면: ${_formatTimeAgo(awakeMinutes)} (${lastDuration}분간)',
+      ));
+
+      // 월령 기반 권장 깨어있는 시간 (예: 2개월 = 60-90분)
+      final recommendedAwake = 90; // TODO: 월령에 따라 계산
+
+      hints.add(ContextHintItem(
+        emoji: '📊',
+        text: '권장 깨어있는 시간: ${recommendedAwake ~/ 60}시간 ${recommendedAwake % 60}분',
+      ));
+
+      if (awakeMinutes >= recommendedAwake - 15 && awakeMinutes <= recommendedAwake + 30) {
+        status = ContextStatus.good;
+        hints.add(ContextHintItem(
+          emoji: '✅',
+          text: '지금 재우기 좋은 타이밍이에요!',
+        ));
+      } else if (awakeMinutes > recommendedAwake + 30) {
+        status = ContextStatus.caution;
+        hints.add(ContextHintItem(
+          emoji: '⚠️',
+          text: '깨어있는 시간이 길어졌어요. 피로 누적 주의!',
+        ));
+      }
+    } else {
+      hints.add(ContextHintItem(
+        emoji: '📝',
+        text: '첫 수면 기록이에요! 시작 시간을 선택해주세요.',
+      ));
+    }
+
+    return ContextHintData(hints: hints, status: status);
+  }
+
+  String _formatTimeAgo(int minutes) {
+    if (minutes < 60) return '$minutes분 전';
+    final hours = minutes ~/ 60;
+    final mins = minutes % 60;
+    return '$hours시간 $mins분 전';
+  }
+
+  Future<int> _calculateTodaySleepTotal() async {
+    final activities = await _storage.getActivities();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    return activities
+        .where((a) {
+          if (a.type != ActivityType.sleep) return false;
+          final time = DateTime.parse(a.timestamp);
+          return time.isAfter(today);
+        })
+        .fold<int>(0, (sum, a) => sum + (a.durationMinutes ?? 0));
+  }
+
+  Future<int> _calculateYesterdaySleepTotal() async {
+    final activities = await _storage.getActivities();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+
+    return activities
+        .where((a) {
+          if (a.type != ActivityType.sleep) return false;
+          final time = DateTime.parse(a.timestamp);
+          return time.isAfter(yesterday) && time.isBefore(today);
+        })
+        .fold<int>(0, (sum, a) => sum + (a.durationMinutes ?? 0));
+  }
+}
+
+/// Context Hint 데이터
+class ContextHintData {
+  final List<ContextHintItem> hints;
+  final ContextStatus status;
+
+  ContextHintData({required this.hints, required this.status});
 }

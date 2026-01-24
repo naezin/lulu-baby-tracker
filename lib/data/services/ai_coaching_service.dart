@@ -1,4 +1,5 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../data/services/firestore_stub.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:convert';
 import '../models/activity_model.dart';
 import '../models/ai_insight_model.dart';
