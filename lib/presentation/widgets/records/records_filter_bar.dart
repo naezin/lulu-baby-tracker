@@ -136,14 +136,14 @@ Future<DateTimeRange?> showDateRangePicker({
 
   return await showDateRangePicker(
     context: context,
-    firstDate: DateTime(now.year - 1),
-    lastDate: now,
-    initialDateRange: initialDateRange ??
+    start: DateTime(now.year - 1),
+    end: now,
+    currentDateRange: initialDateRange ??
         DateTimeRange(
           start: DateTime(now.year, now.month, 1),
           end: now,
         ),
-    builder: (context, child) {
+    dateRangePickerBuilder: (context, child) {
       return Theme(
         data: Theme.of(context).copyWith(
           colorScheme: const ColorScheme.light(
