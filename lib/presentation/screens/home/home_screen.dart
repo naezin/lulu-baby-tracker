@@ -123,11 +123,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
                       const SizedBox(height: 16),
 
-                      // Baby Context Card (72 days, 2.46kg premature girl)
-                      _buildBabyContextCard(context, l10n),
-
-                      const SizedBox(height: 16),
-
                       // Sweet Spot Hero Card (Huckleberry-style)
                       const SweetSpotHeroCard(),
 
