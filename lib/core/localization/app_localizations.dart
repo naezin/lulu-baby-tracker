@@ -97,6 +97,20 @@ class AppLocalizations {
       'records_empty': 'No records yet',
       'records_empty_subtitle': 'Start tracking your baby\'s activities',
 
+      // Records V2 - Quick Record
+      'quick_record': 'Quick Record',
+      'quick_record_hint': 'Tap to record instantly, long press for details',
+      'now_feeding': 'Feed Now',
+      'now_diaper': 'Diaper Now',
+      'start_sleep': 'Start Sleep',
+      'end_sleep': 'End Sleep',
+      'play_record': 'Play',
+      'health_record': 'Health',
+      'todays_timeline': "Today's Timeline",
+      'no_records_today': 'No records today',
+      'start_first_record_hint': 'Tap the buttons above to start',
+      'today_summary': 'Today\'s Summary',
+
       // Insights
       'insights_title': 'Insights',
       'insights_sleep_patterns': 'Sleep Patterns',
@@ -799,6 +813,20 @@ class AppLocalizations {
       'records_play': '놀이',
       'records_empty': '아직 기록이 없습니다',
       'records_empty_subtitle': '아기의 활동을 기록해보세요',
+
+      // Records V2 - Quick Record
+      'quick_record': '원탭 기록',
+      'quick_record_hint': '탭하면 즉시 기록, 길게 누르면 상세 입력',
+      'now_feeding': '지금 수유',
+      'now_diaper': '지금 기저귀',
+      'start_sleep': '지금 재움',
+      'end_sleep': '수면 종료',
+      'play_record': '놀이 기록',
+      'health_record': '건강 기록',
+      'todays_timeline': '오늘의 타임라인',
+      'no_records_today': '오늘 기록이 없어요',
+      'start_first_record_hint': '위 버튼을 눌러 첫 기록을 시작하세요',
+      'today_summary': '오늘 요약',
 
       // Insights
       'insights_title': '분석',

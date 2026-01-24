@@ -78,6 +78,20 @@ class LocalStorageService {
     return null;
   }
 
+  /// 활동 업데이트
+  Future<void> updateActivity(ActivityModel activity) async {
+    final activities = await getActivities();
+    final index = activities.indexWhere((a) => a.id == activity.id);
+
+    if (index != -1) {
+      activities[index] = activity;
+
+      final prefs = await SharedPreferences.getInstance();
+      final jsonList = activities.map((a) => a.toJson()).toList();
+      await prefs.setString(_activitiesKey, jsonEncode(jsonList));
+    }
+  }
+
   /// 활동 삭제
   Future<void> deleteActivity(String activityId) async {
     final activities = await getActivities();

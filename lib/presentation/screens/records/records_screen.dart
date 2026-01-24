@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
-// import 'package:cloud_firestore/cloud_firestore.dart'; // Temporarily disabled for web
-import '../../../data/services/firestore_stub.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/activity_model.dart';
-import '../../../data/services/insights_service.dart';
 import '../../../data/services/local_storage_service.dart';
-import '../../widgets/insights/qa_insight_card.dart';
+import '../../../data/services/widget_service.dart';
 import '../activities/log_sleep_screen.dart';
 import '../activities/log_feeding_screen.dart';
 import '../activities/log_diaper_screen.dart';
 import '../activities/log_play_screen.dart';
 import '../activities/log_health_screen.dart';
 
+/// 📝 Records V2 - 원탭 기록 화면
+/// 핵심 원칙: "1초 안에 기록 완료"
 class RecordsScreen extends StatefulWidget {
   const RecordsScreen({Key? key}) : super(key: key);
 
@@ -21,46 +21,222 @@ class RecordsScreen extends StatefulWidget {
   State<RecordsScreen> createState() => _RecordsScreenState();
 }
 
-class _RecordsScreenState extends State<RecordsScreen> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  ActivityType _selectedType = ActivityType.sleep;
+class _RecordsScreenState extends State<RecordsScreen> {
+  final _storage = LocalStorageService();
+  List<ActivityModel> _todayActivities = [];
+  bool _isLoading = true;
+
+  // 진행 중인 활동 (수면 타이머 등)
+  ActivityModel? _ongoingActivity;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 6, vsync: this);
-    _tabController.addListener(() {
-      if (_tabController.indexIsChanging) {
-        setState(() {
-          switch (_tabController.index) {
-            case 0:
-              _selectedType = ActivityType.sleep;
-              break;
-            case 1:
-              _selectedType = ActivityType.feeding;
-              break;
-            case 2:
-              _selectedType = ActivityType.play;
-              break;
-            case 3:
-              _selectedType = ActivityType.diaper;
-              break;
-            case 4:
-              _selectedType = ActivityType.health;
-              break;
-            case 5:
-              _selectedType = ActivityType.sleep; // All
-              break;
-          }
-        });
-      }
+    _loadTodayActivities();
+  }
+
+  Future<void> _loadTodayActivities() async {
+    setState(() => _isLoading = true);
+
+    final activities = await _storage.getActivities();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    final todayActivities = activities.where((a) {
+      final actDate = DateTime.parse(a.timestamp);
+      return actDate.isAfter(today) || actDate.isAtSameMomentAs(today);
+    }).toList();
+
+    // 시간순 정렬 (최신이 아래로)
+    todayActivities.sort((a, b) =>
+        DateTime.parse(a.timestamp).compareTo(DateTime.parse(b.timestamp)));
+
+    // 진행 중인 수면 찾기
+    final ongoing = todayActivities.where((a) =>
+        a.type == ActivityType.sleep && a.endTimestamp == null).firstOrNull;
+
+    setState(() {
+      _todayActivities = todayActivities;
+      _ongoingActivity = ongoing;
+      _isLoading = false;
     });
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
+  /// 원탭 기록 - 즉시 저장
+  Future<void> _quickRecord(ActivityType type) async {
+    HapticFeedback.mediumImpact();
+
+    final now = DateTime.now();
+
+    // 수면인 경우: 진행 중이면 종료, 아니면 시작
+    if (type == ActivityType.sleep) {
+      if (_ongoingActivity != null) {
+        await _endSleep();
+        return;
+      }
+    }
+
+    final activity = ActivityModel(
+      id: now.millisecondsSinceEpoch.toString(),
+      visitorId: 'local',
+      babyId: 'default',
+      type: type,
+      timestamp: now.toIso8601String(),
+      // 수면은 endTimestamp 없이 시작 (진행 중)
+      endTimestamp: type == ActivityType.sleep ? null : now.toIso8601String(),
+      // 기본값 설정
+      durationMinutes: type == ActivityType.sleep ? null : 0,
+      amountMl: type == ActivityType.feeding ? 120 : null, // 기본 수유량
+      feedingType: type == ActivityType.feeding ? 'bottle' : null,
+      diaperType: type == ActivityType.diaper ? 'wet' : null,
+    );
+
+    await _storage.saveActivity(activity);
+    await WidgetService().updateAllWidgets();
+
+    _showQuickFeedback(type);
+    _loadTodayActivities();
+  }
+
+  /// 수면 종료
+  Future<void> _endSleep() async {
+    if (_ongoingActivity == null) return;
+
+    final now = DateTime.now();
+    final startTime = DateTime.parse(_ongoingActivity!.timestamp);
+    final duration = now.difference(startTime).inMinutes;
+
+    final updated = ActivityModel(
+      id: _ongoingActivity!.id,
+      visitorId: _ongoingActivity!.visitorId,
+      babyId: _ongoingActivity!.babyId,
+      type: ActivityType.sleep,
+      timestamp: _ongoingActivity!.timestamp,
+      endTimestamp: now.toIso8601String(),
+      durationMinutes: duration,
+      sleepQuality: _ongoingActivity!.sleepQuality,
+      sleepLocation: _ongoingActivity!.sleepLocation,
+    );
+
+    await _storage.updateActivity(updated);
+    await WidgetService().updateAllWidgets();
+
+    HapticFeedback.heavyImpact();
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Text('😴'),
+              const SizedBox(width: 8),
+              Text('수면 종료! ${_formatDuration(duration)}'),
+            ],
+          ),
+          backgroundColor: AppTheme.sleepColor,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    }
+
+    _loadTodayActivities();
+  }
+
+  void _showQuickFeedback(ActivityType type) {
+    final emoji = _getEmoji(type);
+    final label = _getLabel(type);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 20)),
+            const SizedBox(width: 8),
+            Text('$label 기록됨!'),
+            const Spacer(),
+            TextButton(
+              onPressed: () {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                _openDetailScreen(type);
+              },
+              child: const Text('상세 수정', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+        backgroundColor: _getColor(type),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  /// 상세 기록 화면 열기
+  void _openDetailScreen(ActivityType type) {
+    HapticFeedback.lightImpact();
+
+    Widget screen;
+    switch (type) {
+      case ActivityType.sleep:
+        screen = const LogSleepScreen();
+        break;
+      case ActivityType.feeding:
+        screen = const LogFeedingScreen();
+        break;
+      case ActivityType.diaper:
+        screen = const LogDiaperScreen();
+        break;
+      case ActivityType.play:
+        screen = const LogPlayScreen();
+        break;
+      case ActivityType.health:
+        screen = const LogHealthScreen();
+        break;
+    }
+
+    Navigator.push(context, MaterialPageRoute(builder: (_) => screen))
+        .then((_) => _loadTodayActivities());
+  }
+
+  String _getEmoji(ActivityType type) {
+    switch (type) {
+      case ActivityType.sleep: return '😴';
+      case ActivityType.feeding: return '🍼';
+      case ActivityType.diaper: return '🧷';
+      case ActivityType.play: return '🎮';
+      case ActivityType.health: return '🏥';
+    }
+  }
+
+  String _getLabel(ActivityType type) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (type) {
+      case ActivityType.sleep: return l10n.translate('sleep') ?? '수면';
+      case ActivityType.feeding: return l10n.translate('feeding') ?? '수유';
+      case ActivityType.diaper: return l10n.translate('diaper') ?? '기저귀';
+      case ActivityType.play: return l10n.translate('play') ?? '놀이';
+      case ActivityType.health: return l10n.translate('health') ?? '건강';
+    }
+  }
+
+  Color _getColor(ActivityType type) {
+    switch (type) {
+      case ActivityType.sleep: return AppTheme.sleepColor;
+      case ActivityType.feeding: return AppTheme.feedingColor;
+      case ActivityType.diaper: return AppTheme.diaperColor;
+      case ActivityType.play: return AppTheme.playColor;
+      case ActivityType.health: return AppTheme.healthColor;
+    }
+  }
+
+  String _formatDuration(int minutes) {
+    final hours = minutes ~/ 60;
+    final mins = minutes % 60;
+    if (hours > 0) {
+      return '${hours}시간 ${mins}분';
+    }
+    return '${mins}분';
   }
 
   @override
@@ -68,402 +244,616 @@ class _RecordsScreenState extends State<RecordsScreen> with SingleTickerProvider
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
+      backgroundColor: AppTheme.surfaceDark,
       appBar: AppBar(
-        title: Text(l10n.navRecords),
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          tabs: [
-            Tab(icon: Icon(Icons.bedtime), text: l10n.translate('records_sleep')),
-            Tab(icon: Icon(Icons.restaurant), text: l10n.translate('records_feeding')),
-            Tab(icon: Icon(Icons.toys_outlined), text: l10n.translate('records_play')),
-            Tab(icon: Icon(Icons.baby_changing_station), text: l10n.translate('records_diaper')),
-            Tab(icon: Icon(Icons.medication), text: l10n.translate('records_health')),
-            Tab(icon: Icon(Icons.list), text: l10n.translate('records_all')),
-          ],
+        backgroundColor: AppTheme.surfaceDark,
+        elevation: 0,
+        title: Text(
+          l10n.translate('records_title') ?? '기록',
+          style: const TextStyle(
+            color: AppTheme.textPrimary,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildRecordsList(ActivityType.sleep),
-          _buildRecordsList(ActivityType.feeding),
-          _buildRecordsList(ActivityType.play),
-          _buildRecordsList(ActivityType.diaper),
-          _buildRecordsList(ActivityType.health),
-          _buildRecordsList(null), // All types
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.calendar_month_rounded, color: AppTheme.textSecondary),
+            onPressed: () {
+              // TODO: 캘린더 뷰 열기
+            },
+          ),
         ],
       ),
-      floatingActionButton: _tabController.index < 5 ? FloatingActionButton(
-        onPressed: () => _navigateToAddScreen(context, _selectedType),
-        child: Icon(Icons.add),
-        tooltip: l10n.translate('add_record'),
-      ) : null,
+      body: RefreshIndicator(
+        onRefresh: _loadTodayActivities,
+        color: AppTheme.lavenderMist,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 🚀 원탭 기록 섹션
+              _buildQuickRecordSection(l10n),
+
+              const SizedBox(height: 24),
+
+              // 📅 오늘의 타임라인
+              _buildTimelineSection(l10n),
+
+              const SizedBox(height: 24),
+
+              // 💡 오늘 요약
+              _buildTodaySummary(l10n),
+
+              const SizedBox(height: 100), // 바텀 패딩
+            ],
+          ),
+        ),
+      ),
     );
   }
 
-  Widget _buildRecordsList(ActivityType? type) {
-    final l10n = AppLocalizations.of(context)!;
+  Widget _buildQuickRecordSection(AppLocalizations l10n) {
+    final isOngoingSleep = _ongoingActivity != null;
 
-    // Demo user ID - in production, get from auth
-    const userId = 'demo-user';
-
-    Query query = FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .collection('activities')
-        .orderBy('timestamp', descending: true)
-        .limit(100);
-
-    if (type != null) {
-      query = query.where('type', isEqualTo: type.toString().split('.').last);
-    }
-
-    return StreamBuilder<QuerySnapshot>(
-      stream: query.snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
-                SizedBox(height: 16),
-                Text(l10n.translate('error_loading_records'), style: TextStyle(color: Colors.red)),
-                SizedBox(height: 8),
-                Text(snapshot.error.toString(), style: TextStyle(fontSize: 12)),
-              ],
-            ),
-          );
-        }
-
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        }
-
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  _getIconForType(type),
-                  size: 64,
-                  color: Colors.grey[400],
-                ),
-                SizedBox(height: 16),
-                Text(
-                  l10n.translate('records_empty'),
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  l10n.translate('records_empty_subtitle'),
-                  style: TextStyle(color: Colors.grey[500]),
-                ),
-              ],
-            ),
-          );
-        }
-
-        final activities = snapshot.data!.docs
-            .map((doc) => ActivityModel.fromJson({
-                  'id': doc.id,
-                  ...doc.data() as Map<String, dynamic>,
-                }))
-            .toList();
-
-        return CustomScrollView(
-          slivers: [
-            // Insights Section
-            SliverToBoxAdapter(
-              child: FutureBuilder<List<QAInsight>>(
-                future: _loadInsights(type),
-                builder: (context, insightSnapshot) {
-                  if (insightSnapshot.hasData && insightSnapshot.data!.isNotEmpty) {
-                    final insights = insightSnapshot.data!;
-                    final relevantInsight = _getRelevantInsight(insights, type);
-
-                    if (relevantInsight != null) {
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: QAInsightCard(
-                          question: relevantInsight.question,
-                          answer: relevantInsight.answer,
-                          metrics: relevantInsight.metrics,
-                          actionLabel: relevantInsight.actionLabel,
-                          onAction: relevantInsight.onAction,
-                        ),
-                      );
-                    }
-                  }
-                  return const SizedBox.shrink();
-                },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Text('🚀', style: TextStyle(fontSize: 20)),
+            const SizedBox(width: 8),
+            Text(
+              l10n.translate('quick_record') ?? '원탭 기록',
+              style: const TextStyle(
+                color: AppTheme.textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
               ),
             ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          l10n.translate('quick_record_hint') ?? '탭하면 즉시 기록, 길게 누르면 상세 입력',
+          style: const TextStyle(
+            color: AppTheme.textTertiary,
+            fontSize: 13,
+          ),
+        ),
+        const SizedBox(height: 16),
 
-            // Activity List
-            SliverPadding(
-              padding: EdgeInsets.all(8),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final activity = activities[index];
-                    return _buildActivityCard(activity);
-                  },
-                  childCount: activities.length,
+        // 주요 3개 버튼 (수면/수유/기저귀)
+        Row(
+          children: [
+            Expanded(
+              child: _QuickRecordButton(
+                emoji: isOngoingSleep ? '⏹️' : '😴',
+                label: isOngoingSleep
+                    ? (l10n.translate('end_sleep') ?? '수면 종료')
+                    : (l10n.translate('start_sleep') ?? '지금 재움'),
+                sublabel: isOngoingSleep
+                    ? _getOngoingDuration()
+                    : null,
+                color: AppTheme.sleepColor,
+                isHighlighted: isOngoingSleep,
+                onTap: () => _quickRecord(ActivityType.sleep),
+                onLongPress: () => _openDetailScreen(ActivityType.sleep),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _QuickRecordButton(
+                emoji: '🍼',
+                label: l10n.translate('now_feeding') ?? '지금 수유',
+                sublabel: '+120ml',
+                color: AppTheme.feedingColor,
+                onTap: () => _quickRecord(ActivityType.feeding),
+                onLongPress: () => _openDetailScreen(ActivityType.feeding),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _QuickRecordButton(
+                emoji: '🧷',
+                label: l10n.translate('now_diaper') ?? '지금 기저귀',
+                color: AppTheme.diaperColor,
+                onTap: () => _quickRecord(ActivityType.diaper),
+                onLongPress: () => _openDetailScreen(ActivityType.diaper),
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 12),
+
+        // 보조 2개 버튼 (놀이/건강)
+        Row(
+          children: [
+            Expanded(
+              child: _QuickRecordButton(
+                emoji: '🎮',
+                label: l10n.translate('play_record') ?? '놀이 기록',
+                color: AppTheme.playColor,
+                isCompact: true,
+                onTap: () => _openDetailScreen(ActivityType.play),
+                onLongPress: () => _openDetailScreen(ActivityType.play),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _QuickRecordButton(
+                emoji: '🏥',
+                label: l10n.translate('health_record') ?? '건강 기록',
+                color: AppTheme.healthColor,
+                isCompact: true,
+                onTap: () => _openDetailScreen(ActivityType.health),
+                onLongPress: () => _openDetailScreen(ActivityType.health),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  String _getOngoingDuration() {
+    if (_ongoingActivity == null) return '';
+    final start = DateTime.parse(_ongoingActivity!.timestamp);
+    final duration = DateTime.now().difference(start);
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes % 60;
+    if (hours > 0) {
+      return '${hours}h ${minutes}m';
+    }
+    return '${minutes}m';
+  }
+
+  Widget _buildTimelineSection(AppLocalizations l10n) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                const Text('📅', style: TextStyle(fontSize: 20)),
+                const SizedBox(width: 8),
+                Text(
+                  l10n.translate('todays_timeline') ?? '오늘의 타임라인',
+                  style: const TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            TextButton(
+              onPressed: () {
+                // TODO: 전체 히스토리 화면
+              },
+              child: Text(
+                l10n.translate('view_all') ?? '전체보기',
+                style: const TextStyle(
+                  color: AppTheme.lavenderMist,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
           ],
-        );
-      },
+        ),
+        const SizedBox(height: 16),
+
+        if (_isLoading)
+          const Center(child: CircularProgressIndicator())
+        else if (_todayActivities.isEmpty)
+          _buildEmptyTimeline(l10n)
+        else
+          _buildTimeline(),
+      ],
     );
   }
 
-  /// Load insights based on baby age
-  Future<List<QAInsight>> _loadInsights(ActivityType? type) async {
-    final insightsService = InsightsService();
-    // Default baby age - in production, get from user profile
-    const babyAgeInDays = 60; // 2 months old
-    return await insightsService.getMainInsights(babyAgeInDays: babyAgeInDays);
+  Widget _buildEmptyTimeline(AppLocalizations l10n) {
+    return Container(
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.glassBorder),
+      ),
+      child: Column(
+        children: [
+          const Text('🌙', style: TextStyle(fontSize: 48)),
+          const SizedBox(height: 16),
+          Text(
+            l10n.translate('no_records_today') ?? '오늘 기록이 없어요',
+            style: const TextStyle(
+              color: AppTheme.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            l10n.translate('start_first_record_hint') ?? '위 버튼을 눌러 첫 기록을 시작하세요',
+            style: const TextStyle(
+              color: AppTheme.textTertiary,
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  /// Get most relevant insight for the current tab
-  QAInsight? _getRelevantInsight(List<QAInsight> insights, ActivityType? type) {
-    if (type == null) {
-      // "All" tab - show first insight
-      return insights.isNotEmpty ? insights.first : null;
+  Widget _buildTimeline() {
+    // 오전/오후로 그룹핑
+    final morningActivities = _todayActivities.where((a) {
+      final hour = DateTime.parse(a.timestamp).hour;
+      return hour < 12;
+    }).toList();
+
+    final afternoonActivities = _todayActivities.where((a) {
+      final hour = DateTime.parse(a.timestamp).hour;
+      return hour >= 12;
+    }).toList();
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.glassBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (morningActivities.isNotEmpty) ...[
+            _buildTimelineGroup('🌅 오전', morningActivities),
+          ],
+          if (afternoonActivities.isNotEmpty) ...[
+            if (morningActivities.isNotEmpty)
+              const Divider(height: 1, color: AppTheme.glassBorder),
+            _buildTimelineGroup('🌞 오후', afternoonActivities),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimelineGroup(String title, List<ActivityModel> activities) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...activities.map((activity) => _buildTimelineItem(activity)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimelineItem(ActivityModel activity) {
+    final time = DateTime.parse(activity.timestamp);
+    final timeStr = DateFormat('HH:mm').format(time);
+    final emoji = _getEmoji(activity.type);
+    final color = _getColor(activity.type);
+
+    String title = _getLabel(activity.type);
+    String? subtitle;
+    bool isOngoing = false;
+
+    // 상세 정보 구성
+    switch (activity.type) {
+      case ActivityType.sleep:
+        if (activity.endTimestamp == null) {
+          isOngoing = true;
+          final duration = DateTime.now().difference(time);
+          subtitle = '⏱️ 진행 중 (${duration.inHours}h ${duration.inMinutes % 60}m)';
+        } else if (activity.durationMinutes != null) {
+          subtitle = _formatDuration(activity.durationMinutes!);
+        }
+        break;
+      case ActivityType.feeding:
+        if (activity.amountMl != null) {
+          subtitle = '${activity.amountMl}ml';
+        }
+        break;
+      case ActivityType.diaper:
+        subtitle = activity.diaperType == 'dirty' ? '대변' : '소변';
+        break;
+      default:
+        break;
     }
 
-    // Find insight most relevant to the current activity type
-    for (final insight in insights) {
-      switch (type) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 시간
+          SizedBox(
+            width: 50,
+            child: Text(
+              timeStr,
+              style: const TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+
+          // 타임라인 라인
+          Column(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: isOngoing ? color : color.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                  border: isOngoing
+                      ? Border.all(color: color, width: 2)
+                      : null,
+                ),
+                child: Center(
+                  child: Text(emoji, style: const TextStyle(fontSize: 14)),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(width: 12),
+
+          // 내용
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: isOngoing ? color : AppTheme.textPrimary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (subtitle != null)
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: isOngoing ? color : AppTheme.textSecondary,
+                      fontSize: 13,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
+          // 편집 버튼
+          IconButton(
+            icon: const Icon(Icons.more_horiz, color: AppTheme.textTertiary, size: 20),
+            onPressed: () {
+              // TODO: 편집/삭제 메뉴
+            },
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTodaySummary(AppLocalizations l10n) {
+    // 오늘 통계 계산
+    int sleepCount = 0;
+    int totalSleepMinutes = 0;
+    int feedingCount = 0;
+    int totalFeedingMl = 0;
+    int diaperCount = 0;
+
+    for (final activity in _todayActivities) {
+      switch (activity.type) {
         case ActivityType.sleep:
-          if (insight.question.contains('수면') || insight.question.contains('밤잠')) {
-            return insight;
+          if (activity.durationMinutes != null) {
+            sleepCount++;
+            totalSleepMinutes += activity.durationMinutes!;
           }
           break;
         case ActivityType.feeding:
-          if (insight.question.contains('수유')) {
-            return insight;
+          feedingCount++;
+          if (activity.amountMl != null) {
+            totalFeedingMl += activity.amountMl!.toInt();
           }
           break;
-        case ActivityType.play:
-          if (insight.question.contains('터미타임') || insight.question.contains('발달')) {
-            return insight;
-          }
+        case ActivityType.diaper:
+          diaperCount++;
           break;
         default:
           break;
       }
     }
 
-    // If no type-specific insight found, show the first one
-    return insights.isNotEmpty ? insights.first : null;
-  }
-
-  Widget _buildActivityCard(ActivityModel activity) {
-    final time = DateTime.parse(activity.timestamp);
-    final timeStr = DateFormat('MMM dd, yyyy HH:mm').format(time);
-
-    IconData icon;
-    Color color;
-    String title;
-    String subtitle = '';
-
-    switch (activity.type) {
-      case ActivityType.sleep:
-        icon = Icons.bedtime;
-        color = Colors.purple;
-        title = AppLocalizations.of(context)!.translate('sleep');
-        if (activity.durationMinutes != null) {
-          final hours = activity.durationMinutes! ~/ 60;
-          final minutes = activity.durationMinutes! % 60;
-          subtitle = '${hours}h ${minutes}m';
-          if (activity.sleepQuality != null) {
-            subtitle += ' • ${activity.sleepQuality}';
-          }
-        }
-        break;
-      case ActivityType.feeding:
-        icon = Icons.restaurant;
-        color = Colors.orange;
-        title = AppLocalizations.of(context)!.translate('feeding');
-        subtitle = activity.feedingType ?? '';
-        if (activity.amountMl != null) {
-          subtitle += ' • ${activity.amountMl}ml';
-        }
-        break;
-      case ActivityType.diaper:
-        icon = Icons.baby_changing_station;
-        color = Colors.green;
-        title = AppLocalizations.of(context)!.translate('diaper');
-        subtitle = activity.diaperType ?? '';
-        break;
-      case ActivityType.health:
-        if (activity.temperatureCelsius != null) {
-          icon = Icons.thermostat;
-          final temp = activity.temperatureUnit == 'fahrenheit'
-              ? activity.temperatureCelsius! * 9 / 5 + 32
-              : activity.temperatureCelsius;
-          final unit = activity.temperatureUnit == 'fahrenheit' ? '℉' : '℃';
-          final isFever = activity.temperatureCelsius! >= 38.0;
-          color = isFever ? Colors.red : Colors.blue;
-          title = AppLocalizations.of(context)!.translate('temperature');
-          subtitle = '${temp!.toStringAsFixed(1)}$unit${isFever ? AppLocalizations.of(context)!.translate('fever_high') : ''}';
-        } else if (activity.medicationName != null) {
-          icon = Icons.medication;
-          color = Colors.teal;
-          title = AppLocalizations.of(context)!.translate('medication');
-          subtitle = activity.medicationName ?? '';
-          if (activity.dosageAmount != null) {
-            subtitle += ' • ${activity.dosageAmount}${activity.dosageUnit ?? ''}';
-          }
-        } else {
-          icon = Icons.health_and_safety;
-          color = Colors.teal;
-          title = AppLocalizations.of(context)!.translate('health');
-        }
-        break;
-      default:
-        icon = Icons.circle;
-        color = Colors.grey;
-        title = AppLocalizations.of(context)!.translate('activity');
-    }
-
-    return Card(
-      margin: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      child: ListTile(
-        leading: Container(
-          padding: EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, color: color),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppTheme.lavenderMist.withOpacity(0.2),
+            AppTheme.primaryDark.withOpacity(0.1),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        title: Text(
-          title,
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (subtitle.isNotEmpty) Text(subtitle),
-            SizedBox(height: 4),
-            Text(
-              timeStr,
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-            ),
-            if (activity.notes != null && activity.notes!.isNotEmpty) ...[
-              SizedBox(height: 4),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.glassBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text('💡', style: TextStyle(fontSize: 18)),
+              const SizedBox(width: 8),
               Text(
-                activity.notes!,
-                style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+                l10n.translate('today_summary') ?? '오늘 요약',
+                style: const TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
-          ],
-        ),
-        trailing: IconButton(
-          icon: Icon(Icons.delete_outline, color: Colors.red[300]),
-          onPressed: () => _deleteActivity(activity.id),
-        ),
-      ),
-    );
-  }
-
-  IconData _getIconForType(ActivityType? type) {
-    switch (type) {
-      case ActivityType.sleep:
-        return Icons.bedtime;
-      case ActivityType.feeding:
-        return Icons.restaurant;
-      case ActivityType.diaper:
-        return Icons.baby_changing_station;
-      case ActivityType.health:
-        return Icons.medication;
-      default:
-        return Icons.list;
-    }
-  }
-
-  Future<void> _deleteActivity(String activityId) async {
-    final l10n = AppLocalizations.of(context)!;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.translate('delete_record')),
-        content: Text(l10n.translate('confirm_delete_record')),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.translate('cancel')),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.translate('delete'), style: TextStyle(color: Colors.red)),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildSummaryItem(
+                '😴',
+                '$sleepCount회',
+                _formatDuration(totalSleepMinutes),
+              ),
+              Container(width: 1, height: 40, color: AppTheme.glassBorder),
+              _buildSummaryItem(
+                '🍼',
+                '$feedingCount회',
+                '${totalFeedingMl}ml',
+              ),
+              Container(width: 1, height: 40, color: AppTheme.glassBorder),
+              _buildSummaryItem(
+                '🧷',
+                '$diaperCount회',
+                '',
+              ),
+            ],
           ),
         ],
       ),
     );
-
-    if (confirmed == true) {
-      try {
-        const userId = 'demo-user';
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(userId)
-            .collection('activities')
-            .doc(activityId)
-            .delete();
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.translate('record_deleted'))),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.translate('failed_to_delete').replaceAll('{error}', e.toString()))),
-          );
-        }
-      }
-    }
   }
 
-  void _navigateToAddScreen(BuildContext context, ActivityType type) async {
-    Widget screen;
-    switch (type) {
-      case ActivityType.sleep:
-        screen = LogSleepScreen();
-        break;
-      case ActivityType.feeding:
-        screen = LogFeedingScreen();
-        break;
-      case ActivityType.play:
-        screen = LogPlayScreen();
-        break;
-      case ActivityType.diaper:
-        screen = LogDiaperScreen();
-        break;
-      case ActivityType.health:
-        screen = LogHealthScreen();
-        break;
-      default:
-        return;
-    }
+  Widget _buildSummaryItem(String emoji, String value, String subtitle) {
+    return Column(
+      children: [
+        Text(emoji, style: const TextStyle(fontSize: 24)),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(
+            color: AppTheme.textPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        if (subtitle.isNotEmpty)
+          Text(
+            subtitle,
+            style: const TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 12,
+            ),
+          ),
+      ],
+    );
+  }
+}
 
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => screen),
+/// 원탭 기록 버튼 위젯
+class _QuickRecordButton extends StatelessWidget {
+  final String emoji;
+  final String label;
+  final String? sublabel;
+  final Color color;
+  final bool isCompact;
+  final bool isHighlighted;
+  final VoidCallback onTap;
+  final VoidCallback onLongPress;
+
+  const _QuickRecordButton({
+    required this.emoji,
+    required this.label,
+    required this.color,
+    required this.onTap,
+    required this.onLongPress,
+    this.sublabel,
+    this.isCompact = false,
+    this.isHighlighted = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      onLongPress: onLongPress,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: EdgeInsets.symmetric(
+          vertical: isCompact ? 12 : 16,
+          horizontal: 12,
+        ),
+        decoration: BoxDecoration(
+          color: isHighlighted
+              ? color.withOpacity(0.3)
+              : AppTheme.surfaceCard,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isHighlighted ? color : AppTheme.glassBorder,
+            width: isHighlighted ? 2 : 1,
+          ),
+          boxShadow: isHighlighted
+              ? [
+                  BoxShadow(
+                    color: color.withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              emoji,
+              style: TextStyle(fontSize: isCompact ? 24 : 32),
+            ),
+            SizedBox(height: isCompact ? 4 : 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: isHighlighted ? color : AppTheme.textPrimary,
+                fontSize: isCompact ? 12 : 13,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            if (sublabel != null && !isCompact) ...[
+              const SizedBox(height: 2),
+              Text(
+                sublabel!,
+                style: TextStyle(
+                  color: isHighlighted ? color : AppTheme.textTertiary,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }
