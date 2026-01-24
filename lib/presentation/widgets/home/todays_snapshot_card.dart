@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../core/localization/app_localizations.dart';
 
 /// 📊 Today's Snapshot Card
@@ -14,18 +13,18 @@ class TodaysSnapshotCard extends StatelessWidget {
   final VoidCallback? onViewAllTap;
 
   const TodaysSnapshotCard({
-    Key? key,
+    super.key,
     required this.summary,
     this.onSleepTap,
     this.onFeedingTap,
     this.onDiaperTap,
     this.onPlayTap,
     this.onViewAllTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -355,7 +354,7 @@ class TodaysSummary {
   }
 
   String get sleepTrendLabel {
-    if (sleepDiffMinutes > 0) return '↑${sleepDiffMinutes}분';
+    if (sleepDiffMinutes > 0) return '↑$sleepDiffMinutes분';
     if (sleepDiffMinutes < 0) return '↓${sleepDiffMinutes.abs()}분';
     return '평균';
   }
@@ -398,7 +397,7 @@ class TodaysSummary {
       final minutes = playTimeMinutes % 60;
       return minutes > 0 ? '${hours}h ${minutes}m' : '${hours}h';
     }
-    return '${playTimeMinutes}분';
+    return '$playTimeMinutes분';
   }
 
   int get playGoalPercent =>

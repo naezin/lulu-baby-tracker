@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../data/models/activity_model.dart';
 import '../../../data/models/baby_model.dart';
 import '../../../data/services/local_storage_service.dart';
 import 'services/insight_generator.dart';
@@ -10,7 +9,7 @@ import 'services/insight_generator.dart';
 /// 📊 Analysis Screen - 질문 기반 통합 분석 화면
 /// 핵심 원칙: "차트가 아닌 답변을 보여준다"
 class AnalysisScreen extends StatefulWidget {
-  const AnalysisScreen({Key? key}) : super(key: key);
+  const AnalysisScreen({super.key});
 
   @override
   State<AnalysisScreen> createState() => _AnalysisScreenState();
@@ -119,7 +118,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppTheme.surfaceDark,
@@ -700,8 +699,8 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   String _formatHours(int minutes) {
     final hours = minutes ~/ 60;
     final mins = minutes % 60;
-    if (mins == 0) return '${hours}시간';
-    return '${hours}시간 ${mins}분';
+    if (mins == 0) return '$hours시간';
+    return '$hours시간 $mins분';
   }
 
   String _formatValue(double value) {

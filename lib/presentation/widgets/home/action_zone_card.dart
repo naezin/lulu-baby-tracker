@@ -12,11 +12,11 @@ class ActionZoneCard extends StatelessWidget {
   final VoidCallback? onSetAlarmTap;
 
   const ActionZoneCard({
-    Key? key,
+    super.key,
     this.sweetSpot,
     this.onSleepNowTap,
     this.onSetAlarmTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

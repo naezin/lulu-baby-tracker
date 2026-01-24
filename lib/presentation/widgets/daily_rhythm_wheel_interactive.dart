@@ -18,12 +18,12 @@ class DailyRhythmWheelInteractive extends StatefulWidget {
   final List<ActivityModel> activities;
 
   const DailyRhythmWheelInteractive({
-    Key? key,
+    super.key,
     required this.date,
     required this.babyId,
     required this.babyAgeInDays,
     required this.activities,
-  }) : super(key: key);
+  });
 
   @override
   State<DailyRhythmWheelInteractive> createState() =>
@@ -38,8 +38,8 @@ class _DailyRhythmWheelInteractiveState
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 16),
-      padding: EdgeInsets.all(20),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -47,7 +47,7 @@ class _DailyRhythmWheelInteractiveState
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: Offset(0, 4),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -66,12 +66,12 @@ class _DailyRhythmWheelInteractiveState
                 ),
               ),
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: AppTheme.lavenderMist.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Row(
+                child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
@@ -93,7 +93,7 @@ class _DailyRhythmWheelInteractiveState
               ),
             ],
           ),
-          SizedBox(height: 24),
+          const SizedBox(height: 24),
 
           // Interactive Chart
           AspectRatio(
@@ -112,7 +112,7 @@ class _DailyRhythmWheelInteractiveState
                   if (_isAnalyzing)
                     Center(
                       child: Container(
-                        padding: EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
@@ -123,7 +123,7 @@ class _DailyRhythmWheelInteractiveState
                             ),
                           ],
                         ),
-                        child: Column(
+                        child: const Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             CircularProgressIndicator(),
@@ -144,11 +144,11 @@ class _DailyRhythmWheelInteractiveState
             ),
           ),
 
-          SizedBox(height: 24),
+          const SizedBox(height: 24),
           _buildLegend(),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           _buildLongestStretch(),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           _buildHintText(),
         ],
       ),
@@ -189,7 +189,7 @@ class _DailyRhythmWheelInteractiveState
         final startTime = DateTime.parse(activity.timestamp);
         final endTime = activity.endTime != null
             ? DateTime.parse(activity.endTime!)
-            : startTime.add(Duration(minutes: 30));
+            : startTime.add(const Duration(minutes: 30));
 
         final startHour = startTime.hour + startTime.minute / 60;
         final endHour = endTime.hour + endTime.minute / 60;
@@ -261,7 +261,7 @@ class _DailyRhythmWheelInteractiveState
   void _exportPDF(BuildContext context, AIInsightModel insight) {
     // PDF export feature - to be implemented
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
+      const SnackBar(
         content: Text('PDF 내보내기 기능은 곧 추가될 예정입니다'),
       ),
     );
@@ -273,7 +273,7 @@ class _DailyRhythmWheelInteractiveState
       final startTime = DateTime.parse(activity.timestamp);
       final endTime = activity.endTime != null
           ? DateTime.parse(activity.endTime!)
-          : startTime.add(Duration(minutes: 30));
+          : startTime.add(const Duration(minutes: 30));
 
       final startHour = startTime.hour + startTime.minute / 60;
       final endHour = endTime.hour + endTime.minute / 60;
@@ -306,7 +306,7 @@ class _DailyRhythmWheelInteractiveState
   }
 
   Widget _buildLegend() {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     return Wrap(
       spacing: 16,
       runSpacing: 8,
@@ -332,10 +332,10 @@ class _DailyRhythmWheelInteractiveState
             borderRadius: BorderRadius.circular(3),
           ),
         ),
-        SizedBox(width: 6),
+        const SizedBox(width: 6),
         Text(
           label,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w500,
           ),
@@ -345,13 +345,13 @@ class _DailyRhythmWheelInteractiveState
   }
 
   Widget _buildLongestStretch() {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     final sleeps = widget.activities
         .where((a) => a.type == ActivityType.sleep && a.durationMinutes != null)
         .toList();
 
     if (sleeps.isEmpty) {
-      return SizedBox.shrink();
+      return const SizedBox.shrink();
     }
 
     final longest = sleeps.reduce((a, b) =>
@@ -365,7 +365,7 @@ class _DailyRhythmWheelInteractiveState
     final hours = (longest.durationMinutes ?? 0) / 60;
 
     return Container(
-      padding: EdgeInsets.all(12),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppTheme.successSoft.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
@@ -376,25 +376,25 @@ class _DailyRhythmWheelInteractiveState
       ),
       child: Row(
         children: [
-          Icon(
+          const Icon(
             Icons.star,
             color: AppTheme.successSoft,
             size: 20,
           ),
-          SizedBox(width: 12),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   l10n.translate('longest_sleep_stretch'),
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: AppTheme.successSoft,
                   ),
                 ),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Text(
                   '${hours.toStringAsFixed(1)} hours (${DateFormat('h:mm a').format(startTime)} - ${DateFormat('h:mm a').format(endTime)})',
                   style: TextStyle(
@@ -411,7 +411,7 @@ class _DailyRhythmWheelInteractiveState
   }
 
   Widget _buildHintText() {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -420,7 +420,7 @@ class _DailyRhythmWheelInteractiveState
           size: 14,
           color: Colors.grey[500],
         ),
-        SizedBox(width: 6),
+        const SizedBox(width: 6),
         Flexible(
           child: Text(
             l10n.tapChartForAnalysis,

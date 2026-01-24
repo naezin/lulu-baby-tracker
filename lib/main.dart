@@ -13,7 +13,6 @@ import 'presentation/providers/chat_provider.dart';
 import 'presentation/providers/sweet_spot_provider.dart';
 import 'presentation/providers/locale_provider.dart';
 import 'presentation/providers/unit_preferences_provider.dart';
-import 'presentation/screens/main/main_navigation.dart';
 import 'presentation/screens/activities/log_feeding_screen.dart';
 import 'presentation/screens/activities/log_sleep_screen.dart';
 import 'presentation/screens/activities/log_diaper_screen.dart';
@@ -105,15 +104,13 @@ void _handleWidgetAction(String action) {
       return;
   }
 
-  if (targetScreen != null) {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => targetScreen!),
-    );
-  }
+  Navigator.of(context).push(
+    MaterialPageRoute(builder: (_) => targetScreen!),
+  );
 }
 
 class LuluApp extends StatelessWidget {
-  const LuluApp({Key? key}) : super(key: key);
+  const LuluApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -158,13 +155,13 @@ class LuluApp extends StatelessWidget {
 
             // Localization
             locale: localeProvider.locale,
-            localizationsDelegates: [
+            localizationsDelegates: const [
               AppLocalizations.delegate,
               GlobalMaterialLocalizations.delegate,
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
-            supportedLocales: [
+            supportedLocales: const [
               Locale('en', ''), // English
               Locale('ko', ''), // Korean
             ],
@@ -176,7 +173,7 @@ class LuluApp extends StatelessWidget {
 
             // iOS-style page transitions
             builder: (context, child) {
-              return child ?? SizedBox.shrink();
+              return child ?? const SizedBox.shrink();
             },
 
             // Home - AuthWrapper handles routing based on auth state

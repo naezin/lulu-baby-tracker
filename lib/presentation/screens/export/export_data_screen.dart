@@ -6,7 +6,7 @@ import '../../../core/localization/app_localizations.dart';
 
 /// 데이터 내보내기 화면
 class ExportDataScreen extends StatefulWidget {
-  const ExportDataScreen({Key? key}) : super(key: key);
+  const ExportDataScreen({super.key});
 
   @override
   State<ExportDataScreen> createState() => _ExportDataScreenState();
@@ -29,29 +29,29 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
         title: Text(l10n.translate('export_data')),
       ),
       body: ListView(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         children: [
           // Header Card
           Card(
             color: Colors.green[50],
             child: Padding(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  Icon(Icons.file_download, size: 48, color: Colors.green),
-                  SizedBox(width: 16),
+                  const Icon(Icons.file_download, size: 48, color: Colors.green),
+                  const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           l10n.translate('export_your_baby_log'),
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Text(
                           l10n.translate('download_data_as_csv'),
                           style: TextStyle(color: Colors.grey[700]),
@@ -64,43 +64,43 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
             ),
           ),
 
-          SizedBox(height: 24),
+          const SizedBox(height: 24),
 
           // Export Button
           if (!_isExporting) ...[
             Card(
               child: Padding(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.cloud_download,
                       size: 64,
                       color: Colors.blue,
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     Text(
                       l10n.translate('ready_to_export'),
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Text(
                       l10n.translate('export_description'),
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.grey[600]),
                     ),
-                    SizedBox(height: 24),
+                    const SizedBox(height: 24),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: _exportData,
-                        icon: Icon(Icons.download),
+                        icon: const Icon(Icons.download),
                         label: Text(l10n.translate('export_to_csv')),
                         style: ElevatedButton.styleFrom(
-                          padding: EdgeInsets.symmetric(vertical: 16),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
                           backgroundColor: Colors.green,
                           foregroundColor: Colors.white,
                         ),
@@ -116,7 +116,7 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
           if (_isExporting) ...[
             Card(
               child: Padding(
-                padding: EdgeInsets.all(24),
+                padding: const EdgeInsets.all(24),
                 child: Column(
                   children: [
                     CircularProgressIndicator(
@@ -124,15 +124,15 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
                       strokeWidth: 6,
                       backgroundColor: Colors.grey[200],
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     Text(
                       '${(_progress * 100).toInt()}%',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Text(
                       _statusMessage,
                       style: TextStyle(
@@ -141,7 +141,7 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     LinearProgressIndicator(
                       value: _progress,
                       backgroundColor: Colors.grey[200],
@@ -155,18 +155,18 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
 
           // Summary (after export)
           if (_summary != null) ...[
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
             Text(
               l10n.translate('export_summary'),
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             Card(
               child: Padding(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
                     _buildSummaryRow(
@@ -175,28 +175,28 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
                       value: '${_summary!['total_sleep_records']}',
                       color: Colors.purple,
                     ),
-                    Divider(),
+                    const Divider(),
                     _buildSummaryRow(
                       icon: Icons.schedule,
                       label: l10n.translate('total_sleep_hours'),
                       value: l10n.translate('hours_value').replaceAll('{value}', '${_summary!['total_sleep_hours']}'),
                       color: Colors.blue,
                     ),
-                    Divider(),
+                    const Divider(),
                     _buildSummaryRow(
                       icon: Icons.restaurant,
                       label: l10n.translate('feeding_records'),
                       value: '${_summary!['total_feedings']}',
                       color: Colors.orange,
                     ),
-                    Divider(),
+                    const Divider(),
                     _buildSummaryRow(
                       icon: Icons.baby_changing_station,
                       label: l10n.translate('diaper_changes'),
                       value: '${_summary!['total_diapers']}',
                       color: Colors.green,
                     ),
-                    Divider(),
+                    const Divider(),
                     _buildSummaryRow(
                       icon: Icons.date_range,
                       label: l10n.translate('date_range'),
@@ -207,34 +207,34 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
                 ),
               ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: _exportData,
-                icon: Icon(Icons.refresh),
+                icon: const Icon(Icons.refresh),
                 label: Text(l10n.translate('export_again')),
                 style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
               ),
             ),
           ],
 
-          SizedBox(height: 24),
+          const SizedBox(height: 24),
 
           // Info Card
           Card(
             color: Colors.blue[50],
             child: Padding(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.info_outline, color: Colors.blue),
-                      SizedBox(width: 8),
+                      const Icon(Icons.info_outline, color: Colors.blue),
+                      const SizedBox(width: 8),
                       Text(
                         l10n.translate('about_csv_export'),
                         style: TextStyle(
@@ -244,7 +244,7 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
                       ),
                     ],
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   Text(
                     l10n.translate('csv_export_info'),
                     style: TextStyle(color: Colors.blue[800]),
@@ -254,20 +254,20 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
             ),
           ),
 
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
 
           // Sharing Options Card
           Card(
             color: Colors.purple[50],
             child: Padding(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.share, color: Colors.purple),
-                      SizedBox(width: 8),
+                      const Icon(Icons.share, color: Colors.purple),
+                      const SizedBox(width: 8),
                       Text(
                         l10n.translate('share_options'),
                         style: TextStyle(
@@ -277,7 +277,7 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
                       ),
                     ],
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   Text(
                     l10n.translate('share_options_info'),
                     style: TextStyle(color: Colors.purple[800]),
@@ -298,20 +298,20 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
     required Color color,
   }) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
           Icon(icon, color: color, size: 24),
-          SizedBox(width: 12),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
               label,
-              style: TextStyle(fontSize: 14),
+              style: const TextStyle(fontSize: 14),
             ),
           ),
           Text(
             value,
-            style: TextStyle(
+            style: const TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 16,
             ),
@@ -351,7 +351,7 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
       const userId = 'demo_user';
 
       // Get localization
-      final l10n = AppLocalizations.of(context)!;
+      final l10n = AppLocalizations.of(context);
 
       // Export data with progress callback
       final csvFile = await _csvService.exportAllDataToCsv(
@@ -403,8 +403,8 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
       builder: (context) => AlertDialog(
         title: Row(
           children: [
-            Icon(Icons.check_circle, color: Colors.green, size: 32),
-            SizedBox(width: 12),
+            const Icon(Icons.check_circle, color: Colors.green, size: 32),
+            const SizedBox(width: 12),
             Text(l10n.translate('export_complete')),
           ],
         ),
@@ -413,7 +413,7 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(l10n.translate('export_success_message')),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Text(
               l10n.translate('file_label').replaceAll('{filename}', csvFile.path.split('/').last),
               style: TextStyle(
@@ -431,11 +431,11 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
           ),
           ElevatedButton.icon(
             onPressed: () async {
-              final l10nContext = AppLocalizations.of(context)!;
+              final l10nContext = AppLocalizations.of(context);
               Navigator.pop(context);
               await _csvService.shareCsvFile(csvFile, l10nContext);
             },
-            icon: Icon(Icons.share),
+            icon: const Icon(Icons.share),
             label: Text(l10n.translate('share')),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blue,
@@ -455,8 +455,8 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
       builder: (context) => AlertDialog(
         title: Row(
           children: [
-            Icon(Icons.error, color: Colors.red, size: 32),
-            SizedBox(width: 12),
+            const Icon(Icons.error, color: Colors.red, size: 32),
+            const SizedBox(width: 12),
             Text(l10n.translate('export_failed')),
           ],
         ),

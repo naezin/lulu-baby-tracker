@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 
 /// Wake Window Calculator for predicting optimal sleep times
 /// Based on age-appropriate wake windows

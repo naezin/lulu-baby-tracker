@@ -1,6 +1,5 @@
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
-import '../localization/locale_manager.dart';
 
 /// 날짜/시간 포맷팅 유틸리티
 ///

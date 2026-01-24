@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../core/utils/awake_time_calculator.dart';
@@ -13,11 +12,11 @@ class AwakeTimeTracker extends StatefulWidget {
   final VoidCallback? onSleepSuggested;
 
   const AwakeTimeTracker({
-    Key? key,
+    super.key,
     required this.lastWakeUpTime,
     required this.ageInMonths,
     this.onSleepSuggested,
-  }) : super(key: key);
+  });
 
   @override
   State<AwakeTimeTracker> createState() => _AwakeTimeTrackerState();
@@ -79,7 +78,7 @@ class _AwakeTimeTrackerState extends State<AwakeTimeTracker>
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
 
     Widget card = Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -225,7 +224,7 @@ class _AwakeTimeTrackerState extends State<AwakeTimeTracker>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.bedtime_rounded,
                         size: 14,
                         color: AppTheme.errorSoft,
@@ -233,7 +232,7 @@ class _AwakeTimeTrackerState extends State<AwakeTimeTracker>
                       const SizedBox(width: 4),
                       Text(
                         l10n.translate('awake_time_sleep_now') ?? 'Sleep now',
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: AppTheme.errorSoft,
                           fontSize: 12,
                           fontWeight: FontWeight.bold,

@@ -5,7 +5,7 @@ import '../../../core/theme/app_theme.dart';
 /// 💬 AI Chat Screen (Lulu) - Placeholder
 /// TODO: AI 채팅 기능 구현 예정
 class AIChatScreen extends StatefulWidget {
-  const AIChatScreen({Key? key}) : super(key: key);
+  const AIChatScreen({super.key});
 
   @override
   State<AIChatScreen> createState() => _AIChatScreenState();
@@ -21,7 +21,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
       appBar: AppBar(
         title: Text(
           localizations.navLulu,
-          style: TextStyle(
+          style: const TextStyle(
             color: AppTheme.textPrimary,
             fontSize: 20,
             fontWeight: FontWeight.w700,
@@ -41,8 +41,8 @@ class _AIChatScreenState extends State<AIChatScreen> {
                 size: 80,
                 color: AppTheme.textSecondary.withOpacity(0.5),
               ),
-              SizedBox(height: 24),
-              Text(
+              const SizedBox(height: 24),
+              const Text(
                 '💬 AI 채팅 기능',
                 style: TextStyle(
                   color: AppTheme.textPrimary,
@@ -50,8 +50,8 @@ class _AIChatScreenState extends State<AIChatScreen> {
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              SizedBox(height: 12),
-              Text(
+              const SizedBox(height: 12),
+              const Text(
                 '곧 만나요!',
                 style: TextStyle(
                   color: AppTheme.textSecondary,
@@ -59,7 +59,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
                 ),
                 textAlign: TextAlign.center,
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               Text(
                 'Coming Soon!',
                 style: TextStyle(

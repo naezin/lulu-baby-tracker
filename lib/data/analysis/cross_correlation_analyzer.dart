@@ -1,4 +1,3 @@
-import '../models/activity_model.dart';
 import '../models/ai_insight_model.dart';
 import '../knowledge/expert_guidelines.dart';
 
@@ -118,11 +117,11 @@ class CrossCorrelationAnalyzer {
 
     String diaperAnalysis;
     if (diaperCount < 4) {
-      diaperAnalysis = '최근 24시간 배변 횟수(${diaperCount}회)가 적습니다. 수분/수유 섭취 확인이 필요합니다.';
+      diaperAnalysis = '최근 24시간 배변 횟수($diaperCount회)가 적습니다. 수분/수유 섭취 확인이 필요합니다.';
     } else if (diaperCount > 12) {
-      diaperAnalysis = '최근 24시간 배변 횟수(${diaperCount}회)가 많습니다. 소화 상태를 관찰해주세요.';
+      diaperAnalysis = '최근 24시간 배변 횟수($diaperCount회)가 많습니다. 소화 상태를 관찰해주세요.';
     } else {
-      diaperAnalysis = '배변 횟수(${diaperCount}회)는 정상 범위입니다.';
+      diaperAnalysis = '배변 횟수($diaperCount회)는 정상 범위입니다.';
     }
 
     return HealthCorrelation(
@@ -170,19 +169,19 @@ class CrossCorrelationAnalyzer {
     if (wakeWindowMinutes < stats.wakeWindowMinutes * 0.7) {
       // 너무 짧음
       pressureLevel = PressureLevel.low;
-      analysis = '마지막 낮잠 후 ${wakeWindowMinutes}분 경과했습니다. '
+      analysis = '마지막 낮잠 후 $wakeWindowMinutes분 경과했습니다. '
           '이 월령의 적정 각성 시간(${stats.wakeWindowMinutes}분)보다 짧아 수면 압력이 부족할 수 있습니다. '
           '조금 더 놀아준 후 재우는 것이 좋습니다.';
     } else if (wakeWindowMinutes > stats.wakeWindowMinutes * 1.5) {
       // 너무 김
       pressureLevel = PressureLevel.excessive;
-      analysis = '마지막 낮잠 후 ${wakeWindowMinutes}분 경과했습니다. '
+      analysis = '마지막 낮잠 후 $wakeWindowMinutes분 경과했습니다. '
           '적정 각성 시간(${stats.wakeWindowMinutes}분)을 많이 넘어 과자극 상태일 수 있습니다. '
           '이미 "골든 타임"을 놓쳤을 수 있으니 진정시키는 것이 우선입니다.';
     } else {
       // 적절함
       pressureLevel = PressureLevel.optimal;
-      analysis = '마지막 낮잠 후 ${wakeWindowMinutes}분 경과했습니다. '
+      analysis = '마지막 낮잠 후 $wakeWindowMinutes분 경과했습니다. '
           '적정 각성 시간(${stats.wakeWindowMinutes}분) 내에 있어 수면 압력이 적절합니다. '
           '지금이 재우기 좋은 "골든 타임"입니다.';
     }
@@ -218,13 +217,13 @@ class CrossCorrelationAnalyzer {
     if (hour >= 18 && hour <= 21) {
       // 저녁 시간대 (영아 산통 호발 시간)
       timeType = TimeOfDayType.eveningColicPeak;
-      analysis = '저녁 시간대(${hour}:${minute.toString().padLeft(2, '0')})는 "마녀의 시간(Witching Hour)"으로 불리며 '
+      analysis = '저녁 시간대($hour:${minute.toString().padLeft(2, '0')})는 "마녀의 시간(Witching Hour)"으로 불리며 '
           '영아 산통이 가장 심한 시간입니다. 아기가 더 보챌 수 있으며, 이는 정상적인 현상입니다.\n\n'
           '${ExpertGuidelines.infantColicGuidance}';
     } else if (hour >= 22 || hour < 6) {
       // 밤 시간대
       timeType = TimeOfDayType.nightSleep;
-      analysis = '밤 시간대(${hour}:${minute.toString().padLeft(2, '0')})입니다. '
+      analysis = '밤 시간대($hour:${minute.toString().padLeft(2, '0')})입니다. '
           '이 시기 아기는 4-6시간 연속 수면이 가능하지만, 수유를 위해 1-2회 깰 수 있습니다.\n\n'
           '밤 수유 시 주의사항:\n'
           '- 조명을 어둡게 유지\n'
@@ -234,12 +233,12 @@ class CrossCorrelationAnalyzer {
     } else if (hour >= 6 && hour < 12) {
       // 아침 시간대
       timeType = TimeOfDayType.morning;
-      analysis = '아침 시간대(${hour}:${minute.toString().padLeft(2, '0')})입니다. '
+      analysis = '아침 시간대($hour:${minute.toString().padLeft(2, '0')})입니다. '
           '낮밤 구분을 위해 커튼을 열어 햇빛을 받게 하고, 활기찬 목소리로 말을 걸어주세요.';
     } else {
       // 오후 시간대
       timeType = TimeOfDayType.afternoon;
-      analysis = '오후 시간대(${hour}:${minute.toString().padLeft(2, '0')})입니다. '
+      analysis = '오후 시간대($hour:${minute.toString().padLeft(2, '0')})입니다. '
           '이 시간대 낮잠이 너무 길거나 늦으면 밤잠에 영향을 줄 수 있습니다.';
     }
 

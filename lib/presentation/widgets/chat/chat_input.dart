@@ -8,15 +8,15 @@ class ChatInput extends StatelessWidget {
   final bool enabled;
 
   const ChatInput({
-    Key? key,
+    super.key,
     required this.controller,
     required this.onSend,
     this.enabled = true,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       decoration: BoxDecoration(

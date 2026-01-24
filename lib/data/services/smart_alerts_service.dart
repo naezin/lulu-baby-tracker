@@ -355,7 +355,7 @@ class SmartAlertsService {
       return SmartAlert(
         id: 'diaper_warning',
         title: '기저귀를 확인해주세요',
-        message: '마지막 교체 후 ${hoursSinceLastChange}시간이 지났어요.',
+        message: '마지막 교체 후 $hoursSinceLastChange시간이 지났어요.',
         priority: AlertPriority.warning,
         icon: Icons.child_care_rounded,
         timestamp: now,

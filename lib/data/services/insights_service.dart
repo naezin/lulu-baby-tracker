@@ -108,16 +108,16 @@ class InsightsService {
             InsightMetric(
               label: '오늘 총 수면',
               value: '${todayTotal ~/ 60}h ${todayTotal % 60}m',
-              trend: diff > 0 ? '+${diff}분' : diff < 0 ? '${diff}분' : null,
+              trend: diff > 0 ? '+$diff분' : diff < 0 ? '$diff분' : null,
               trendColor: diff > 0 ? Colors.green : diff < 0 ? Colors.orange : null,
             ),
             InsightMetric(
               label: '수면 횟수',
-              value: '${todayCount}회',
+              value: '$todayCount회',
             ),
             InsightMetric(
               label: '평균 수면 시간',
-              value: '${avgSleepDuration}분',
+              value: '$avgSleepDuration분',
             ),
           ],
           actionLabel: '수면 패턴 자세히 보기',
@@ -134,10 +134,10 @@ class InsightsService {
             InsightMetric(
               label: '오늘 총 수면',
               value: '${todayTotal ~/ 60}h ${todayTotal % 60}m',
-              trend: diff > 0 ? '+${diff}분' : diff < 0 ? '${diff}분' : null,
+              trend: diff > 0 ? '+$diff분' : diff < 0 ? '$diff분' : null,
               trendColor: diff > 0 ? Colors.green : diff < 0 ? Colors.orange : null,
             ),
-            InsightMetric(
+            const InsightMetric(
               label: '권장 수면 시간',
               value: '14-17시간',
             ),
@@ -155,10 +155,10 @@ class InsightsService {
             InsightMetric(
               label: '오늘 총 수면',
               value: '${todayTotal ~/ 60}h ${todayTotal % 60}m',
-              trend: diff > 0 ? '+${diff}분' : diff < 0 ? '${diff}분' : null,
+              trend: diff > 0 ? '+$diff분' : diff < 0 ? '$diff분' : null,
               trendColor: diff > 0 ? Colors.green : diff < 0 ? Colors.orange : null,
             ),
-            InsightMetric(
+            const InsightMetric(
               label: '권장 수면 시간',
               value: '14-17시간',
               color: Colors.orange,
@@ -211,7 +211,7 @@ class InsightsService {
             ),
             InsightMetric(
               label: '수유 횟수',
-              value: '${todayCount}회',
+              value: '$todayCount회',
             ),
             InsightMetric(
               label: '평균 수유량',
@@ -232,7 +232,7 @@ class InsightsService {
               value: '${todayMl}ml',
               color: Colors.orange,
             ),
-            InsightMetric(
+            const InsightMetric(
               label: '권장 수유량',
               value: '600-900ml',
             ),
@@ -298,12 +298,12 @@ class InsightsService {
           question: '먹-놀-잠 루틴을 잘 지키고 있나요?',
           answer: InsightAnswer.success(
             title: '루틴을 잘 지키고 있어요!',
-            subtitle: '먹-놀-잠 패턴이 ${eatPlaySleepCount}회 반복됐어요',
+            subtitle: '먹-놀-잠 패턴이 $eatPlaySleepCount회 반복됐어요',
           ),
           metrics: [
             InsightMetric(
               label: '먹-놀-잠 패턴',
-              value: '${eatPlaySleepCount}회',
+              value: '$eatPlaySleepCount회',
               color: Colors.green,
             ),
           ],
@@ -318,7 +318,7 @@ class InsightsService {
           metrics: [
             InsightMetric(
               label: '먹→잠 패턴',
-              value: '${eatSleepCount}회',
+              value: '$eatSleepCount회',
               color: Colors.purple,
             ),
           ],
@@ -373,7 +373,7 @@ class InsightsService {
             ),
             InsightMetric(
               label: '밤에 깬 횟수',
-              value: '${nightWakings}회',
+              value: '$nightWakings회',
             ),
           ],
         );
@@ -382,12 +382,12 @@ class InsightsService {
           question: '밤잠을 잘 자나요?',
           answer: InsightAnswer.caution(
             title: '밤에 자주 깨고 있어요',
-            subtitle: '어젯밤 ${nightWakings}회 깼어요',
+            subtitle: '어젯밤 $nightWakings회 깼어요',
           ),
           metrics: [
             InsightMetric(
               label: '밤에 깬 횟수',
-              value: '${nightWakings}회',
+              value: '$nightWakings회',
               color: Colors.orange,
             ),
             InsightMetric(
@@ -429,12 +429,12 @@ class InsightsService {
           question: '터미타임을 충분히 하고 있나요?',
           answer: InsightAnswer.success(
             title: '터미타임 목표 달성!',
-            subtitle: '오늘 ${todayTummyTime}분 완료했어요',
+            subtitle: '오늘 $todayTummyTime분 완료했어요',
           ),
           metrics: [
             InsightMetric(
               label: '오늘 터미타임',
-              value: '${todayTummyTime}분',
+              value: '$todayTummyTime분',
               color: Colors.green,
             ),
             InsightMetric(
@@ -453,10 +453,10 @@ class InsightsService {
           metrics: [
             InsightMetric(
               label: '오늘 터미타임',
-              value: '${todayTummyTime}분',
+              value: '$todayTummyTime분',
               color: Colors.purple,
             ),
-            InsightMetric(
+            const InsightMetric(
               label: '목표',
               value: '30분',
             ),

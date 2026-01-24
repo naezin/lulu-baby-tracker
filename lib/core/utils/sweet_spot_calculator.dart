@@ -2,6 +2,7 @@
 ///
 /// 아기의 월령에 따른 최적의 낮잠 시간(Sweet Spot)을 계산합니다.
 /// Wake Windows(깨어있는 시간) 기반으로 다음 낮잠 권장 시간을 예측합니다.
+library;
 
 class SweetSpotCalculator {
   /// 월령별 Wake Windows 테이블 (단위: 시간)
@@ -310,7 +311,7 @@ class SweetSpotResult {
   String get userFriendlyMessage {
     switch (urgencyLevel) {
       case UrgencyLevel.tooEarly:
-        return 'Still awake time! Sweet spot starts in ${minutesUntilSweetSpot} minutes.';
+        return 'Still awake time! Sweet spot starts in $minutesUntilSweetSpot minutes.';
       case UrgencyLevel.approaching:
         return 'Sweet spot approaching! Consider starting wind-down routine.';
       case UrgencyLevel.optimal:

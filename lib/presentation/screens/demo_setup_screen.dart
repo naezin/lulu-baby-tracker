@@ -6,7 +6,7 @@ import '../../core/localization/app_localizations.dart';
 
 /// Sweet Spot 데모를 위한 설정 화면
 class DemoSetupScreen extends StatefulWidget {
-  const DemoSetupScreen({Key? key}) : super(key: key);
+  const DemoSetupScreen({super.key});
 
   @override
   State<DemoSetupScreen> createState() => _DemoSetupScreenState();
@@ -14,7 +14,7 @@ class DemoSetupScreen extends StatefulWidget {
 
 class _DemoSetupScreenState extends State<DemoSetupScreen> {
   int _selectedAgeMonths = 6;
-  DateTime _lastWakeUpTime = DateTime.now().subtract(Duration(hours: 2));
+  DateTime _lastWakeUpTime = DateTime.now().subtract(const Duration(hours: 2));
 
   @override
   Widget build(BuildContext context) {
@@ -25,19 +25,19 @@ class _DemoSetupScreenState extends State<DemoSetupScreen> {
         title: Text(l10n.translate('sweet_spot_demo_title')),
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header
             Text(
               l10n.translate('demo_try_sweet_spot_prediction'),
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
               l10n.translate('demo_description'),
               style: TextStyle(
@@ -45,19 +45,19 @@ class _DemoSetupScreenState extends State<DemoSetupScreen> {
                 fontSize: 16,
               ),
             ),
-            SizedBox(height: 32),
+            const SizedBox(height: 32),
 
             // Baby Age Selection
             Text(
               l10n.translate('demo_baby_age'),
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 color: Colors.grey[100],
                 borderRadius: BorderRadius.circular(12),
@@ -67,7 +67,7 @@ class _DemoSetupScreenState extends State<DemoSetupScreen> {
                 children: [
                   Text(
                     l10n.translate('demo_months_old').replaceAll('{months}', '$_selectedAgeMonths'),
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                     ),
@@ -82,7 +82,7 @@ class _DemoSetupScreenState extends State<DemoSetupScreen> {
                                 });
                               }
                             : null,
-                        icon: Icon(Icons.remove_circle_outline),
+                        icon: const Icon(Icons.remove_circle_outline),
                       ),
                       IconButton(
                         onPressed: _selectedAgeMonths < 24
@@ -92,26 +92,26 @@ class _DemoSetupScreenState extends State<DemoSetupScreen> {
                                 });
                               }
                             : null,
-                        icon: Icon(Icons.add_circle_outline),
+                        icon: const Icon(Icons.add_circle_outline),
                       ),
                     ],
                   ),
                 ],
               ),
             ),
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
 
             // Last Wake Up Time
             Text(
               l10n.translate('demo_last_wake_up_time'),
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             _buildTimeSelector(),
-            SizedBox(height: 32),
+            const SizedBox(height: 32),
 
             // Calculate Button
             SizedBox(
@@ -125,7 +125,7 @@ class _DemoSetupScreenState extends State<DemoSetupScreen> {
                 ),
                 child: Text(
                   l10n.translate('demo_calculate_sweet_spot'),
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
@@ -133,11 +133,11 @@ class _DemoSetupScreenState extends State<DemoSetupScreen> {
               ),
             ),
 
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
 
             // Info Card
             Container(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.blue[50],
                 borderRadius: BorderRadius.circular(12),
@@ -147,7 +147,7 @@ class _DemoSetupScreenState extends State<DemoSetupScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Icon(Icons.info_outline, color: Colors.blue[700]),
-                  SizedBox(width: 12),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -159,7 +159,7 @@ class _DemoSetupScreenState extends State<DemoSetupScreen> {
                             color: Colors.blue[900],
                           ),
                         ),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Text(
                           l10n.translate('demo_sweet_spot_explanation'),
                           style: TextStyle(
@@ -182,12 +182,12 @@ class _DemoSetupScreenState extends State<DemoSetupScreen> {
   Widget _buildTimeSelector() {
     final l10n = AppLocalizations.of(context);
     final presetTimes = [
-      Duration(minutes: 30),
-      Duration(hours: 1),
-      Duration(hours: 1, minutes: 30),
-      Duration(hours: 2),
-      Duration(hours: 2, minutes: 30),
-      Duration(hours: 3),
+      const Duration(minutes: 30),
+      const Duration(hours: 1),
+      const Duration(hours: 1, minutes: 30),
+      const Duration(hours: 2),
+      const Duration(hours: 2, minutes: 30),
+      const Duration(hours: 3),
     ];
 
     return Column(
@@ -210,7 +210,7 @@ class _DemoSetupScreenState extends State<DemoSetupScreen> {
             );
           }).toList(),
         ),
-        SizedBox(height: 12),
+        const SizedBox(height: 12),
         TextButton.icon(
           onPressed: () async {
             final time = await showTimePicker(
@@ -230,7 +230,7 @@ class _DemoSetupScreenState extends State<DemoSetupScreen> {
               });
             }
           },
-          icon: Icon(Icons.access_time),
+          icon: const Icon(Icons.access_time),
           label: Text(l10n.translate('demo_custom_time').replaceAll('{time}', _formatTime(_lastWakeUpTime, l10n))),
         ),
       ],
@@ -318,7 +318,7 @@ class _DemoSetupScreenState extends State<DemoSetupScreen> {
           title: Row(
             children: [
               Text(_getUrgencyEmoji(sweetSpot.urgencyLevel)),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Expanded(child: Text(l10n.translate('demo_sweet_spot_result'))),
             ],
           ),
@@ -334,7 +334,7 @@ class _DemoSetupScreenState extends State<DemoSetupScreen> {
                   color: Theme.of(context).colorScheme.primary,
                 ),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               _buildInfoRow(
                 l10n.translate('demo_wake_window'),
                 sweetSpot.wakeWindowData.displayRange,
@@ -347,16 +347,16 @@ class _DemoSetupScreenState extends State<DemoSetupScreen> {
                 l10n.translate('demo_recommended_naps'),
                 l10n.translate('demo_naps_per_day').replaceAll('{naps}', '${sweetSpot.wakeWindowData.recommendedNaps}'),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               Container(
-                padding: EdgeInsets.all(12),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: Colors.grey[100],
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   sweetSpot.userFriendlyMessage,
-                  style: TextStyle(fontSize: 14),
+                  style: const TextStyle(fontSize: 14),
                 ),
               ),
             ],
@@ -381,7 +381,7 @@ class _DemoSetupScreenState extends State<DemoSetupScreen> {
 
   Widget _buildInfoRow(String label, String value) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -391,7 +391,7 @@ class _DemoSetupScreenState extends State<DemoSetupScreen> {
           ),
           Text(
             value,
-            style: TextStyle(fontWeight: FontWeight.w600),
+            style: const TextStyle(fontWeight: FontWeight.w600),
           ),
         ],
       ),

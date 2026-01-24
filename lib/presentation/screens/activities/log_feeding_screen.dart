@@ -7,7 +7,7 @@ import '../../../core/localization/app_localizations.dart';
 
 /// 수유 기록 화면
 class LogFeedingScreen extends StatefulWidget {
-  const LogFeedingScreen({Key? key}) : super(key: key);
+  const LogFeedingScreen({super.key});
 
   @override
   State<LogFeedingScreen> createState() => _LogFeedingScreenState();
@@ -31,36 +31,36 @@ class _LogFeedingScreenState extends State<LogFeedingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.translate('log_feeding')),
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header
             Card(
               child: Padding(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
-                    Icon(Icons.restaurant, size: 32, color: Colors.orange),
-                    SizedBox(width: 16),
+                    const Icon(Icons.restaurant, size: 32, color: Colors.orange),
+                    const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             l10n.translate('record_feeding'),
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          SizedBox(height: 4),
+                          const SizedBox(height: 4),
                           Text(
                             l10n.translate('track_feeding_types'),
                             style: TextStyle(color: Colors.grey[600]),
@@ -73,18 +73,18 @@ class _LogFeedingScreenState extends State<LogFeedingScreen> {
               ),
             ),
 
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
 
             // Feeding Time
             _buildSectionTitle(l10n.translate('feeding_time')),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             _buildTimeSelector(),
 
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
 
             // Feeding Type
             _buildSectionTitle(l10n.translate('feeding_type')),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               children: [
@@ -94,12 +94,12 @@ class _LogFeedingScreenState extends State<LogFeedingScreen> {
               ],
             ),
 
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
 
             // Amount (for bottle/solid)
             if (_feedingType != 'breast') ...[
               _buildSectionTitle(l10n.translate('amount')),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               Row(
                 children: [
                   Expanded(
@@ -121,9 +121,9 @@ class _LogFeedingScreenState extends State<LogFeedingScreen> {
                       ],
                     ),
                   ),
-                  SizedBox(width: 16),
+                  const SizedBox(width: 16),
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
                       color: Colors.orange[50],
                       borderRadius: BorderRadius.circular(8),
@@ -138,13 +138,13 @@ class _LogFeedingScreenState extends State<LogFeedingScreen> {
                   ),
                 ],
               ),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
             ],
 
             // Breast Side (for breastfeeding)
             if (_feedingType == 'breast') ...[
               _buildSectionTitle(l10n.translate('breast_side')),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
                 children: [
@@ -153,12 +153,12 @@ class _LogFeedingScreenState extends State<LogFeedingScreen> {
                   _buildSideChip('both', l10n.translate('both')),
                 ],
               ),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
             ],
 
             // Notes
             _buildSectionTitle(l10n.translate('notes_optional')),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             TextField(
               controller: _notesController,
               maxLines: 3,
@@ -172,7 +172,7 @@ class _LogFeedingScreenState extends State<LogFeedingScreen> {
               ),
             ),
 
-            SizedBox(height: 32),
+            const SizedBox(height: 32),
 
             // Save Button
             SizedBox(
@@ -180,10 +180,10 @@ class _LogFeedingScreenState extends State<LogFeedingScreen> {
               height: 50,
               child: ElevatedButton.icon(
                 onPressed: _saveFeeding,
-                icon: Icon(Icons.check),
+                icon: const Icon(Icons.check),
                 label: Text(
                   l10n.translate('save_feeding_record'),
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.orange,
@@ -200,7 +200,7 @@ class _LogFeedingScreenState extends State<LogFeedingScreen> {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: TextStyle(
+      style: const TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.bold,
       ),
@@ -211,7 +211,7 @@ class _LogFeedingScreenState extends State<LogFeedingScreen> {
     return InkWell(
       onTap: _selectTime,
       child: Container(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.grey[100],
           borderRadius: BorderRadius.circular(12),
@@ -219,11 +219,11 @@ class _LogFeedingScreenState extends State<LogFeedingScreen> {
         ),
         child: Row(
           children: [
-            Icon(Icons.access_time, color: Colors.orange),
-            SizedBox(width: 16),
+            const Icon(Icons.access_time, color: Colors.orange),
+            const SizedBox(width: 16),
             Text(
               DateFormat('MMM d, yyyy  h:mm a').format(_feedingTime),
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
               ),
@@ -240,8 +240,8 @@ class _LogFeedingScreenState extends State<LogFeedingScreen> {
       label: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(emoji, style: TextStyle(fontSize: 18)),
-          SizedBox(width: 6),
+          Text(emoji, style: const TextStyle(fontSize: 18)),
+          const SizedBox(width: 6),
           Text(label),
         ],
       ),
@@ -273,8 +273,8 @@ class _LogFeedingScreenState extends State<LogFeedingScreen> {
     final date = await showDatePicker(
       context: context,
       initialDate: _feedingTime,
-      firstDate: DateTime.now().subtract(Duration(days: 7)),
-      lastDate: DateTime.now().add(Duration(days: 1)),
+      firstDate: DateTime.now().subtract(const Duration(days: 7)),
+      lastDate: DateTime.now().add(const Duration(days: 1)),
     );
 
     if (date == null) return;
@@ -316,7 +316,7 @@ class _LogFeedingScreenState extends State<LogFeedingScreen> {
     await _widgetService.updateAllWidgets();
 
     if (mounted) {
-      final l10n = AppLocalizations.of(context)!;
+      final l10n = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(l10n.translate('feeding_recorded_success')),

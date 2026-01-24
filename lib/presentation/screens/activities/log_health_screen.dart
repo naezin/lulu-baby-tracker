@@ -8,7 +8,7 @@ import '../../../core/localization/app_localizations.dart';
 
 /// 체온 및 투약 기록 화면
 class LogHealthScreen extends StatefulWidget {
-  const LogHealthScreen({Key? key}) : super(key: key);
+  const LogHealthScreen({super.key});
 
   @override
   State<LogHealthScreen> createState() => _LogHealthScreenState();
@@ -31,15 +31,15 @@ class _LogHealthScreenState extends State<LogHealthScreen> with SingleTickerProv
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.translate('health_record')),
         bottom: TabBar(
           controller: _tabController,
           tabs: [
-            Tab(icon: Icon(Icons.thermostat), text: l10n.translate('temperature')),
-            Tab(icon: Icon(Icons.medication), text: l10n.translate('medication')),
+            Tab(icon: const Icon(Icons.thermostat), text: l10n.translate('temperature')),
+            Tab(icon: const Icon(Icons.medication), text: l10n.translate('medication')),
           ],
         ),
       ),
@@ -133,24 +133,24 @@ class _TemperatureTabState extends State<_TemperatureTab> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     return SingleChildScrollView(
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Unit Toggle
           Card(
             child: Padding(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     l10n.translate('temperature_unit'),
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   SegmentedButton<String>(
                     segments: [
                       ButtonSegment(
@@ -173,13 +173,13 @@ class _TemperatureTabState extends State<_TemperatureTab> {
               ),
             ),
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
 
           // Temperature Input
           Card(
             color: _isFever ? Colors.red[50] : null,
             child: Padding(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -190,7 +190,7 @@ class _TemperatureTabState extends State<_TemperatureTab> {
                         color: _isFever ? Colors.red : Colors.blue,
                         size: 28,
                       ),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Text(
                         l10n.translate('temperature'),
                         style: TextStyle(
@@ -201,10 +201,10 @@ class _TemperatureTabState extends State<_TemperatureTab> {
                       ),
                     ],
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   TextField(
                     controller: _temperatureController,
-                    keyboardType: TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
@@ -214,18 +214,18 @@ class _TemperatureTabState extends State<_TemperatureTab> {
                       hintText: _selectedUnit == 'celsius' ? '36.5' : '97.7',
                       suffix: Text(
                         _selectedUnit == 'celsius' ? '℃' : '℉',
-                        style: TextStyle(fontSize: 24, color: Colors.grey),
+                        style: const TextStyle(fontSize: 24, color: Colors.grey),
                       ),
-                      border: OutlineInputBorder(),
+                      border: const OutlineInputBorder(),
                       filled: true,
                       fillColor: Colors.white,
                     ),
                     onChanged: (_) => setState(() {}),
                   ),
                   if (_isFever) ...[
-                    SizedBox(height: 12),
+                    const SizedBox(height: 12),
                     Container(
-                      padding: EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: Colors.red[100],
                         borderRadius: BorderRadius.circular(8),
@@ -233,8 +233,8 @@ class _TemperatureTabState extends State<_TemperatureTab> {
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.warning, color: Colors.red),
-                          SizedBox(width: 8),
+                          const Icon(Icons.warning, color: Colors.red),
+                          const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               l10n.highFever,
@@ -250,23 +250,23 @@ class _TemperatureTabState extends State<_TemperatureTab> {
                   ],
                   // Show fever advice if baby profile is loaded
                   if (_temperature != null && _babyProfile != null && !_isLoadingProfile) ...[
-                    SizedBox(height: 12),
+                    const SizedBox(height: 12),
                     _buildFeverAdviceCard(),
                   ],
                 ],
               ),
             ),
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
 
           // Time Picker
           Card(
             child: ListTile(
-              leading: Icon(Icons.access_time),
+              leading: const Icon(Icons.access_time),
               title: Text(l10n.translate('time')),
               subtitle: Text(
                 '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               trailing: TextButton(
                 onPressed: () async {
@@ -290,38 +290,38 @@ class _TemperatureTabState extends State<_TemperatureTab> {
               ),
             ),
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
 
           // Notes
           Card(
             child: Padding(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               child: TextField(
                 controller: _notesController,
                 decoration: InputDecoration(
                   labelText: l10n.translate('notes_optional'),
                   hintText: l10n.additionalObservationsHint,
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                 ),
                 maxLines: 3,
               ),
             ),
           ),
-          SizedBox(height: 24),
+          const SizedBox(height: 24),
 
           // Save Button
           ElevatedButton.icon(
             onPressed: _isSaving ? null : _saveTemperature,
             icon: _isSaving
-                ? SizedBox(
+                ? const SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : Icon(Icons.save),
+                : const Icon(Icons.save),
             label: Text(_isSaving ? l10n.saving : l10n.saveTemperature),
             style: ElevatedButton.styleFrom(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               backgroundColor: _isFever ? Colors.red : null,
             ),
           ),
@@ -331,9 +331,9 @@ class _TemperatureTabState extends State<_TemperatureTab> {
   }
 
   Widget _buildFeverAdviceCard() {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     final temp = _temperature;
-    if (temp == null || _babyProfile == null) return SizedBox.shrink();
+    if (temp == null || _babyProfile == null) return const SizedBox.shrink();
 
     // Convert to Celsius for fever guidelines
     double tempCelsius = temp;
@@ -377,7 +377,7 @@ class _TemperatureTabState extends State<_TemperatureTab> {
     }
 
     return Container(
-      padding: EdgeInsets.all(12),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(8),
@@ -392,7 +392,7 @@ class _TemperatureTabState extends State<_TemperatureTab> {
           Row(
             children: [
               Icon(icon, color: textColor),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   '${l10n.feverAdviceWithMonths} (${_babyProfile!.ageInMonths}${l10n.monthsOld})',
@@ -404,25 +404,25 @@ class _TemperatureTabState extends State<_TemperatureTab> {
               ),
             ],
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           ...advice.actions.map((action) => Padding(
-                padding: EdgeInsets.only(bottom: 4),
+                padding: const EdgeInsets.only(bottom: 4),
                 child: Text(
                   '• $action',
                   style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
                 ),
               )),
           if (advice.tips.isNotEmpty) ...[
-            SizedBox(height: 8),
-            Divider(),
-            SizedBox(height: 4),
+            const SizedBox(height: 8),
+            const Divider(),
+            const SizedBox(height: 4),
             Text(
               l10n.tips,
               style: TextStyle(fontWeight: FontWeight.bold, color: textColor)
             ),
-            SizedBox(height: 4),
+            const SizedBox(height: 4),
             ...advice.tips.map((tip) => Padding(
-                  padding: EdgeInsets.only(bottom: 4),
+                  padding: const EdgeInsets.only(bottom: 4),
                   child: Text(
                     tip,
                     style: TextStyle(color: textColor, fontSize: 12),
@@ -435,13 +435,13 @@ class _TemperatureTabState extends State<_TemperatureTab> {
   }
 
   void _showEmergencyDialog(FeverAdvice advice) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.red[50],
-        icon: Icon(Icons.emergency, color: Colors.red, size: 48),
+        icon: const Icon(Icons.emergency, color: Colors.red, size: 48),
         title: Text(
           l10n.emergencyWarning,
           style: TextStyle(color: Colors.red[900], fontWeight: FontWeight.bold),
@@ -456,11 +456,11 @@ class _TemperatureTabState extends State<_TemperatureTab> {
                 _temperature!.toStringAsFixed(1),
                 _selectedUnit == 'celsius' ? 'C' : 'F',
               ),
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Container(
-              padding: EdgeInsets.all(12),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.red[100],
                 borderRadius: BorderRadius.circular(8),
@@ -476,13 +476,13 @@ class _TemperatureTabState extends State<_TemperatureTab> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   Text(
                     l10n.actionsToTakeNow,
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   ...advice.actions.map((action) => Padding(
-                        padding: EdgeInsets.only(top: 4, left: 8),
+                        padding: const EdgeInsets.only(top: 4, left: 8),
                         child: Text('• $action'),
                       )),
                 ],
@@ -493,7 +493,7 @@ class _TemperatureTabState extends State<_TemperatureTab> {
         actions: [
           TextButton.icon(
             onPressed: () => Navigator.pop(context),
-            icon: Icon(Icons.phone, color: Colors.green),
+            icon: const Icon(Icons.phone, color: Colors.green),
             label: Text(l10n.callPediatrician),
             style: TextButton.styleFrom(
               backgroundColor: Colors.green[50],
@@ -502,7 +502,7 @@ class _TemperatureTabState extends State<_TemperatureTab> {
           ),
           TextButton.icon(
             onPressed: () => Navigator.pop(context),
-            icon: Icon(Icons.local_hospital, color: Colors.red),
+            icon: const Icon(Icons.local_hospital, color: Colors.red),
             label: Text(l10n.goToER),
             style: TextButton.styleFrom(
               backgroundColor: Colors.red[100],
@@ -515,7 +515,7 @@ class _TemperatureTabState extends State<_TemperatureTab> {
   }
 
   Future<void> _saveTemperature() async {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     final temp = _temperature;
     if (temp == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -647,24 +647,24 @@ class _MedicationTabState extends State<_MedicationTab> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     return SingleChildScrollView(
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Medication Type
           Card(
             child: Padding(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     l10n.translate('medication_type'),
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   Wrap(
                     spacing: 8,
                     children: [
@@ -710,20 +710,20 @@ class _MedicationTabState extends State<_MedicationTab> {
               ),
             ),
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
 
           // Medication Name Selection
           Card(
             child: Padding(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     l10n.medicationName,
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -743,7 +743,7 @@ class _MedicationTabState extends State<_MedicationTab> {
               ),
             ),
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
 
           // Dosage Calculator (if applicable)
           if (_medicationType == 'fever_reducer' &&
@@ -752,39 +752,39 @@ class _MedicationTabState extends State<_MedicationTab> {
               _babyProfile?.weightKg != null &&
               !_isLoadingProfile) ...[
             _buildDosageCalculatorCard(),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
           ],
 
           // Dosage
           Card(
             child: Padding(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     l10n.dosage,
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   Row(
                     children: [
                       Expanded(
                         flex: 2,
                         child: TextField(
                           controller: _dosageController,
-                          keyboardType: TextInputType.numberWithOptions(decimal: true),
-                          decoration: InputDecoration(
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          decoration: const InputDecoration(
                             hintText: '5.0',
                             border: OutlineInputBorder(),
                           ),
                         ),
                       ),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: DropdownButtonFormField<String>(
-                          value: _dosageUnit,
-                          decoration: InputDecoration(
+                          initialValue: _dosageUnit,
+                          decoration: const InputDecoration(
                             border: OutlineInputBorder(),
                           ),
                           items: ['ml', 'mg', 'tablet'].map((unit) {
@@ -806,30 +806,30 @@ class _MedicationTabState extends State<_MedicationTab> {
               ),
             ),
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
 
           // Safety Timer
           if (_medicationType == 'fever_reducer') ...[
             Card(
               color: Colors.orange[50],
               child: Padding(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.timer, color: Colors.orange),
-                        SizedBox(width: 8),
+                        const Icon(Icons.timer, color: Colors.orange),
+                        const SizedBox(width: 8),
                         Text(
                           l10n.safetyTimer,
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
-                    SizedBox(height: 12),
+                    const SizedBox(height: 12),
                     Text(l10n.nextDoseAvailableIn),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     SegmentedButton<int>(
                       segments: [
                         ButtonSegment(value: 4, label: Text(l10n.fourHours)),
@@ -843,7 +843,7 @@ class _MedicationTabState extends State<_MedicationTab> {
                         });
                       },
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Text(
                       l10n.translate('next_dose').replaceAll('{time}', '${_selectedTime.add(Duration(hours: _hoursUntilNext)).hour.toString().padLeft(2, '0')}:${_selectedTime.add(Duration(hours: _hoursUntilNext)).minute.toString().padLeft(2, '0')}'),
                       style: TextStyle(
@@ -855,17 +855,17 @@ class _MedicationTabState extends State<_MedicationTab> {
                 ),
               ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
           ],
 
           // Time
           Card(
             child: ListTile(
-              leading: Icon(Icons.access_time),
+              leading: const Icon(Icons.access_time),
               title: Text(l10n.timeGiven),
               subtitle: Text(
                 '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               trailing: TextButton(
                 onPressed: () async {
@@ -889,38 +889,38 @@ class _MedicationTabState extends State<_MedicationTab> {
               ),
             ),
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
 
           // Notes
           Card(
             child: Padding(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               child: TextField(
                 controller: _notesController,
                 decoration: InputDecoration(
                   labelText: l10n.translate('notes_optional'),
                   hintText: l10n.reasonForMedicationHint,
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                 ),
                 maxLines: 3,
               ),
             ),
           ),
-          SizedBox(height: 24),
+          const SizedBox(height: 24),
 
           // Save Button
           ElevatedButton.icon(
             onPressed: _isSaving ? null : _saveMedication,
             icon: _isSaving
-                ? SizedBox(
+                ? const SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : Icon(Icons.save),
+                : const Icon(Icons.save),
             label: Text(_isSaving ? l10n.saving : l10n.saveMedication),
             style: ElevatedButton.styleFrom(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
             ),
           ),
         ],
@@ -929,9 +929,9 @@ class _MedicationTabState extends State<_MedicationTab> {
   }
 
   Widget _buildDosageCalculatorCard() {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     if (_babyProfile?.weightKg == null || _selectedMedication == null) {
-      return SizedBox.shrink();
+      return const SizedBox.shrink();
     }
 
     DosageRecommendation? dosage;
@@ -950,11 +950,11 @@ class _MedicationTabState extends State<_MedicationTab> {
       return Card(
         color: Colors.red[50],
         child: Padding(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              Icon(Icons.block, color: Colors.red),
-              SizedBox(width: 12),
+              const Icon(Icons.block, color: Colors.red),
+              const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   l10n.ibuprofenWarning,
@@ -973,14 +973,14 @@ class _MedicationTabState extends State<_MedicationTab> {
     return Card(
       color: Colors.blue[50],
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Icon(Icons.calculate, color: Colors.blue[900]),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Text(
                   l10n.dosageCalculator,
                   style: TextStyle(
@@ -991,9 +991,9 @@ class _MedicationTabState extends State<_MedicationTab> {
                 ),
               ],
             ),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             Container(
-              padding: EdgeInsets.all(12),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(8),
@@ -1004,41 +1004,41 @@ class _MedicationTabState extends State<_MedicationTab> {
                 children: [
                   Text(
                     l10n.medicationLabel(dosage.medicationName),
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
                     l10n.babyWeightLabel(dosage.weightKg.toStringAsFixed(1)),
                     style: TextStyle(color: Colors.grey[700]),
                   ),
-                  Divider(height: 24),
+                  const Divider(height: 24),
                   Text(
                     l10n.recommendedDosage,
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Row(
                     children: [
-                      Icon(Icons.straighten, size: 20, color: Colors.blue),
-                      SizedBox(width: 8),
+                      const Icon(Icons.straighten, size: 20, color: Colors.blue),
+                      const SizedBox(width: 8),
                       Text(
-                        '${dosage.dosageRangeMg}',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        dosage.dosageRangeMg,
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(Icons.water_drop, size: 20, color: Colors.blue),
-                      SizedBox(width: 8),
+                      const Icon(Icons.water_drop, size: 20, color: Colors.blue),
+                      const SizedBox(width: 8),
                       Text(
-                        '${dosage.dosageRangeMl}',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        dosage.dosageRangeMl,
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   Text(
                     l10n.frequencyEveryHours(int.parse(dosage.frequencyHours)),
                     style: TextStyle(color: Colors.grey[700]),
@@ -1055,9 +1055,9 @@ class _MedicationTabState extends State<_MedicationTab> {
               ),
             ),
             if (dosage.warnings.isNotEmpty) ...[
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               Container(
-                padding: EdgeInsets.all(12),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: Colors.orange[50],
                   borderRadius: BorderRadius.circular(8),
@@ -1069,7 +1069,7 @@ class _MedicationTabState extends State<_MedicationTab> {
                     Row(
                       children: [
                         Icon(Icons.warning_amber, color: Colors.orange[900], size: 20),
-                        SizedBox(width: 8),
+                        const SizedBox(width: 8),
                         Text(
                           l10n.safetyWarnings,
                           style: TextStyle(
@@ -1079,9 +1079,9 @@ class _MedicationTabState extends State<_MedicationTab> {
                         ),
                       ],
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     ...dosage.warnings.map((warning) => Padding(
-                          padding: EdgeInsets.only(bottom: 4, left: 4),
+                          padding: const EdgeInsets.only(bottom: 4, left: 4),
                           child: Text(
                             '• $warning',
                             style: TextStyle(
@@ -1094,9 +1094,9 @@ class _MedicationTabState extends State<_MedicationTab> {
                 ),
               ),
             ],
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             Container(
-              padding: EdgeInsets.all(8),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: Colors.grey[100],
                 borderRadius: BorderRadius.circular(4),
@@ -1104,7 +1104,7 @@ class _MedicationTabState extends State<_MedicationTab> {
               child: Row(
                 children: [
                   Icon(Icons.info_outline, size: 16, color: Colors.grey[700]),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       l10n.guidelineDisclaimer,
@@ -1125,7 +1125,7 @@ class _MedicationTabState extends State<_MedicationTab> {
   }
 
   Future<void> _saveMedication() async {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     if (_selectedMedication == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.selectMedication)),

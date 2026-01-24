@@ -11,14 +11,14 @@ class ActivityRecommendationsCard extends StatelessWidget {
   final Function(PlayActivityType) onActivitySelected;
 
   const ActivityRecommendationsCard({
-    Key? key,
+    super.key,
     required this.ageInDays,
     required this.onActivitySelected,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     final ageInMonths = (ageInDays / 30).floor();
 
     // 72일령 추천 액티비티
@@ -199,8 +199,8 @@ class ActivityRecommendationsCard extends StatelessWidget {
                         ),
                         child: Text(
                           '${tag.emoji} ${l10n.translate('dev_tag_${tag.name}') ?? tag.name}',
-                          style: TextStyle(
-                            color: const Color(0xFF5FB37B),
+                          style: const TextStyle(
+                            color: Color(0xFF5FB37B),
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                           ),
@@ -221,7 +221,7 @@ class ActivityRecommendationsCard extends StatelessWidget {
               ),
               child: Text(
                 '${activity.recommendedDurationMinutes}분',
-                style: TextStyle(
+                style: const TextStyle(
                   color: AppTheme.textSecondary,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -232,7 +232,7 @@ class ActivityRecommendationsCard extends StatelessWidget {
             const SizedBox(width: 8),
 
             // Arrow
-            Icon(
+            const Icon(
               Icons.arrow_forward_ios_rounded,
               size: 16,
               color: AppTheme.textTertiary,

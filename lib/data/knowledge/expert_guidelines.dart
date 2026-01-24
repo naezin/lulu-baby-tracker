@@ -245,7 +245,7 @@ class ExpertPersona {
 $systemPrompt
 
 **현재 상담 중인 아기 정보:**
-- 생후: ${babyAgeInDays}일 (약 ${(babyAgeInDays / 30).floor()}개월 ${babyAgeInDays % 30}일)
+- 생후: $babyAgeInDays일 (약 ${(babyAgeInDays / 30).floor()}개월 ${babyAgeInDays % 30}일)
 - 체중: ${babyWeightKg}kg
 - 발달 단계: ${_getDevelopmentStage(babyAgeInDays)}
 

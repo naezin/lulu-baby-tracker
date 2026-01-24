@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../data/services/openai_service.dart';
@@ -108,7 +107,7 @@ class ChatProvider extends ChangeNotifier {
   /// 초기 인사 메시지 추가
   void addWelcomeMessage(BuildContext context) {
     if (_messages.isEmpty) {
-      final l10n = AppLocalizations.of(context)!;
+      final l10n = AppLocalizations.of(context);
       final welcomeMessage = ChatMessage.assistant(
         "${l10n.translate('chat_welcome_greeting')}\n\n"
         "${l10n.translate('chat_welcome_description')}\n\n"
@@ -128,7 +127,7 @@ class ChatProvider extends ChangeNotifier {
 /// 빠른 질문 템플릿
 class QuickQuestions {
   static List<QuickQuestion> getTemplates(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
 
     return [
       QuickQuestion(

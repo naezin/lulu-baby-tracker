@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 /// 타이핑 인디케이터 (Lulu가 응답 중임을 표시)
 class TypingIndicator extends StatefulWidget {
-  const TypingIndicator({Key? key}) : super(key: key);
+  const TypingIndicator({super.key});
 
   @override
   State<TypingIndicator> createState() => _TypingIndicatorState();

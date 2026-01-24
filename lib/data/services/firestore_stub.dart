@@ -1,5 +1,6 @@
 /// Firestore stub for web compatibility
 /// This file provides minimal stubs for Firestore types when Firebase is disabled
+library;
 
 class Timestamp {
   final DateTime _dateTime;

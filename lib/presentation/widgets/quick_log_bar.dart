@@ -9,13 +9,13 @@ class QuickLogBar extends StatelessWidget {
   final Function(String activityType) onQuickLog;
 
   const QuickLogBar({
-    Key? key,
+    super.key,
     required this.onQuickLog,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
 
     return SafeArea(
       top: false,
@@ -158,7 +158,7 @@ class _CircularQuickLogButtonState extends State<_CircularQuickLogButton>
             const SizedBox(height: 6),
             Text(
               widget.label,
-              style: TextStyle(
+              style: const TextStyle(
                 color: AppTheme.textSecondary,
                 fontSize: 10,
                 fontWeight: FontWeight.w600,

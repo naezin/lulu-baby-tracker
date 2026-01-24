@@ -9,7 +9,7 @@ import '../../core/theme/app_theme.dart';
 /// 🌟 Sweet Spot Hero Card - Huckleberry-inspired
 /// Prominently displays sleep prediction at dashboard center
 class SweetSpotHeroCard extends StatefulWidget {
-  const SweetSpotHeroCard({Key? key}) : super(key: key);
+  const SweetSpotHeroCard({super.key});
 
   @override
   State<SweetSpotHeroCard> createState() => _SweetSpotHeroCardState();
@@ -64,7 +64,7 @@ class _SweetSpotHeroCardState extends State<SweetSpotHeroCard>
   }
 
   Widget _buildEmptyState(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
 
     return FadeTransition(
       opacity: _fadeAnimation,
@@ -89,7 +89,7 @@ class _SweetSpotHeroCardState extends State<SweetSpotHeroCard>
                   color: AppTheme.lavenderMist.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.bedtime_outlined,
                   size: 48,
                   color: AppTheme.lavenderMist,
@@ -119,7 +119,7 @@ class _SweetSpotHeroCardState extends State<SweetSpotHeroCard>
   }
 
   Widget _buildHeroCard(BuildContext context, SweetSpotResult sweetSpot) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     final urgency = sweetSpot.urgencyLevel;
     final colorScheme = _getColorScheme(urgency);
 
@@ -322,7 +322,7 @@ class _SweetSpotHeroCardState extends State<SweetSpotHeroCard>
           child: LinearProgressIndicator(
             value: progress,
             backgroundColor: Colors.white.withOpacity(0.2),
-            valueColor: AlwaysStoppedAnimation<Color>(
+            valueColor: const AlwaysStoppedAnimation<Color>(
               Colors.white,
             ),
             minHeight: 6,

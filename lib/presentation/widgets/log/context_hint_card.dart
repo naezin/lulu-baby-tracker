@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_theme.dart';
 
 /// 💡 Context Hint Card
 /// 기록 전 유용한 컨텍스트 정보 제공
@@ -9,11 +8,11 @@ class ContextHintCard extends StatelessWidget {
   final ContextStatus status;
 
   const ContextHintCard({
-    Key? key,
+    super.key,
     required this.title,
     required this.hints,
     this.status = ContextStatus.neutral,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

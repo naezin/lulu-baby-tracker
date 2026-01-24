@@ -9,7 +9,7 @@ import '../../widgets/log/post_record_feedback.dart';
 
 /// 수면 기록 화면
 class LogSleepScreen extends StatefulWidget {
-  const LogSleepScreen({Key? key}) : super(key: key);
+  const LogSleepScreen({super.key});
 
   @override
   State<LogSleepScreen> createState() => _LogSleepScreenState();
@@ -19,7 +19,7 @@ class _LogSleepScreenState extends State<LogSleepScreen> {
   final _storage = LocalStorageService();
   final _widgetService = WidgetService();
 
-  DateTime _startTime = DateTime.now().subtract(Duration(hours: 2));
+  DateTime _startTime = DateTime.now().subtract(const Duration(hours: 2));
   DateTime? _endTime = DateTime.now();
   String _location = 'crib'; // Internal key - translation happens in UI
   String _quality = 'good'; // Internal key - translation happens in UI
@@ -35,13 +35,13 @@ class _LogSleepScreenState extends State<LogSleepScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.translate('log_sleep')),
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -59,28 +59,28 @@ class _LogSleepScreenState extends State<LogSleepScreen> {
               },
             ),
 
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
 
             // Sleep Status
             Card(
               child: Padding(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
-                    Icon(Icons.bedtime, size: 32, color: Colors.purple),
-                    SizedBox(width: 16),
+                    const Icon(Icons.bedtime, size: 32, color: Colors.purple),
+                    const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             _isOngoing ? l10n.translate('sleep_in_progress') : l10n.translate('record_past_sleep'),
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          SizedBox(height: 4),
+                          const SizedBox(height: 4),
                           Text(
                             _isOngoing
                                 ? l10n.translate('sleep_timer_running')
@@ -108,34 +108,34 @@ class _LogSleepScreenState extends State<LogSleepScreen> {
               ),
             ),
 
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
 
             // Start Time
             _buildSectionTitle(l10n.translate('start_time')),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             _buildTimeSelector(
               time: _startTime,
               onTap: () => _selectTime(isStartTime: true),
             ),
 
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
 
             // End Time
             if (!_isOngoing) ...[
               _buildSectionTitle(l10n.translate('end_time_wake_up')),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               _buildTimeSelector(
                 time: _endTime!,
                 onTap: () => _selectTime(isStartTime: false),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               _buildDurationDisplay(),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
             ],
 
             // Location
             _buildSectionTitle(l10n.translate('sleep_location')),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               children: [
@@ -147,11 +147,11 @@ class _LogSleepScreenState extends State<LogSleepScreen> {
               ],
             ),
 
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
 
             // Quality
             _buildSectionTitle(l10n.translate('sleep_quality')),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               children: [
@@ -161,11 +161,11 @@ class _LogSleepScreenState extends State<LogSleepScreen> {
               ],
             ),
 
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
 
             // Notes
             _buildSectionTitle(l10n.translate('notes_optional')),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             TextField(
               controller: _notesController,
               maxLines: 3,
@@ -179,7 +179,7 @@ class _LogSleepScreenState extends State<LogSleepScreen> {
               ),
             ),
 
-            SizedBox(height: 32),
+            const SizedBox(height: 32),
 
             // Save Button
             SizedBox(
@@ -187,10 +187,10 @@ class _LogSleepScreenState extends State<LogSleepScreen> {
               height: 50,
               child: ElevatedButton.icon(
                 onPressed: _saveSleep,
-                icon: Icon(Icons.check),
+                icon: const Icon(Icons.check),
                 label: Text(
                   _isOngoing ? l10n.translate('start_sleep_timer') : l10n.translate('save_sleep_record'),
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.purple,
@@ -207,7 +207,7 @@ class _LogSleepScreenState extends State<LogSleepScreen> {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: TextStyle(
+      style: const TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.bold,
       ),
@@ -218,7 +218,7 @@ class _LogSleepScreenState extends State<LogSleepScreen> {
     return InkWell(
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.grey[100],
           borderRadius: BorderRadius.circular(12),
@@ -226,11 +226,11 @@ class _LogSleepScreenState extends State<LogSleepScreen> {
         ),
         child: Row(
           children: [
-            Icon(Icons.access_time, color: Colors.purple),
-            SizedBox(width: 16),
+            const Icon(Icons.access_time, color: Colors.purple),
+            const SizedBox(width: 16),
             Text(
               DateFormat('MMM d, yyyy  h:mm a').format(time),
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
               ),
@@ -242,15 +242,15 @@ class _LogSleepScreenState extends State<LogSleepScreen> {
   }
 
   Widget _buildDurationDisplay() {
-    if (_endTime == null) return SizedBox.shrink();
+    if (_endTime == null) return const SizedBox.shrink();
 
     final duration = _endTime!.difference(_startTime);
     final hours = duration.inHours;
     final minutes = duration.inMinutes % 60;
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
 
     return Container(
-      padding: EdgeInsets.all(12),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.purple[50],
         borderRadius: BorderRadius.circular(8),
@@ -258,8 +258,8 @@ class _LogSleepScreenState extends State<LogSleepScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.timer, color: Colors.purple),
-          SizedBox(width: 8),
+          const Icon(Icons.timer, color: Colors.purple),
+          const SizedBox(width: 8),
           Text(
             l10n.translate('duration_format').replaceAll('{hours}', hours.toString()).replaceAll('{minutes}', minutes.toString()),
             style: TextStyle(
@@ -280,7 +280,7 @@ class _LogSleepScreenState extends State<LogSleepScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(emoji),
-          SizedBox(width: 4),
+          const SizedBox(width: 4),
           Text(label),
         ],
       ),
@@ -301,7 +301,7 @@ class _LogSleepScreenState extends State<LogSleepScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(emoji),
-          SizedBox(width: 4),
+          const SizedBox(width: 4),
           Text(label),
         ],
       ),
@@ -321,8 +321,8 @@ class _LogSleepScreenState extends State<LogSleepScreen> {
     final date = await showDatePicker(
       context: context,
       initialDate: currentTime,
-      firstDate: DateTime.now().subtract(Duration(days: 7)),
-      lastDate: DateTime.now().add(Duration(days: 1)),
+      firstDate: DateTime.now().subtract(const Duration(days: 7)),
+      lastDate: DateTime.now().add(const Duration(days: 1)),
     );
 
     if (date == null) return;
@@ -382,7 +382,7 @@ class _LogSleepScreenState extends State<LogSleepScreen> {
             emoji: '⏱️',
             label: '오늘 총 수면',
             value: '${totalToday ~/ 60}시간 ${totalToday % 60}분',
-            trend: diff > 0 ? '+${diff}분' : diff < 0 ? '${diff}분' : '평균',
+            trend: diff > 0 ? '+$diff분' : diff < 0 ? '$diff분' : '평균',
             color: Colors.purple,
             trendColor: diff >= 0 ? Colors.green : Colors.orange,
           ),
@@ -427,32 +427,32 @@ class _LogSleepScreenState extends State<LogSleepScreen> {
 
       hints.add(ContextHintItem(
         emoji: '⏰',
-        text: '마지막 수면: ${_formatTimeAgo(awakeMinutes)} (${lastDuration}분간)',
+        text: '마지막 수면: ${_formatTimeAgo(awakeMinutes)} ($lastDuration분간)',
       ));
 
       // 월령 기반 권장 깨어있는 시간 (예: 2개월 = 60-90분)
-      final recommendedAwake = 90; // TODO: 월령에 따라 계산
+      const recommendedAwake = 90; // TODO: 월령에 따라 계산
 
-      hints.add(ContextHintItem(
+      hints.add(const ContextHintItem(
         emoji: '📊',
         text: '권장 깨어있는 시간: ${recommendedAwake ~/ 60}시간 ${recommendedAwake % 60}분',
       ));
 
       if (awakeMinutes >= recommendedAwake - 15 && awakeMinutes <= recommendedAwake + 30) {
         status = ContextStatus.good;
-        hints.add(ContextHintItem(
+        hints.add(const ContextHintItem(
           emoji: '✅',
           text: '지금 재우기 좋은 타이밍이에요!',
         ));
       } else if (awakeMinutes > recommendedAwake + 30) {
         status = ContextStatus.caution;
-        hints.add(ContextHintItem(
+        hints.add(const ContextHintItem(
           emoji: '⚠️',
           text: '깨어있는 시간이 길어졌어요. 피로 누적 주의!',
         ));
       }
     } else {
-      hints.add(ContextHintItem(
+      hints.add(const ContextHintItem(
         emoji: '📝',
         text: '첫 수면 기록이에요! 시작 시간을 선택해주세요.',
       ));

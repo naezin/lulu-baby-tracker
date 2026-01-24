@@ -2,6 +2,7 @@
 ///
 /// AAP(American Academy of Pediatrics) Safe Sleep Guidelines 기반
 /// 따뜻하고 전문적인 수면 상담 어시스턴트
+library;
 
 class LuluPersona {
   static const String name = 'Lulu';

@@ -55,7 +55,7 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
 
-      colorScheme: ColorScheme.dark(
+      colorScheme: const ColorScheme.dark(
         primary: lavenderMist,
         onPrimary: midnightNavy,
         primaryContainer: softBlue,
@@ -71,7 +71,7 @@ class AppTheme {
       scaffoldBackgroundColor: surfaceDark,
 
       // AppBar Theme - Minimalist & Clean
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         backgroundColor: surfaceDark,
         foregroundColor: textPrimary,
         elevation: 0,
@@ -108,14 +108,14 @@ class AppTheme {
         height: 72, // Easier thumb reach
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return TextStyle(
+            return const TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
               color: lavenderGlow,
               letterSpacing: -0.2,
             );
           }
-          return TextStyle(
+          return const TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w500,
             color: textSecondary,
@@ -125,7 +125,7 @@ class AppTheme {
       ),
 
       // Bottom Sheet Theme - Quick Log Optimized
-      bottomSheetTheme: BottomSheetThemeData(
+      bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: deepBlue,
         modalBackgroundColor: deepBlue,
         shape: RoundedRectangleBorder(
@@ -142,7 +142,7 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
-        extendedSizeConstraints: BoxConstraints.tightFor(height: 56),
+        extendedSizeConstraints: const BoxConstraints.tightFor(height: 56),
       ),
 
       // Elevated Button Theme - Apple-style
@@ -151,11 +151,11 @@ class AppTheme {
           backgroundColor: lavenderMist,
           foregroundColor: midnightNavy,
           elevation: 0,
-          padding: EdgeInsets.symmetric(horizontal: 32, vertical: 18),
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          textStyle: TextStyle(
+          textStyle: const TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w600,
             fontFamily: 'SF Pro Display',
@@ -168,7 +168,7 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: lavenderGlow,
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -189,10 +189,10 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: lavenderMist, width: 2),
+          borderSide: const BorderSide(color: lavenderMist, width: 2),
         ),
-        contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        hintStyle: TextStyle(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        hintStyle: const TextStyle(
           color: textTertiary,
           fontSize: 16,
         ),
@@ -206,7 +206,7 @@ class AppTheme {
       ),
 
       // Text Theme - SF Pro inspired typography
-      textTheme: TextTheme(
+      textTheme: const TextTheme(
         displayLarge: TextStyle(
           fontSize: 34,
           fontWeight: FontWeight.bold,
