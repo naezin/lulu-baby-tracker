@@ -4,7 +4,7 @@ import '../../core/theme/app_theme.dart';
 import 'home/home_screen.dart';
 import 'sleep/sleep_tracking_screen.dart';
 import 'records/records_screen.dart';
-import 'analytics/analytics_screen.dart';
+import 'analysis/analysis_screen.dart';
 import 'settings/settings_screen.dart';
 
 /// 메인 탭바 네비게이션
@@ -28,7 +28,7 @@ class _MainNavigationState extends State<MainNavigation> {
       const HomeScreen(),
       const SleepTrackingScreen(),
       const RecordsScreen(),
-      const AnalyticsScreen(),
+      const AnalysisScreen(),
       const SettingsScreen(),
     ];
   }
