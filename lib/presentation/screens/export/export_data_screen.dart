@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../data/services/csv_export_service.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../../../di/injection_container.dart';
 
 /// 데이터 내보내기 화면
 class ExportDataScreen extends StatefulWidget {
@@ -13,7 +14,7 @@ class ExportDataScreen extends StatefulWidget {
 }
 
 class _ExportDataScreenState extends State<ExportDataScreen> {
-  final _csvService = CsvExportService();
+  final _csvService = sl<CsvExportService>();
 
   bool _isExporting = false;
   double _progress = 0.0;
@@ -355,7 +356,7 @@ class _ExportDataScreenState extends State<ExportDataScreen> {
 
       // Export data with progress callback
       final csvFile = await _csvService.exportAllDataToCsv(
-        userId: userId,
+        babyId: userId,
         l10n: l10n,
         onProgress: (progress, message) {
           setState(() {

@@ -27,6 +27,9 @@ dependencies:
   # Charts
   fl_chart: ^0.69.0
 
+  # Screenshot
+  screenshot: ^3.0.0
+
   # Notifications
   flutter_local_notifications: ^17.0.0
   timezone: ^0.9.0
@@ -37,13 +40,14 @@ dependencies:
   path_provider: ^2.1.0
   file_picker: ^6.1.0
 
-  # Firebase (for authentication and data) - Temporarily disabled for web
-  # firebase_core: ^2.24.2
-  # cloud_firestore: ^4.14.0
+  # Backend (Supabase - 빌드 성능 최적화)
+  supabase_flutter: ^2.0.0
 
-  # Authentication - Temporarily disabled for web
-  # firebase_auth: ^4.16.0
-  # google_sign_in: ^6.2.1
+  # Authentication (OAuth)
+  google_sign_in: ^6.2.1
+
+  # Dependency Injection
+  get_it: ^7.6.0
 
   # Icons
   cupertino_icons: ^1.0.2
@@ -51,7 +55,8 @@ dependencies:
   # Home Screen Widgets
   home_widget: ^0.6.0
 
-  uuid: any
+  # UUID Generator (버전 고정 - 빌드 안정성)
+  uuid: ^4.5.2
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -60,3 +65,6 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   generate: true
+
+  assets:
+    - assets/privacy_policy.md

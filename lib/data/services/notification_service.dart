@@ -216,4 +216,289 @@ class NotificationService {
     // Handle notification tap - navigate to relevant screen based on payload
     print('Notification tapped: ${response.payload}');
   }
+
+  // === 수유 알림 ===
+
+  /// 수유 알림 스케줄링
+  /// [intervalHours]: 수유 간격 (시간)
+  /// [babyName]: 아기 이름
+  /// [startFromNow]: true면 지금부터 시작, false면 마지막 수유 시간부터 계산
+  Future<void> scheduleFeedingReminders({
+    required int intervalHours,
+    required String babyName,
+    required AppLocalizations l10n,
+    bool startFromNow = true,
+    DateTime? lastFeedingTime,
+  }) async {
+    await initialize();
+
+    // 기존 수유 알림 취소 (ID 100-109)
+    for (int i = 100; i < 110; i++) {
+      await cancelNotification(i);
+    }
+
+    DateTime nextFeedingTime;
+    if (startFromNow) {
+      nextFeedingTime = DateTime.now().add(Duration(hours: intervalHours));
+    } else {
+      nextFeedingTime = (lastFeedingTime ?? DateTime.now())
+          .add(Duration(hours: intervalHours));
+    }
+
+    // 향후 24시간 동안의 수유 알림 설정
+    for (int i = 0; i < 8; i++) {
+      // 최대 8개 (3시간 간격 = 24시간)
+      final notificationTime = nextFeedingTime.add(Duration(hours: intervalHours * i));
+
+      // 24시간 이내만 스케줄링
+      if (notificationTime.difference(DateTime.now()).inHours > 24) break;
+
+      await _scheduleSingleFeedingNotification(
+        notificationTime: notificationTime,
+        babyName: babyName,
+        l10n: l10n,
+        notificationId: 100 + i,
+      );
+    }
+  }
+
+  Future<void> _scheduleSingleFeedingNotification({
+    required DateTime notificationTime,
+    required String babyName,
+    required AppLocalizations l10n,
+    required int notificationId,
+  }) async {
+    // 과거 시간이면 스케줄링하지 않음
+    if (notificationTime.isBefore(DateTime.now())) return;
+
+    final messages = [
+      '🍼 $babyName의 수유 시간이에요! 배고픈 신호를 보이고 있을 수 있어요.',
+      '👶 수유 시간 알림! $babyName가 밥 먹을 시간입니다.',
+      '🥛 $babyName에게 수유할 시간이에요. 준비해주세요!',
+      '💝 수유 타이머 알림! $babyName의 식사 시간입니다.',
+    ];
+
+    final message = messages[notificationId % messages.length];
+
+    final androidDetails = AndroidNotificationDetails(
+      'feeding_channel',
+      l10n.translate('notification_channel_feeding') ?? '수유 알림',
+      channelDescription: l10n.translate('notification_channel_feeding_desc') ?? '수유 시간 알림',
+      importance: Importance.high,
+      priority: Priority.high,
+      icon: '@mipmap/ic_launcher',
+      sound: const RawResourceAndroidNotificationSound('notification'),
+      enableVibration: true,
+      playSound: true,
+    );
+
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+      sound: 'notification.aiff',
+    );
+
+    final notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    await _notifications.zonedSchedule(
+      notificationId,
+      '🍼 수유 시간 알림',
+      message,
+      tz.TZDateTime.from(notificationTime, tz.local),
+      notificationDetails,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      payload: 'feeding',
+    );
+  }
+
+  /// 수유 알림 취소
+  Future<void> cancelFeedingReminders() async {
+    for (int i = 100; i < 110; i++) {
+      await cancelNotification(i);
+    }
+  }
+
+  // === 기저귀 알림 ===
+
+  /// 기저귀 알림 스케줄링
+  /// [intervalHours]: 기저귀 체크 간격 (시간)
+  /// [babyName]: 아기 이름
+  Future<void> scheduleDiaperReminders({
+    required int intervalHours,
+    required String babyName,
+    required AppLocalizations l10n,
+    bool startFromNow = true,
+    DateTime? lastDiaperChange,
+  }) async {
+    await initialize();
+
+    // 기존 기저귀 알림 취소 (ID 200-209)
+    for (int i = 200; i < 210; i++) {
+      await cancelNotification(i);
+    }
+
+    DateTime nextDiaperTime;
+    if (startFromNow) {
+      nextDiaperTime = DateTime.now().add(Duration(hours: intervalHours));
+    } else {
+      nextDiaperTime = (lastDiaperChange ?? DateTime.now())
+          .add(Duration(hours: intervalHours));
+    }
+
+    // 향후 24시간 동안의 기저귀 알림 설정
+    for (int i = 0; i < 10; i++) {
+      // 최대 10개
+      final notificationTime = nextDiaperTime.add(Duration(hours: intervalHours * i));
+
+      // 24시간 이내만 스케줄링
+      if (notificationTime.difference(DateTime.now()).inHours > 24) break;
+
+      await _scheduleSingleDiaperNotification(
+        notificationTime: notificationTime,
+        babyName: babyName,
+        l10n: l10n,
+        notificationId: 200 + i,
+      );
+    }
+  }
+
+  Future<void> _scheduleSingleDiaperNotification({
+    required DateTime notificationTime,
+    required String babyName,
+    required AppLocalizations l10n,
+    required int notificationId,
+  }) async {
+    // 과거 시간이면 스케줄링하지 않음
+    if (notificationTime.isBefore(DateTime.now())) return;
+
+    final messages = [
+      '🧷 $babyName의 기저귀를 확인해주세요!',
+      '👶 기저귀 체크 시간이에요! $babyName가 불편해할 수 있어요.',
+      '💙 $babyName의 기저귀를 갈아줄 시간입니다.',
+      '🌟 기저귀 알림! $babyName를 확인해주세요.',
+    ];
+
+    final message = messages[notificationId % messages.length];
+
+    final androidDetails = AndroidNotificationDetails(
+      'diaper_channel',
+      l10n.translate('notification_channel_diaper') ?? '기저귀 알림',
+      channelDescription: l10n.translate('notification_channel_diaper_desc') ?? '기저귀 체크 알림',
+      importance: Importance.defaultImportance,
+      priority: Priority.defaultPriority,
+      icon: '@mipmap/ic_launcher',
+      sound: const RawResourceAndroidNotificationSound('notification'),
+      enableVibration: true,
+      playSound: true,
+    );
+
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+      sound: 'notification.aiff',
+    );
+
+    final notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    await _notifications.zonedSchedule(
+      notificationId,
+      '🧷 기저귀 체크 알림',
+      message,
+      tz.TZDateTime.from(notificationTime, tz.local),
+      notificationDetails,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      payload: 'diaper',
+    );
+  }
+
+  /// 기저귀 알림 취소
+  Future<void> cancelDiaperReminders() async {
+    for (int i = 200; i < 210; i++) {
+      await cancelNotification(i);
+    }
+  }
+
+  // === 알림 상태 확인 ===
+
+  /// 수유 알림이 활성화되어 있는지 확인
+  Future<bool> isFeedingReminderActive() async {
+    final pending = await getPendingNotifications();
+    return pending.any((n) => n.id >= 100 && n.id < 110);
+  }
+
+  /// 기저귀 알림이 활성화되어 있는지 확인
+  Future<bool> isDiaperReminderActive() async {
+    final pending = await getPendingNotifications();
+    return pending.any((n) => n.id >= 200 && n.id < 210);
+  }
+
+  /// Sweet Spot 알림이 활성화되어 있는지 확인
+  Future<bool> isSweetSpotActive() async {
+    final pending = await getPendingNotifications();
+    return pending.any((n) => n.id >= 0 && n.id < 100);
+  }
+
+  /// 범용 알림 스케줄링 (AlertChainManager용)
+  Future<void> scheduleNotification({
+    required int id,
+    required String title,
+    required String body,
+    required DateTime scheduledTime,
+  }) async {
+    await initialize();
+
+    // 과거 시간이면 스케줄링하지 않음
+    if (scheduledTime.isBefore(DateTime.now())) {
+      return;
+    }
+
+    // Android 알림 설정
+    const androidDetails = AndroidNotificationDetails(
+      'alert_chain_channel',
+      'Alert Chain Notifications',
+      channelDescription: 'Notifications for alert chains (bedtime, nap, feeding)',
+      importance: Importance.high,
+      priority: Priority.high,
+      icon: '@mipmap/ic_launcher',
+      sound: RawResourceAndroidNotificationSound('notification'),
+      enableVibration: true,
+      playSound: true,
+    );
+
+    // iOS 알림 설정
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+      sound: 'notification.aiff',
+    );
+
+    const notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    await _notifications.zonedSchedule(
+      id,
+      title,
+      body,
+      tz.TZDateTime.from(scheduledTime, tz.local),
+      notificationDetails,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+    );
+  }
 }

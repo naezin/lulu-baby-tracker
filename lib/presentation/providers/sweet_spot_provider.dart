@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import '../../core/utils/sweet_spot_calculator.dart';
 import '../../data/models/baby_model.dart';
 
@@ -12,6 +13,42 @@ class SweetSpotProvider extends ChangeNotifier {
   SweetSpotResult? get currentSweetSpot => _currentSweetSpot;
   List<SweetSpotResult>? get dailySchedule => _dailySchedule;
   BabyModel? get currentBaby => _currentBaby;
+
+  /// 초기화 메서드 - HomeScreen에서 호출
+  Future<void> initialize({
+    required BabyModel baby,
+    required DateTime? lastWakeUpTime,
+  }) async {
+    _currentBaby = baby;
+
+    if (lastWakeUpTime != null) {
+      _lastSleepActivity = lastWakeUpTime;
+      _calculateCurrentSweetSpot();
+    } else {
+      // 마지막 기상 시간이 없으면 현재 시간에서 2시간 전으로 가정
+      // (사용자가 아직 오늘 수면 기록을 안 한 경우)
+      _lastSleepActivity = DateTime.now().subtract(const Duration(hours: 2));
+      _calculateCurrentSweetSpot();
+    }
+
+    notifyListeners();
+  }
+
+  /// Activity 기록 후 업데이트 - 수면 기록 시 호출
+  void onSleepActivityRecorded({
+    required DateTime wakeUpTime,
+    int? napNumber,
+  }) {
+    _lastSleepActivity = wakeUpTime;
+    _calculateCurrentSweetSpot();
+  }
+
+  /// 수동 새로고침
+  void refreshSweetSpot() {
+    if (_currentBaby != null && _lastSleepActivity != null) {
+      _calculateCurrentSweetSpot();
+    }
+  }
 
   /// 아기 정보 설정
   void setBaby(BabyModel baby) {

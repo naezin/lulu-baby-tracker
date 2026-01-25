@@ -1,44 +1,48 @@
-import '../../../data/services/firestore_stub.dart';
-// import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/activity_model.dart';
+import '../../domain/repositories/i_activity_repository.dart';
+import '../../domain/entities/activity_entity.dart';
 import '../../core/localization/app_localizations.dart';
 
-/// Service to calculate daily summary statistics
+/// Service to calculate daily summary statistics (✅ Repository 패턴 적용 완료)
 class DailySummaryService {
-  /// Get today's summary for a specific user
-  Future<DailySummary> getTodaysSummary(String userId) async {
+  final IActivityRepository _activityRepository;
+
+  DailySummaryService({
+    required IActivityRepository activityRepository,
+  }) : _activityRepository = activityRepository;
+
+  /// Get today's summary for a specific baby
+  Future<DailySummary> getTodaysSummary(String babyId) async {
+    // Use local time for "today" but convert to UTC for consistent comparison
     final now = DateTime.now();
     final startOfDay = DateTime(now.year, now.month, now.day);
     final endOfDay = startOfDay.add(const Duration(days: 1));
 
     try {
-      final firestore = FirebaseFirestore.instance;
-      final querySnapshot = await firestore
-          .collection('users')
-          .doc(userId)
-          .collection('activities')
-          .where('timestamp', isGreaterThanOrEqualTo: startOfDay.toIso8601String())
-          .where('timestamp', isLessThan: endOfDay.toIso8601String())
-          .get();
+      final activities = await _activityRepository.getActivities(
+        babyId: babyId,
+        startDate: startOfDay,
+        endDate: endOfDay,
+      );
 
-      final activities = querySnapshot.docs
-          .map((doc) {
-            final data = doc.data();
-            data['id'] = doc.id;
-            return ActivityModel.fromJson(data);
-          })
-          .toList();
+      // Filter activities again in-memory to ensure timezone consistency
+      final todayActivities = activities.where((activity) {
+        final activityDate = activity.timestamp;
+        final activityLocal = activityDate.isUtc ? activityDate.toLocal() : activityDate;
+        return activityLocal.isAfter(startOfDay.subtract(const Duration(seconds: 1))) &&
+               activityLocal.isBefore(endOfDay);
+      }).toList();
 
-      return _calculateSummary(activities);
+      return _calculateSummary(todayActivities);
     } catch (e) {
       // Return empty summary on error
       return DailySummary.empty();
     }
   }
 
-  DailySummary _calculateSummary(List<ActivityModel> activities) {
+  DailySummary _calculateSummary(List<ActivityEntity> activities) {
     int totalSleepMinutes = 0;
     double totalFeedingMl = 0;
+    int feedingCount = 0; // 🆕 추가
     int diaperCount = 0;
     double? lastTemperature;
     DateTime? lastTempTime;
@@ -56,6 +60,7 @@ class DailySummaryService {
           }
           break;
         case ActivityType.feeding:
+          feedingCount++; // 🆕 추가
           if (activity.amountMl != null) {
             totalFeedingMl += activity.amountMl!;
           }
@@ -65,7 +70,7 @@ class DailySummaryService {
           break;
         case ActivityType.health:
           if (activity.temperatureCelsius != null) {
-            final activityTime = DateTime.parse(activity.timestamp);
+            final activityTime = activity.timestamp;
             if (lastTempTime == null || activityTime.isAfter(lastTempTime)) {
               lastTemperature = activity.temperatureCelsius;
               lastTempTime = activityTime;
@@ -80,6 +85,7 @@ class DailySummaryService {
     return DailySummary(
       totalSleepMinutes: totalSleepMinutes,
       totalFeedingMl: totalFeedingMl,
+      feedingCount: feedingCount, // 🆕 추가
       diaperCount: diaperCount,
       lastTemperature: lastTemperature,
       sleepTrend: _calculateTrend(totalSleepMinutes.toDouble(), prevSleepMinutes),
@@ -137,6 +143,7 @@ class DailySummaryService {
 class DailySummary {
   final int totalSleepMinutes;
   final double totalFeedingMl;
+  final int feedingCount; // 🆕 추가
   final int diaperCount;
   final double? lastTemperature;
   final Trend sleepTrend;
@@ -147,6 +154,7 @@ class DailySummary {
   DailySummary({
     required this.totalSleepMinutes,
     required this.totalFeedingMl,
+    required this.feedingCount, // 🆕 추가
     required this.diaperCount,
     this.lastTemperature,
     required this.sleepTrend,
@@ -159,6 +167,7 @@ class DailySummary {
     return DailySummary(
       totalSleepMinutes: 0,
       totalFeedingMl: 0,
+      feedingCount: 0, // 🆕 추가
       diaperCount: 0,
       lastTemperature: null,
       sleepTrend: Trend.stable,

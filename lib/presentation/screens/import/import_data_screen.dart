@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../data/services/csv_import_service.dart';
+import '../../../di/injection_container.dart';
 
 /// 데이터 가져오기 화면
 class ImportDataScreen extends StatefulWidget {
@@ -13,7 +14,7 @@ class ImportDataScreen extends StatefulWidget {
 }
 
 class _ImportDataScreenState extends State<ImportDataScreen> {
-  final _csvService = CsvImportService();
+  final _csvService = sl<CsvImportService>();
 
   bool _isImporting = false;
   double _progress = 0.0;
@@ -463,7 +464,7 @@ class _ImportDataScreenState extends State<ImportDataScreen> {
 
       // Import data with progress callback
       final result = await _csvService.importFromCsv(
-        userId: userId,
+        babyId: userId,
         csvFile: _selectedFile!,
         onProgress: (progress, message) {
           setState(() {

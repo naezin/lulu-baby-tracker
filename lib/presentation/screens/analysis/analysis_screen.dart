@@ -4,7 +4,17 @@ import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/baby_model.dart';
 import '../../../data/services/local_storage_service.dart';
+import '../../../core/utils/premature_baby_calculator.dart';
+import '../../../data/models/activity_model.dart';
+import '../../../data/services/growth_percentile_service.dart';
+import '../../widgets/analysis/who_growth_chart.dart';
+import '../../widgets/analysis/corrected_age_card.dart';
+import '../../widgets/analysis/low_birth_weight_care_card.dart';
+import '../../widgets/charts/growth_curve_chart.dart';
+import '../../widgets/charts/sleep_heatmap.dart';
+import '../../widgets/growth_share_card.dart';
 import 'services/insight_generator.dart';
+import '../profile/baby_profile_screen.dart';
 
 /// 📊 Analysis Screen - 질문 기반 통합 분석 화면
 /// 핵심 원칙: "차트가 아닌 답변을 보여준다"
@@ -31,6 +41,8 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
 
   BabyModel? _baby;
   int _babyAgeInDays = 72; // 기본값
+  double? _birthWeight; // 출생 체중 (저체중아 판단용)
+  double? _currentWeight; // 최신 체중 (건강 기록에서)
 
   @override
   void initState() {
@@ -47,10 +59,18 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       if (_baby != null) {
         final birthDate = DateTime.parse(_baby!.birthDate);
         _babyAgeInDays = DateTime.now().difference(birthDate).inDays;
+        _birthWeight = _baby!.birthWeightKg;
       }
 
       // 활동 데이터 로드
       final activities = await _storage.getActivities();
+
+      // 최신 체중 가져오기 (건강 기록에서)
+      final weightRecords = activities
+          .where((a) => a.type == ActivityType.health && a.weightKg != null)
+          .toList()
+        ..sort((a, b) => DateTime.parse(b.timestamp).compareTo(DateTime.parse(a.timestamp)));
+      _currentWeight = weightRecords.isNotEmpty ? weightRecords.first.weightKg : _birthWeight;
 
       // 기간 필터링
       final now = DateTime.now();
@@ -79,7 +99,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       _feedingInsight = _insightGenerator.generateFeedingInsight(
         activities: filteredActivities,
         prevActivities: prevActivities,
-        babyWeightKg: _baby?.weightKg ?? 5.0,
+        babyWeightKg: _currentWeight ?? 5.0,
       );
 
       _wakeUpInsight = _insightGenerator.generateWakeUpInsight(
@@ -103,17 +123,22 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   }
 
   String _generateHighlight() {
+    final babyName = _baby?.name ?? '아기';
+
     // 가장 긍정적인 변화를 하이라이트로
     if (_sleepInsight != null && _sleepInsight!.diffMinutes > 0) {
-      return '🎉 밤잠이 ${_sleepInsight!.diffMinutes}분 늘었어요!';
+      return '🌙 우리 $babyName가 지난주보다 ${_sleepInsight!.diffMinutes}분 더 푹 잤어요!';
     }
     if (_wakeUpInsight != null && _wakeUpInsight!.diffCount < 0) {
-      return '🎉 밤에 깨는 횟수가 ${-_wakeUpInsight!.diffCount}회 줄었어요!';
+      return '✨ $babyName가 밤에 ${-_wakeUpInsight!.diffCount}번 덜 깼어요. 잘하고 있어요!';
     }
     if (_feedingInsight != null && _feedingInsight!.status == InsightStatus.good) {
-      return '✅ 수유량이 적절해요!';
+      return '🍼 $babyName가 충분한 영양을 섭취하고 있어요!';
     }
-    return '📊 이번 주 아기의 패턴을 분석했어요';
+    if (_sleepInsight != null && _sleepInsight!.diffMinutes == 0) {
+      return '💙 $babyName의 수면 패턴이 안정적이에요';
+    }
+    return '📊 이번 주 $babyName의 성장 여정을 함께 살펴봐요';
   }
 
   @override
@@ -133,6 +158,24 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
           ),
         ),
         actions: [
+          // 프로필 편집 버튼
+          IconButton(
+            icon: const Icon(Icons.person_outline),
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => BabyProfileScreen(existingBaby: _baby),
+                ),
+              );
+
+              // 프로필이 수정되었으면 데이터 새로고침
+              if (result == true) {
+                _loadAnalysis();
+              }
+            },
+            tooltip: '프로필 편집',
+          ),
           // 기간 선택 드롭다운
           Container(
             margin: const EdgeInsets.only(right: 16),
@@ -186,6 +229,20 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
 
                     const SizedBox(height: 24),
 
+                    // 📅 조산아 교정 나이 카드
+                    if (_baby != null && _baby!.isPremature && _baby!.dueDate != null)
+                      CorrectedAgeCard(baby: _baby!),
+
+                    if (_baby != null && _baby!.isPremature && _baby!.dueDate != null)
+                      const SizedBox(height: 16),
+
+                    // 💗 저체중아 특별 케어 카드
+                    if (_birthWeight != null && _birthWeight! < 2.5)
+                      _buildLowBirthWeightCare(),
+
+                    if (_birthWeight != null && _birthWeight! < 2.5)
+                      const SizedBox(height: 16),
+
                     // ❓ 수면 인사이트
                     _buildSleepInsightCard(l10n),
 
@@ -203,6 +260,29 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
 
                     // ❓ 패턴 인사이트
                     _buildPatternInsightCard(l10n),
+
+                    const SizedBox(height: 24),
+
+                    // 😴 수면 히트맵 - 7일 또는 30일
+                    _buildSleepHeatmapSection(l10n),
+
+                    const SizedBox(height: 24),
+
+                    // 📈 WHO 성장 곡선 (교정 나이 사용)
+                    if (_baby != null && _currentWeight != null && _baby!.gender != null)
+                      WHOGrowthChart(
+                        currentWeight: _currentWeight!,
+                        ageInMonths: _baby!.isPremature
+                            ? PrematureBabyCalculator.calculateCorrectedAgeInMonths(_baby!)
+                            : _baby!.ageInMonths,
+                        isBoy: _baby!.gender == 'male',
+                        babyName: _baby!.name,
+                      ),
+
+                    const SizedBox(height: 24),
+
+                    // 📊 성장 곡선 차트 (fl_chart 버전)
+                    _buildGrowthCurveSection(l10n),
 
                     const SizedBox(height: 24),
 
@@ -237,7 +317,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            '이번 주 하이라이트',
+            '✨ 이번 주 가장 좋았던 순간',
             style: TextStyle(
               color: AppTheme.textSecondary,
               fontSize: 13,
@@ -289,21 +369,22 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     final statusIcon = status == InsightStatus.good ? '✅'
         : status == InsightStatus.warning ? '⚠️'
         : 'ℹ️';
+    final babyName = _baby?.name ?? '아기';
     final statusText = status == InsightStatus.good
-        ? (l10n.translate('sleeping_well') ?? '네, 잘 자고 있어요!')
+        ? '네, $babyName가 푹 쉬고 있어요! 👏'
         : status == InsightStatus.warning
-            ? (l10n.translate('needs_attention') ?? '조금 관심이 필요해요')
-            : (l10n.translate('normal') ?? '정상 범위입니다');
+            ? '조금만 더 신경써주세요 💙'
+            : '$babyName의 수면, 정상 범위예요';
 
     return _QAInsightCard(
-      question: l10n.translate('q_sleeping_well') ?? '우리 아기 요즘 잘 자고 있나요?',
+      question: '우리 $babyName, 요즘 잘 자고 있나요?',
       statusIcon: statusIcon,
       statusText: statusText,
       status: status,
       children: [
         const SizedBox(height: 12),
         _buildMetricRow(
-          label: l10n.translate('avg_night_sleep') ?? '평균 밤잠',
+          label: '하루 평균 밤잠',
           value: _formatHours(_sleepInsight!.avgMinutes),
           diff: _sleepInsight!.diffMinutes.toDouble(),
         ),
@@ -316,7 +397,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
         ),
         const SizedBox(height: 12),
         _buildActionButton(
-          label: l10n.translate('view_sleep_chart') ?? '📈 수면 차트 보기',
+          label: '📈 수면 기록 자세히 보기',
           onTap: () {
             // TODO: 수면 차트 상세 화면
           },
@@ -328,30 +409,31 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   Widget _buildWakeUpInsightCard(AppLocalizations l10n) {
     if (_wakeUpInsight == null) return const SizedBox.shrink();
 
+    final babyName = _baby?.name ?? '아기';
     final status = _wakeUpInsight!.status;
     final statusIcon = status == InsightStatus.good ? '✅'
         : status == InsightStatus.warning ? '⚠️'
         : 'ℹ️';
     final statusText = status == InsightStatus.good
-        ? (l10n.translate('normal_wakeups') ?? '정상 범위예요')
-        : (l10n.translate('slightly_high') ?? '조금 많은 편이에요');
+        ? '$babyName, 밤에 잘 자고 있어요! 👏'
+        : '밤잠이 조금 불안정해요 💙';
 
     return _QAInsightCard(
-      question: l10n.translate('q_night_wakeups') ?? '밤에 깨는 횟수는 정상인가요?',
+      question: '$babyName는 밤에 몇 번이나 깨나요?',
       statusIcon: statusIcon,
       statusText: statusText,
       status: status,
       children: [
         const SizedBox(height: 12),
         _buildMetricRow(
-          label: l10n.translate('avg_wakeups') ?? '이번 주 평균',
-          value: '${_wakeUpInsight!.avgCount.toStringAsFixed(1)}회/밤',
+          label: '하루 밤 평균',
+          value: '${_wakeUpInsight!.avgCount.toStringAsFixed(1)}회',
           diff: _wakeUpInsight!.diffCount.toDouble(),
           isLowerBetter: true,
         ),
         const SizedBox(height: 4),
         Text(
-          '${_babyAgeInDays ~/ 30}개월 아기 평균: ${_wakeUpInsight!.peerAvgCount.toStringAsFixed(1)}회/밤',
+          '또래 ${_babyAgeInDays ~/ 30}개월 아기들은 평균 ${_wakeUpInsight!.peerAvgCount.toStringAsFixed(1)}번 깨요',
           style: const TextStyle(
             color: AppTheme.textTertiary,
             fontSize: 13,
@@ -371,8 +453,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    l10n.translate('tip_reduce_wakeups') ??
-                        'Tip: 마지막 수유량을 10-20ml 늘려보세요',
+                    '💡 Tip: 자기 전 수유량을 10-20ml 늘리면 푹 잘 수 있어요',
                     style: const TextStyle(
                       color: AppTheme.textPrimary,
                       fontSize: 13,
@@ -390,23 +471,24 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   Widget _buildFeedingInsightCard(AppLocalizations l10n) {
     if (_feedingInsight == null) return const SizedBox.shrink();
 
+    final babyName = _baby?.name ?? '아기';
     final status = _feedingInsight!.status;
     final statusIcon = status == InsightStatus.good ? '✅'
         : status == InsightStatus.warning ? '⚠️'
         : 'ℹ️';
     final statusText = status == InsightStatus.good
-        ? (l10n.translate('adequate') ?? '적절합니다')
-        : (l10n.translate('check_needed') ?? '확인이 필요해요');
+        ? '$babyName가 충분히 먹고 있어요! 🍼'
+        : '수유량을 조금 확인해주세요 💙';
 
     return _QAInsightCard(
-      question: l10n.translate('q_feeding_amount') ?? '수유량은 충분한가요?',
+      question: '$babyName는 충분히 먹고 있나요?',
       statusIcon: statusIcon,
       statusText: statusText,
       status: status,
       children: [
         const SizedBox(height: 12),
         _buildMetricRow(
-          label: l10n.translate('daily_avg') ?? '일 평균',
+          label: '하루 평균',
           value: '${_feedingInsight!.avgDailyMl.toInt()}ml',
           diff: _feedingInsight!.diffMl,
         ),
@@ -424,14 +506,15 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   Widget _buildPatternInsightCard(AppLocalizations l10n) {
     if (_patternInsight == null) return const SizedBox.shrink();
 
+    final babyName = _baby?.name ?? '아기';
     final hasGoodPattern = _patternInsight!.eatPlaySleepRate > 0.6;
     final statusIcon = hasGoodPattern ? '✅' : '📊';
     final statusText = hasGoodPattern
-        ? (l10n.translate('good_pattern') ?? '좋은 패턴이에요!')
-        : (l10n.translate('needs_improvement') ?? '개선이 필요해요');
+        ? '$babyName, 건강한 리듬으로 생활하고 있어요! 👏'
+        : '리듬을 조금씩 만들어가고 있어요';
 
     return _QAInsightCard(
-      question: l10n.translate('q_eat_play_sleep') ?? '먹-놀-잠 패턴은 어떤가요?',
+      question: '$babyName의 먹-놀-잠 패턴은 어떤가요?',
       statusIcon: statusIcon,
       statusText: statusText,
       status: hasGoodPattern ? InsightStatus.good : InsightStatus.info,
@@ -456,7 +539,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
         if (!hasGoodPattern) ...[
           const SizedBox(height: 8),
           Text(
-            '수유 후 바로 잠든 횟수: ${_patternInsight!.feedToSleepCount}회/${_patternInsight!.totalDays}일',
+            '수유 후 바로 잠든 날: ${_patternInsight!.feedToSleepCount}일 / ${_patternInsight!.totalDays}일',
             style: const TextStyle(
               color: AppTheme.textSecondary,
               fontSize: 13,
@@ -464,7 +547,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
           ),
           const SizedBox(height: 4),
           const Text(
-            '→ 수유 후 10-15분 놀이 시간을 가져보세요',
+            '💡 수유 후 10-15분 함께 놀아주면 더 건강한 리듬을 만들 수 있어요',
             style: TextStyle(
               color: AppTheme.lavenderMist,
               fontSize: 13,
@@ -473,7 +556,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
         ],
         const SizedBox(height: 12),
         _buildActionButton(
-          label: l10n.translate('view_24h_rhythm') ?? '🕐 24시간 리듬 보기',
+          label: '🕐 24시간 생활 리듬 보기',
           onTap: () {
             // TODO: 24시간 리듬 차트
           },
@@ -497,9 +580,9 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
             children: [
               const Text('📋', style: TextStyle(fontSize: 20)),
               const SizedBox(width: 8),
-              Text(
-                l10n.translate('pediatric_report') ?? '소아과 방문용 리포트',
-                style: const TextStyle(
+              const Text(
+                '소아과 선생님께 보여드릴 리포트',
+                style: TextStyle(
                   color: AppTheme.textPrimary,
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -508,10 +591,9 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          Text(
-            l10n.translate('report_description') ??
-                '이번 주 데이터를 PDF로 정리해서 의사 선생님께 보여드리세요',
-            style: const TextStyle(
+          const Text(
+            '이번 주 아기의 기록을 PDF로 정리해서 의사 선생님과 함께 살펴보세요',
+            style: TextStyle(
               color: AppTheme.textSecondary,
               fontSize: 14,
             ),
@@ -522,7 +604,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
             child: ElevatedButton.icon(
               onPressed: _generatePdfReport,
               icon: const Icon(Icons.picture_as_pdf_rounded),
-              label: Text(l10n.translate('generate_pdf') ?? 'PDF 생성하기'),
+              label: const Text('PDF로 저장하기'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.lavenderMist,
                 foregroundColor: Colors.white,
@@ -710,6 +792,24 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     return '${value.toInt()}ml';
   }
 
+  Widget _buildLowBirthWeightCare() {
+    if (_birthWeight == null || _baby == null) {
+      return const SizedBox.shrink();
+    }
+
+    final category = PrematureBabyCalculator.getLowBirthWeightCategory(_birthWeight!);
+    if (category == LowBirthWeightCategory.normal) {
+      return const SizedBox.shrink();
+    }
+
+    final guides = PrematureBabyCalculator.getCareGuides(_baby!, _birthWeight!);
+
+    return LowBirthWeightCareCard(
+      guides: guides,
+      category: category,
+    );
+  }
+
   Future<void> _generatePdfReport() async {
     HapticFeedback.mediumImpact();
 
@@ -718,6 +818,292 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       const SnackBar(
         content: Text('📄 PDF 리포트 생성 중...'),
         behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  /// 😴 수면 히트맵 섹션
+  Widget _buildSleepHeatmapSection(AppLocalizations l10n) {
+    return FutureBuilder<List<ActivityModel>>(
+      future: _storage.getActivitiesByType(ActivityType.sleep),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppTheme.surfaceCard,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppTheme.glassBorder),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Text('😴', style: TextStyle(fontSize: 24)),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      '수면 패턴 히트맵',
+                      style: TextStyle(
+                        color: AppTheme.textPrimary,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                '지난 7일간의 수면 패턴을 한눈에 확인하세요',
+                style: TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                height: 400, // 고정 높이 지정
+                child: SleepHeatmap(
+                  sleepData: _convertToSleepDataPoints(snapshot.data!),
+                  height: 400,
+                  onCellTap: (date, hour) {
+                    // AI 분석 콜백
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          '${date.month}/${date.day} ${hour}시 수면',
+                        ),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// 📊 성장 곡선 차트 섹션
+  Widget _buildGrowthCurveSection(AppLocalizations l10n) {
+    if (_baby == null || _baby!.gender == null) {
+      return const SizedBox.shrink();
+    }
+
+    return FutureBuilder<List<ActivityModel>>(
+      future: _storage.getActivitiesByType(ActivityType.health),
+      builder: (context, snapshot) {
+        // 체중 기록이 있는 건강 활동만 필터링
+        final healthRecords = snapshot.data?.where((a) => a.weightKg != null).toList() ?? [];
+
+        // 출생 체중 포함
+        final growthDataPoints = <GrowthDataPoint>[];
+        final birthDate = DateTime.parse(_baby!.birthDate);
+
+        if (_baby!.birthWeightKg != null) {
+          growthDataPoints.add(GrowthDataPoint(
+            ageInMonths: 0,
+            value: _baby!.birthWeightKg!,
+            dateTime: birthDate,
+          ));
+        }
+
+        // 건강 기록의 체중 추가
+        for (final record in healthRecords) {
+          final recordDate = DateTime.parse(record.timestamp);
+          final ageInMonths = recordDate.difference(birthDate).inDays ~/ 30;
+
+          growthDataPoints.add(GrowthDataPoint(
+            ageInMonths: ageInMonths,
+            value: record.weightKg!,
+            dateTime: recordDate,
+          ));
+        }
+
+        // 데이터가 없을 때 플레이스홀더 표시
+        if (growthDataPoints.isEmpty) {
+          return Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceCard,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppTheme.glassBorder),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    const Text('📈', style: TextStyle(fontSize: 24)),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text(
+                        'WHO 성장 곡선',
+                        style: TextStyle(
+                          color: AppTheme.textPrimary,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(32),
+                  decoration: BoxDecoration(
+                    color: AppTheme.glassBorder,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(Icons.monitor_weight_outlined,
+                        size: 48,
+                        color: Colors.grey[600],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        '체중 기록이 없습니다',
+                        style: TextStyle(
+                          color: Colors.grey[400],
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '건강 기록에서 체중을 추가해주세요',
+                        style: TextStyle(
+                          color: Colors.grey[500],
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppTheme.surfaceCard,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppTheme.glassBorder),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      const Text('📈', style: TextStyle(fontSize: 24)),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'WHO 성장 곡선',
+                        style: TextStyle(
+                          color: AppTheme.textPrimary,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  // SNS 공유 버튼
+                  IconButton(
+                    icon: const Icon(Icons.share_rounded, color: AppTheme.lavenderMist),
+                    onPressed: () => _showShareDialog(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${_baby!.name}의 성장을 WHO 표준과 비교해보세요',
+                style: const TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                height: 300,
+                child: GrowthCurveChart(
+                  metric: GrowthMetric.weight,
+                  gender: _baby!.gender == 'male' ? Gender.male : Gender.female,
+                  babyData: growthDataPoints,
+                  title: '체중 (Weight)',
+                  unit: 'kg',
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// ActivityModel을 SleepDataPoint로 변환
+  List<SleepDataPoint> _convertToSleepDataPoints(List<ActivityModel> activities) {
+    final dataPoints = <SleepDataPoint>[];
+
+    for (final activity in activities) {
+      if (activity.endTime == null) continue; // 진행 중인 수면은 제외
+
+      final startTime = DateTime.parse(activity.timestamp);
+      final endTime = DateTime.parse(activity.endTime!);
+
+      // 시작 시간부터 종료 시간까지 시간 단위로 데이터 포인트 생성
+      var current = startTime;
+      while (current.isBefore(endTime)) {
+        final nextHour = DateTime(current.year, current.month, current.day, current.hour + 1);
+        final minutesInThisHour = endTime.isBefore(nextHour)
+            ? endTime.difference(current).inMinutes
+            : nextHour.difference(current).inMinutes;
+
+        if (minutesInThisHour > 0) {
+          dataPoints.add(SleepDataPoint(
+            date: DateTime(current.year, current.month, current.day),
+            hour: current.hour,
+            minutes: minutesInThisHour.clamp(0, 60),
+          ));
+        }
+
+        current = nextHour;
+      }
+    }
+
+    return dataPoints;
+  }
+
+  /// SNS 공유 다이얼로그
+  void _showShareDialog() {
+    if (_baby == null || _currentWeight == null) return;
+
+    final ageInMonths = _baby!.isPremature
+        ? PrematureBabyCalculator.calculateCorrectedAgeInMonths(_baby!)
+        : _baby!.ageInMonths;
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: GrowthShareCard(
+          babyName: _baby!.name,
+          ageText: '$ageInMonths개월',
+          gender: _baby!.gender ?? 'male',
+          weightKg: _currentWeight,
+          weightPercentile: 50, // TODO: 실제 백분위수 계산
+          measurementDate: DateTime.now(),
+        ),
       ),
     );
   }

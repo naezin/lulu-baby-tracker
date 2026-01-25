@@ -4,6 +4,8 @@ import '../../../data/models/activity_model.dart';
 import '../../../data/services/local_storage_service.dart';
 import '../../../data/services/widget_service.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../../widgets/log_screen_template.dart';
+import '../../widgets/lulu_time_picker.dart';
 
 /// 수유 기록 화면
 class LogFeedingScreen extends StatefulWidget {
@@ -16,12 +18,14 @@ class LogFeedingScreen extends StatefulWidget {
 class _LogFeedingScreenState extends State<LogFeedingScreen> {
   final _storage = LocalStorageService();
   final _widgetService = WidgetService();
+  static const Color _themeColor = Color(0xFFE8B87E); // Warm orange for feeding
 
   DateTime _feedingTime = DateTime.now();
   String _feedingType = 'bottle';
   double _amountMl = 120.0;
   String _breastSide = 'both';
   final _notesController = TextEditingController();
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -32,298 +36,374 @@ class _LogFeedingScreenState extends State<LogFeedingScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.translate('log_feeding')),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+
+    return LogScreenTemplate(
+      title: l10n.translate('log_feeding'),
+      subtitle: l10n.translate('track_feeding_types') ?? '다양한 수유 방법을 기록하세요',
+      icon: Icons.restaurant_rounded,
+      themeColor: _themeColor,
+      contextHint: _buildContextHint(),
+      inputSection: _buildInputSection(),
+      saveButtonText: l10n.translate('save_feeding_record'),
+      onSave: _saveFeeding,
+      isLoading: _isLoading,
+    );
+  }
+
+  Widget _buildContextHint() {
+    return FutureBuilder<String>(
+      future: _getContextHintText(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const SizedBox.shrink();
+        }
+        return Text(
+          snapshot.data!,
+          style: const TextStyle(
+            fontSize: 14,
+            color: Colors.white70,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<String> _getContextHintText() async {
+    final l10n = AppLocalizations.of(context);
+    final activities = await _storage.getActivities();
+    final now = DateTime.now();
+
+    final lastFeeding = activities
+        .where((a) => a.type == ActivityType.feeding)
+        .toList()
+      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+    if (lastFeeding.isNotEmpty) {
+      final lastTime = DateTime.parse(lastFeeding.first.timestamp);
+      final timeSince = now.difference(lastTime);
+      final hours = timeSince.inHours;
+      final minutes = timeSince.inMinutes % 60;
+      final timeAgo = hours > 0 ? '${hours}시간 ${minutes}분' : '${minutes}분';
+
+      return l10n.translate('feeding_last_time')?.replaceAll('{time}', timeAgo)
+          ?? 'Last feeding: $timeAgo ago\n${l10n.translate('feeding_recommended_interval') ?? 'Recommended interval: 2-3 hours'}';
+    }
+
+    return l10n.translate('feeding_first_record') ?? 'First feeding record! Please enter feeding information.';
+  }
+
+  Widget _buildInputSection() {
+    final l10n = AppLocalizations.of(context);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Feeding Time
+        _buildSectionLabel(l10n.translate('feeding_time')),
+        const SizedBox(height: 8),
+        _buildTimeSelector(),
+
+        const SizedBox(height: 16),
+
+        // Feeding Type
+        _buildSectionLabel(l10n.translate('feeding_type')),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
           children: [
-            // Header
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
+            LogOptionButton(
+              label: l10n.translate('bottle'),
+              icon: Icons.baby_changing_station_rounded,
+              isSelected: _feedingType == 'bottle',
+              themeColor: _themeColor,
+              onTap: () => setState(() => _feedingType = 'bottle'),
+            ),
+            LogOptionButton(
+              label: l10n.translate('breast'),
+              icon: Icons.pregnant_woman_rounded,
+              isSelected: _feedingType == 'breast',
+              themeColor: _themeColor,
+              onTap: () => setState(() => _feedingType = 'breast'),
+            ),
+            LogOptionButton(
+              label: l10n.translate('solid_food'),
+              icon: Icons.restaurant_menu_rounded,
+              isSelected: _feedingType == 'solid',
+              themeColor: _themeColor,
+              onTap: () => setState(() => _feedingType = 'solid'),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 16),
+
+        // Amount (for bottle/solid)
+        if (_feedingType != 'breast') ...[
+          _buildSectionLabel(l10n.translate('amount')),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1A2332),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white.withOpacity(0.1)),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Icon(Icons.restaurant, size: 32, color: Colors.orange),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            l10n.translate('record_feeding'),
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            l10n.translate('track_feeding_types'),
-                            style: TextStyle(color: Colors.grey[600]),
-                          ),
-                        ],
+                    Text(
+                      '${_amountMl.toInt()} ml',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: _themeColor,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _themeColor.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '${(_amountMl * 0.033814).toStringAsFixed(1)} oz',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: _themeColor,
+                        ),
                       ),
                     ),
                   ],
                 ),
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Feeding Time
-            _buildSectionTitle(l10n.translate('feeding_time')),
-            const SizedBox(height: 8),
-            _buildTimeSelector(),
-
-            const SizedBox(height: 24),
-
-            // Feeding Type
-            _buildSectionTitle(l10n.translate('feeding_type')),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              children: [
-                _buildTypeChip('bottle', '🍼', l10n.translate('bottle')),
-                _buildTypeChip('breast', '🤱', l10n.translate('breast')),
-                _buildTypeChip('solid', '🥄', l10n.translate('solid_food')),
+                const SizedBox(height: 12),
+                SliderTheme(
+                  data: SliderThemeData(
+                    activeTrackColor: _themeColor,
+                    thumbColor: _themeColor,
+                    inactiveTrackColor: _themeColor.withOpacity(0.2),
+                    overlayColor: _themeColor.withOpacity(0.2),
+                  ),
+                  child: Slider(
+                    value: _amountMl,
+                    min: 0,
+                    max: 300,
+                    divisions: 30,
+                    onChanged: (value) {
+                      setState(() {
+                        _amountMl = value;
+                      });
+                    },
+                  ),
+                ),
               ],
             ),
+          ),
+          const SizedBox(height: 16),
+        ],
 
-            const SizedBox(height: 24),
-
-            // Amount (for bottle/solid)
-            if (_feedingType != 'breast') ...[
-              _buildSectionTitle(l10n.translate('amount')),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      children: [
-                        Text('${_amountMl.toInt()} ml'),
-                        Slider(
-                          value: _amountMl,
-                          min: 0,
-                          max: 300,
-                          divisions: 30,
-                          label: '${_amountMl.toInt()} ml',
-                          onChanged: (value) {
-                            setState(() {
-                              _amountMl = value;
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.orange[50],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      '${(_amountMl * 0.033814).toStringAsFixed(1)} oz',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: Colors.orange[900],
-                      ),
-                    ),
-                  ),
-                ],
+        // Breast Side (for breastfeeding)
+        if (_feedingType == 'breast') ...[
+          _buildSectionLabel(l10n.translate('breast_side')),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              LogOptionButton(
+                label: l10n.translate('left'),
+                isSelected: _breastSide == 'left',
+                themeColor: _themeColor,
+                onTap: () => setState(() => _breastSide = 'left'),
               ),
-              const SizedBox(height: 24),
+              LogOptionButton(
+                label: l10n.translate('right'),
+                isSelected: _breastSide == 'right',
+                themeColor: _themeColor,
+                onTap: () => setState(() => _breastSide = 'right'),
+              ),
+              LogOptionButton(
+                label: l10n.translate('both'),
+                isSelected: _breastSide == 'both',
+                themeColor: _themeColor,
+                onTap: () => setState(() => _breastSide = 'both'),
+              ),
             ],
+          ),
+          const SizedBox(height: 16),
+        ],
 
-            // Breast Side (for breastfeeding)
-            if (_feedingType == 'breast') ...[
-              _buildSectionTitle(l10n.translate('breast_side')),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children: [
-                  _buildSideChip('left', l10n.translate('left')),
-                  _buildSideChip('right', l10n.translate('right')),
-                  _buildSideChip('both', l10n.translate('both')),
-                ],
-              ),
-              const SizedBox(height: 24),
-            ],
-
-            // Notes
-            _buildSectionTitle(l10n.translate('notes_optional')),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _notesController,
-              maxLines: 3,
-              decoration: InputDecoration(
-                hintText: l10n.translate('observations_hint_feeding'),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: Colors.grey[50],
-              ),
+        // Notes
+        _buildSectionLabel(l10n.translate('notes_optional')),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _notesController,
+          maxLines: 3,
+          style: const TextStyle(color: Colors.white),
+          decoration: InputDecoration(
+            hintText: l10n.translate('observations_hint_feeding'),
+            hintStyle: TextStyle(color: Colors.grey[600]),
+            filled: true,
+            fillColor: const Color(0xFF1A2332),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
             ),
-
-            const SizedBox(height: 32),
-
-            // Save Button
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton.icon(
-                onPressed: _saveFeeding,
-                icon: const Icon(Icons.check),
-                label: Text(
-                  l10n.translate('save_feeding_record'),
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  foregroundColor: Colors.white,
-                ),
-              ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
             ),
-          ],
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: _themeColor, width: 2),
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionLabel(String label) {
     return Text(
-      title,
+      label,
       style: const TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: Colors.white70,
       ),
     );
   }
 
   Widget _buildTimeSelector() {
-    return InkWell(
+    return GestureDetector(
       onTap: _selectTime,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.grey[100],
+          color: const Color(0xFF1A2332),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[300]!),
+          border: Border.all(color: Colors.white.withOpacity(0.1)),
         ),
         child: Row(
           children: [
-            const Icon(Icons.access_time, color: Colors.orange),
-            const SizedBox(width: 16),
+            Icon(Icons.access_time_rounded, color: _themeColor, size: 20),
+            const SizedBox(width: 12),
             Text(
               DateFormat('MMM d, yyyy  h:mm a').format(_feedingTime),
               style: const TextStyle(
                 fontSize: 16,
+                color: Colors.white,
                 fontWeight: FontWeight.w500,
               ),
             ),
+            const Spacer(),
+            Icon(Icons.edit_rounded, color: Colors.grey[600], size: 18),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildTypeChip(String value, String emoji, String label) {
-    final isSelected = _feedingType == value;
-    return ChoiceChip(
-      label: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(emoji, style: const TextStyle(fontSize: 18)),
-          const SizedBox(width: 6),
-          Text(label),
-        ],
-      ),
-      selected: isSelected,
-      onSelected: (selected) {
-        setState(() {
-          _feedingType = value;
-        });
-      },
-      selectedColor: Colors.orange[100],
-    );
-  }
-
-  Widget _buildSideChip(String value, String label) {
-    final isSelected = _breastSide == value;
-    return ChoiceChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (selected) {
-        setState(() {
-          _breastSide = value;
-        });
-      },
-      selectedColor: Colors.pink[100],
-    );
-  }
-
   Future<void> _selectTime() async {
-    final date = await showDatePicker(
+    final selectedTime = await LuluTimePicker.show(
       context: context,
-      initialDate: _feedingTime,
-      firstDate: DateTime.now().subtract(const Duration(days: 7)),
-      lastDate: DateTime.now().add(const Duration(days: 1)),
+      initialTime: _feedingTime,
+      dateRangeDays: 7,
+      allowFutureTime: false,
     );
 
-    if (date == null) return;
-
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(_feedingTime),
-    );
-
-    if (time == null) return;
+    if (selectedTime == null) return;
 
     setState(() {
-      _feedingTime = DateTime(
-        date.year,
-        date.month,
-        date.day,
-        time.hour,
-        time.minute,
-      );
+      _feedingTime = selectedTime;
     });
   }
 
   Future<void> _saveFeeding() async {
-    final activity = ActivityModel.feeding(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      time: _feedingTime,
-      feedingType: _feedingType,
-      amountMl: _feedingType != 'breast' ? _amountMl : null,
-      amountOz: _feedingType != 'breast' ? _amountMl * 0.033814 : null,
-      breastSide: _feedingType == 'breast' ? _breastSide : null,
-      notes: _notesController.text.trim().isEmpty
-          ? null
-          : _notesController.text.trim(),
-    );
+    setState(() => _isLoading = true);
 
-    await _storage.saveActivity(activity);
-
-    // Update widgets with new data
-    await _widgetService.updateAllWidgets();
-
-    if (mounted) {
-      final l10n = AppLocalizations.of(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.translate('feeding_recorded_success')),
-          backgroundColor: Colors.green,
-        ),
+    try {
+      final activity = ActivityModel.feeding(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        time: _feedingTime,
+        feedingType: _feedingType,
+        amountMl: _feedingType != 'breast' ? _amountMl : null,
+        amountOz: _feedingType != 'breast' ? _amountMl * 0.033814 : null,
+        breastSide: _feedingType == 'breast' ? _breastSide : null,
+        notes: _notesController.text.trim().isEmpty
+            ? null
+            : _notesController.text.trim(),
       );
-      Navigator.pop(context, true);
+
+      await _storage.saveActivity(activity);
+      await _widgetService.updateAllWidgets();
+
+      // HomeDataProvider 업데이트 - Today's Snapshot 새로고침
+      if (mounted) {
+        final homeDataProvider = Provider.of<HomeDataProvider>(context, listen: false);
+        await homeDataProvider.refreshDailySummary();
+        print('✅ [LogFeedingScreen] HomeDataProvider daily summary refreshed');
+      }
+
+      if (mounted) {
+        setState(() => _isLoading = false);
+
+        // Calculate feedback data
+        final todayCount = await _calculateTodayFeedingCount();
+
+        final l10n = AppLocalizations.of(context);
+        final insights = [
+          l10n.translate('feeding_today_count')?.replaceAll('{count}', todayCount.toString())
+              ?? '🍼 Today\'s feedings: $todayCount',
+          if (_feedingType == 'bottle')
+            l10n.translate('feeding_bottle_amount')
+                ?.replaceAll('{ml}', _amountMl.toInt().toString())
+                .replaceAll('{oz}', (_amountMl * 0.033814).toStringAsFixed(1))
+                ?? '📊 ${_amountMl.toInt()}ml (${(_amountMl * 0.033814).toStringAsFixed(1)}oz)',
+          if (_feedingType == 'breast')
+            (_breastSide == 'both'
+                ? l10n.translate('feeding_breast_both')
+                : _breastSide == 'left'
+                    ? l10n.translate('feeding_breast_left')
+                    : l10n.translate('feeding_breast_right'))
+                ?? '🤱 ${_breastSide == "both" ? "Both sides" : _breastSide == "left" ? "Left" : "Right"}',
+        ];
+
+        showPostRecordFeedback(
+          context: context,
+          title: l10n.translate('feeding_record_complete') ?? 'Feeding Record Complete! 🍼',
+          insights: insights,
+          themeColor: _themeColor,
+        );
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.translate('sleep_save_failed')?.replaceAll('{error}', e.toString()) ?? 'Save failed: $e')),
+        );
+      }
     }
+  }
+
+  Future<int> _calculateTodayFeedingCount() async {
+    final activities = await _storage.getActivities();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    return activities
+        .where((a) {
+          if (a.type != ActivityType.feeding) return false;
+          final time = DateTime.parse(a.timestamp);
+          return time.isAfter(today);
+        })
+        .length;
   }
 }

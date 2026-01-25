@@ -6,11 +6,13 @@ import '../../../core/theme/app_theme.dart';
 import '../../../data/models/activity_model.dart';
 import '../../../data/services/local_storage_service.dart';
 import '../../../data/services/widget_service.dart';
+import '../../utils/snackbar_utils.dart';
 import '../activities/log_sleep_screen.dart';
 import '../activities/log_feeding_screen.dart';
 import '../activities/log_diaper_screen.dart';
 import '../activities/log_play_screen.dart';
 import '../activities/log_health_screen.dart';
+import 'activity_detail_screen.dart';
 
 /// 📝 Records V2 - 원탭 기록 화면
 /// 핵심 원칙: "1초 안에 기록 완료"
@@ -574,11 +576,36 @@ class _RecordsScreenState extends State<RecordsScreen> {
         break;
     }
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return Dismissible(
+      key: Key(activity.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        decoration: BoxDecoration(
+          color: AppTheme.errorSoft,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Icon(
+          Icons.delete,
+          color: Colors.white,
+        ),
+      ),
+      confirmDismiss: (direction) async {
+        HapticFeedback.mediumImpact();
+        return await _showDeleteConfirmation(context, activity);
+      },
+      onDismissed: (direction) async {
+        await _deleteActivityWithUndo(activity);
+      },
+      child: InkWell(
+        onTap: () => _navigateToDetailScreen(activity),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
           // 시간
           SizedBox(
             width: 50,
@@ -642,15 +669,108 @@ class _RecordsScreenState extends State<RecordsScreen> {
           // 편집 버튼
           IconButton(
             icon: const Icon(Icons.more_horiz, color: AppTheme.textTertiary, size: 20),
-            onPressed: () {
-              // TODO: 편집/삭제 메뉴
-            },
+            onPressed: () => _navigateToDetailScreen(activity),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
           ),
         ],
       ),
+        ),
+      ),
     );
+  }
+
+  /// 상세 화면으로 이동
+  Future<void> _navigateToDetailScreen(ActivityModel activity) async {
+    HapticFeedback.lightImpact();
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ActivityDetailScreen(activity: activity),
+      ),
+    );
+
+    // 돌아올 때 목록 새로고침
+    _loadTodayActivities();
+  }
+
+  /// 삭제 확인 다이얼로그
+  Future<bool?> _showDeleteConfirmation(BuildContext context, ActivityModel activity) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surfaceDark,
+        title: const Text(
+          '활동 삭제',
+          style: TextStyle(color: AppTheme.textPrimary),
+        ),
+        content: Text(
+          '${_getLabel(activity.type)} 기록을 삭제하시겠습니까?\n삭제 후 3초 내에 취소할 수 있습니다.',
+          style: const TextStyle(color: AppTheme.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text(
+              '취소',
+              style: TextStyle(color: AppTheme.textTertiary),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              '삭제',
+              style: TextStyle(
+                color: AppTheme.errorSoft,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 삭제 + Undo 기능
+  Future<void> _deleteActivityWithUndo(ActivityModel activity) async {
+    final l10n = AppLocalizations.of(context);
+    final deletedActivity = activity;
+    final deletedIndex = _todayActivities.indexOf(activity);
+
+    // 1. Optimistic Update - UI에서 즉시 제거
+    setState(() {
+      _todayActivities.remove(activity);
+    });
+
+    if (!mounted) return;
+
+    // 2. Undo 가능한 스낵바 표시
+    final wasUndone = await LuluSnackBar.showDestructive(
+      context,
+      message: '${_getLabel(activity.type)} ${l10n.translate('activity_deleted')}',
+      undoLabel: l10n.translate('undo'),
+      duration: const Duration(seconds: 5),
+      onUndo: () async {
+        // 복원 로직
+        setState(() {
+          if (deletedIndex >= 0 && deletedIndex <= _todayActivities.length) {
+            _todayActivities.insert(deletedIndex, deletedActivity);
+          } else {
+            _todayActivities.add(deletedActivity);
+            _todayActivities.sort((a, b) =>
+              DateTime.parse(b.timestamp).compareTo(DateTime.parse(a.timestamp)));
+          }
+        });
+        HapticFeedback.lightImpact();
+      },
+    );
+
+    // 3. Undo하지 않은 경우에만 실제 삭제
+    if (!wasUndone) {
+      await _storage.deleteActivity(activity.id);
+      await WidgetService().updateAllWidgets();
+    }
   }
 
   Widget _buildTodaySummary(AppLocalizations l10n) {

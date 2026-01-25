@@ -10,19 +10,25 @@ import '../../../data/models/activity_model.dart';
 import '../../../data/models/baby_model.dart';
 import '../../widgets/sweet_spot_hero_card.dart';
 import '../../widgets/quick_log_bar.dart';
-import '../../widgets/home/action_zone_card.dart';
 import '../../widgets/home/todays_snapshot_card.dart';
 import '../../widgets/home/smart_alerts_card.dart';
 import '../../providers/sweet_spot_provider.dart';
+import '../../providers/home_data_provider.dart';
+import '../../providers/smart_coach_provider.dart';
+import '../../providers/baby_provider.dart';
 import '../../../data/services/smart_alerts_service.dart';
+import '../../widgets/smart_coach/today_timeline_section.dart';
 import '../activities/log_sleep_screen.dart';
 import '../activities/log_feeding_screen.dart';
 import '../activities/log_diaper_screen.dart';
 import '../activities/log_play_screen.dart';
 import '../activities/log_health_screen.dart';
 import '../records/records_screen.dart';
+import '../records/activity_detail_screen.dart';
 import '../settings/settings_screen.dart';
 import '../settings/notification_settings_screen.dart';
+import '../profile/baby_profile_screen.dart';
+import '../../../data/services/widget_service.dart';
 
 /// 🏠 Home Screen - Huckleberry + BabyTime Inspired Dashboard
 /// Features: Sweet Spot prediction, Quick Log, Baby context (72 days, 2.46kg)
@@ -37,6 +43,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
 
+  final _storage = LocalStorageService();
+  final _widgetService = WidgetService();
+
   @override
   void initState() {
     super.initState();
@@ -50,10 +59,92 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
     _fadeController.forward();
 
-    // Load Sweet Spot on init
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   Provider.of<SweetSpotProvider>(context, listen: false).refreshSweetSpot();
-    // });
+    // 🆕 Load Baby info and Sweet Spot data on init
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadSweetSpotData();
+    });
+  }
+
+  /// Load Baby info and last sleep activity for Sweet Spot calculation
+  Future<void> _loadSweetSpotData() async {
+    final babyProvider = Provider.of<BabyProvider>(context, listen: false);
+    final sweetSpotProvider = Provider.of<SweetSpotProvider>(context, listen: false);
+    final homeDataProvider = Provider.of<HomeDataProvider>(context, listen: false);
+    final smartCoachProvider = Provider.of<SmartCoachProvider>(context, listen: false);
+    final l10n = AppLocalizations.of(context);
+    final isKorean = l10n.locale.languageCode == 'ko';
+
+    // 1. Load baby info via BabyProvider
+    if (!babyProvider.hasBaby) {
+      await babyProvider.loadBabies();
+    }
+
+    final baby = babyProvider.currentBaby;
+    if (baby == null) {
+      print('⚠️ [HomeScreen] No baby data found');
+      return;
+    }
+    print('✅ [HomeScreen] Baby loaded: ${baby.name}, ${baby.correctedAgeInMonths} months');
+
+    // 2. Load last sleep activity
+    final activities = await _storage.getActivities();
+    final sleepActivities = activities
+        .where((a) => a.type == ActivityType.sleep && a.endTime != null)
+        .toList();
+
+    DateTime? lastWakeTime;
+    DateTime? lastFeedingTime;
+
+    if (sleepActivities.isNotEmpty) {
+      // Sort by timestamp descending to get most recent
+      sleepActivities.sort((a, b) {
+        return b.timestamp.compareTo(a.timestamp);
+      });
+
+      final endTimeStr = sleepActivities.first.endTime;
+      lastWakeTime = endTimeStr != null ? DateTime.parse(endTimeStr) : DateTime.parse(sleepActivities.first.timestamp);
+      print('✅ [HomeScreen] Last wake time loaded: $lastWakeTime');
+    } else {
+      print('⚠️ [HomeScreen] No sleep records found, using default wake time');
+    }
+
+    // Load last feeding activity
+    final feedingActivities = activities
+        .where((a) => a.type == ActivityType.feeding)
+        .toList();
+    if (feedingActivities.isNotEmpty) {
+      feedingActivities.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      lastFeedingTime = DateTime.parse(feedingActivities.first.timestamp);
+      print('✅ [HomeScreen] Last feeding time loaded: $lastFeedingTime');
+    }
+
+    // 3. Initialize SweetSpotProvider with new initialize method
+    await sweetSpotProvider.initialize(
+      baby: baby,
+      lastWakeUpTime: lastWakeTime,
+    );
+    print('✅ [HomeScreen] SweetSpotProvider initialized');
+
+    // 4. Initialize HomeDataProvider
+    await homeDataProvider.loadAll(
+      babyId: baby.id,
+      babyName: baby.name,
+      lastWakeUpTime: lastWakeTime ?? DateTime.now().subtract(const Duration(hours: 1)),
+      ageInMonths: baby.correctedAgeInMonths,
+      l10n: l10n,
+    );
+    print('✅ [HomeScreen] HomeDataProvider initialized');
+
+    // 5. Initialize SmartCoachProvider
+    await smartCoachProvider.loadTimeline(
+      userId: baby.id,
+      babyName: baby.name,
+      ageInMonths: baby.correctedAgeInMonths,
+      lastWakeUpTime: lastWakeTime,
+      lastFeedingTime: lastFeedingTime,
+      isKorean: isKorean,
+    );
+    print('✅ [HomeScreen] SmartCoachProvider initialized');
   }
 
   @override
@@ -86,32 +177,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     children: [
                       const SizedBox(height: 8),
 
-                      // 🎯 NEW: Action Zone Card - "지금 뭘 하면 좋을까요?"
-                      Consumer<SweetSpotProvider>(
-                        builder: (context, provider, _) {
-                          return ActionZoneCard(
-                            sweetSpot: provider.currentSweetSpot,
-                            onSleepNowTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const LogSleepScreen(),
-                                ),
-                              );
-                            },
-                            onSetAlarmTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('알림 설정 기능 곧 출시됩니다!'),
-                                  duration: Duration(seconds: 2),
-                                ),
-                              );
-                            },
-                          );
-                        },
-                      ),
-
-                      const SizedBox(height: 16),
 
                       // 📊 NEW: Today's Snapshot
                       _buildTodaysSnapshot(context),
@@ -123,8 +188,22 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
                       const SizedBox(height: 16),
 
-                      // Sweet Spot Hero Card (Huckleberry-style)
-                      const SweetSpotHeroCard(),
+                      // Sweet Spot Hero Card v2.0 (Huckleberry-style)
+                      FutureBuilder<BabyModel?>(
+                        future: _storage.getBaby(),
+                        builder: (context, snapshot) {
+                          final babyName = snapshot.data?.name ?? 'Baby';
+                          return SweetSpotHeroCard(babyName: babyName);
+                        },
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // 🆕 오늘의 타임라인 섹션 (스마트 코치)
+                      TodayTimelineSection(
+                        onSeeAllTap: () => _navigateToFullTimeline(context),
+                        onAskCoachTap: () => _navigateToChat(context),
+                      ),
 
                       // Bottom padding for Quick Log Bar
                       const SizedBox(height: 100),
@@ -184,6 +263,30 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         ),
       ),
       actions: [
+        // Profile button
+        FutureBuilder<BabyModel?>(
+          future: LocalStorageService().getBaby(),
+          builder: (context, snapshot) {
+            return IconButton(
+              icon: const Icon(Icons.person_outline, color: AppTheme.lavenderMist),
+              onPressed: () async {
+                _triggerHaptic();
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => BabyProfileScreen(existingBaby: snapshot.data),
+                  ),
+                );
+
+                // 프로필이 변경되면 화면 새로고침
+                if (result == true && mounted) {
+                  setState(() {});
+                }
+              },
+              tooltip: '프로필 편집',
+            );
+          },
+        ),
         // Notification button
         IconButton(
           icon: const Icon(Icons.notifications_outlined, color: AppTheme.lavenderMist),
@@ -225,7 +328,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           final baby = snapshot.data!;
           babyName = baby.name;
           birthDate = DateTime.parse(baby.birthDate);
-          birthWeight = baby.weightKg;
+          birthWeight = baby.birthWeightKg;
           isPremature = baby.isPremature;
         }
 
@@ -1476,5 +1579,120 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     } catch (e) {
       return TodaysSummary.empty();
     }
+  }
+
+  /// 🌙 "지금 재우기" - 즉시 수면 시작
+  Future<void> _startSleepNow(BuildContext context) async {
+    print('🌙 [HomeScreen] _startSleepNow() called');
+    HapticFeedback.mediumImpact();
+
+    try {
+      print('📝 [HomeScreen] Creating sleep activity...');
+      // 현재 시각에 진행 중인 수면 기록 생성
+      final activity = ActivityModel.sleep(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        startTime: DateTime.now(),
+        endTime: null, // 진행 중
+        location: null,
+        quality: null,
+        notes: null,
+      );
+
+      print('💾 [HomeScreen] Saving activity to storage...');
+      await _storage.saveActivity(activity);
+      print('✅ [HomeScreen] Activity saved successfully');
+
+      print('📱 [HomeScreen] Updating widgets...');
+      await _widgetService.updateAllWidgets();
+      print('✅ [HomeScreen] Widgets updated successfully');
+
+      if (!mounted) {
+        print('⚠️ [HomeScreen] Widget not mounted after saving, exiting');
+        return;
+      }
+
+      // SweetSpotProvider 업데이트 - 수면 시작 시각을 마지막 기상 시각으로 설정하지 않음
+      // (수면이 종료된 후에 기상 시각을 업데이트해야 함)
+      print('🔄 [HomeScreen] Sweet Spot will update when sleep ends');
+
+      HapticFeedback.heavyImpact();
+
+      print('📢 [HomeScreen] Showing success feedback...');
+      // 성공 피드백
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.bedtime, color: Colors.white),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  '수면이 시작되었습니다.\n기록에서 확인하거나 종료할 수 있습니다.',
+                  style: TextStyle(fontSize: 14),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: AppTheme.lavenderMist,
+          duration: const Duration(seconds: 3),
+          action: SnackBarAction(
+            label: '기록 보기',
+            textColor: Colors.white,
+            onPressed: () {
+              print('🔍 [HomeScreen] Navigating to activity detail...');
+              // 기록 탭으로 이동
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ActivityDetailScreen(activity: activity),
+                ),
+              );
+            },
+          ),
+        ),
+      );
+
+      // 홈 화면 새로고침
+      if (mounted) {
+        print('🔄 [HomeScreen] Refreshing home screen...');
+        setState(() {});
+        print('✅ [HomeScreen] Home screen refreshed');
+      } else {
+        print('⚠️ [HomeScreen] Widget not mounted for setState');
+      }
+
+      print('🎉 [HomeScreen] _startSleepNow() completed successfully!');
+    } catch (e, stackTrace) {
+      print('❌ [HomeScreen] Error in _startSleepNow(): $e');
+      print('📍 [HomeScreen] Stack trace: $stackTrace');
+
+      if (!context.mounted) {
+        print('⚠️ [HomeScreen] Context not mounted, cannot show error');
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('수면 시작 실패: $e'),
+          backgroundColor: AppTheme.errorSoft,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
+  }
+
+  /// 챗봇으로 이동
+  void _navigateToChat(BuildContext context) {
+    Navigator.pushNamed(context, '/chat');
+  }
+
+  /// 전체 타임라인으로 이동 (향후 구현)
+  void _navigateToFullTimeline(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('전체 타임라인 화면은 곧 출시됩니다!'),
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 }

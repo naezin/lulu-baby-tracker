@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../data/models/baby_model.dart';
 import '../providers/sweet_spot_provider.dart';
 import '../../core/localization/app_localizations.dart';
+import '../widgets/lulu_time_picker.dart';
 
 /// Sweet Spot 데모를 위한 설정 화면
 class DemoSetupScreen extends StatefulWidget {
@@ -213,20 +214,15 @@ class _DemoSetupScreenState extends State<DemoSetupScreen> {
         const SizedBox(height: 12),
         TextButton.icon(
           onPressed: () async {
-            final time = await showTimePicker(
+            final selectedTime = await LuluTimePicker.show(
               context: context,
-              initialTime: TimeOfDay.fromDateTime(_lastWakeUpTime),
+              initialTime: _lastWakeUpTime,
+              dateRangeDays: 7,
+              allowFutureTime: false,
             );
-            if (time != null) {
+            if (selectedTime != null) {
               setState(() {
-                final now = DateTime.now();
-                _lastWakeUpTime = DateTime(
-                  now.year,
-                  now.month,
-                  now.day,
-                  time.hour,
-                  time.minute,
-                );
+                _lastWakeUpTime = selectedTime;
               });
             }
           },

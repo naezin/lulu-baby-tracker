@@ -261,11 +261,22 @@ class AppLocalizations {
       'yes': 'Yes',
       'no': 'No',
       'confirm': 'Confirm',
+      'undo': 'Undo',
       'notes': 'Notes',
       'time': 'Time',
       'date': 'Date',
       'today': 'Today',
       'yesterday': 'Yesterday',
+      'tomorrow': 'Tomorrow',
+      'time_now': 'Now',
+      'time_minutes_ago': 'min ago',
+      'time_hours_ago': 'hr ago',
+      'time_days_ago': 'days ago',
+      'time_minutes_later': 'min later',
+      'time_hours_later': 'hr later',
+      'time_today': 'Today',
+      'time_yesterday': 'Yesterday',
+      'time_tomorrow': 'Tomorrow',
       'this_week': 'This Week',
       'this_month': 'This Month',
       'minutes': 'minutes',
@@ -533,6 +544,21 @@ class AppLocalizations {
       'sweet_spot_info_nap': 'Nap',
       'sweet_spot_info_daily_naps': 'Daily Naps',
 
+      // Sweet Spot Recommendation Card States
+      'sweet_spot_state_no_data': 'Need sleep record',
+      'sweet_spot_state_play_time': 'Play time',
+      'sweet_spot_state_sleep_soon': 'Sleep soon',
+      'sweet_spot_state_optimal_time': 'Optimal sleep time',
+      'sweet_spot_state_sleep_now': 'Sleep now',
+      'sweet_spot_msg_no_data': 'Log sleep to get\npersonalized recommendations',
+      'sweet_spot_msg_too_early': 'Still play time\nKeep baby awake a bit longer',
+      'sweet_spot_msg_approaching': 'Sleep time is coming\nStart preparing',
+      'sweet_spot_msg_active_window': 'Perfect time to\nput baby to sleep!',
+      'sweet_spot_msg_overtired': 'Missed the sweet spot\nPut baby to sleep now',
+      'sweet_spot_action_log_sleep': 'Log Sleep',
+      'sweet_spot_action_sleep_now': 'Sleep Now',
+      'sweet_spot_action_set_reminder': 'Get Reminder',
+
       // Chat Interface (chat_bubble.dart, chat_input.dart)
       'timestamp_just_now': 'Just now',
       'chat_button_tooltip_add_context': 'Add context',
@@ -698,6 +724,23 @@ class AppLocalizations {
       'widget_add_android_step2': '2. Tap "Widgets"',
       'widget_add_android_step3': '3. Find and select "Lulu"',
       'widget_add_android_step4': '4. Drag to your home screen',
+
+      // Widget States - Empty
+      'widget_empty_header': '🌙 Find your baby\'s golden time',
+      'widget_empty_body': 'Tell us when your baby woke up, and we\'ll predict the best time to sleep',
+      'widget_empty_cta': '🌅 Log wake-up time',
+
+      // Widget States - Active
+      'widget_active_header': 'Next Sweet Spot',
+      'widget_active_remaining': '{n} min left',
+      'widget_hint_green': '💡 Baby will get sleepy soon',
+      'widget_hint_yellow': '💡 Sweet Spot is coming up',
+      'widget_hint_red': '💡 Now is a good time!',
+
+      // Widget States - Urgent
+      'widget_urgent_header': '💤 It\'s Sweet Spot time!',
+      'widget_urgent_body': 'This is when your baby falls asleep most easily',
+      'widget_urgent_cta': '😴 Log sleep start',
 
       // Authentication
       'welcome_to_lulu': 'Welcome to Lulu',
@@ -1006,11 +1049,22 @@ class AppLocalizations {
       'yes': '예',
       'no': '아니오',
       'confirm': '확인',
+      'undo': '실행 취소',
       'notes': '메모',
       'time': '시간',
       'date': '날짜',
       'today': '오늘',
       'yesterday': '어제',
+      'tomorrow': '내일',
+      'time_now': '방금',
+      'time_minutes_ago': '분 전',
+      'time_hours_ago': '시간 전',
+      'time_days_ago': '일 전',
+      'time_minutes_later': '분 후',
+      'time_hours_later': '시간 후',
+      'time_today': '오늘',
+      'time_yesterday': '어제',
+      'time_tomorrow': '내일',
       'this_week': '이번 주',
       'this_month': '이번 달',
       'minutes': '분',
@@ -1278,6 +1332,21 @@ class AppLocalizations {
       'sweet_spot_info_nap': '낮잠',
       'sweet_spot_info_daily_naps': '일일 낮잠',
 
+      // Sweet Spot Recommendation Card States
+      'sweet_spot_state_no_data': '수면 기록 필요',
+      'sweet_spot_state_play_time': '놀이 시간',
+      'sweet_spot_state_sleep_soon': '곧 재울 시간',
+      'sweet_spot_state_optimal_time': '최적 수면 시간',
+      'sweet_spot_state_sleep_now': '즉시 재우기',
+      'sweet_spot_msg_no_data': '수면을 기록하면\n맞춤 추천을 받을 수 있어요',
+      'sweet_spot_msg_too_early': '아직 놀 시간이에요\n조금 더 깨어있게 해주세요',
+      'sweet_spot_msg_approaching': '곧 재울 시간이에요\n준비를 시작하세요',
+      'sweet_spot_msg_active_window': '지금이 재우기\n딱 좋은 시간이에요!',
+      'sweet_spot_msg_overtired': '스위트 스팟을 놓쳤어요\n지금 바로 재워주세요',
+      'sweet_spot_action_log_sleep': '수면 기록하기',
+      'sweet_spot_action_sleep_now': '지금 재우기',
+      'sweet_spot_action_set_reminder': '알림 받기',
+
       // Chat Interface (chat_bubble.dart, chat_input.dart)
       'timestamp_just_now': '방금 전',
       'chat_button_tooltip_add_context': '컨텍스트 추가',
@@ -1443,6 +1512,23 @@ class AppLocalizations {
       'widget_add_android_step2': '2. "위젯"을 탭하세요',
       'widget_add_android_step3': '3. "Lulu"를 찾아 선택하세요',
       'widget_add_android_step4': '4. 홈 화면으로 드래그하세요',
+
+      // Widget States - Empty
+      'widget_empty_header': '🌙 아기의 골든타임을 찾아요',
+      'widget_empty_body': '기상 시간을 알려주시면 아기가 가장 쉽게 잠들 시간을 예측해드릴게요',
+      'widget_empty_cta': '🌅 기상 시간 기록하기',
+
+      // Widget States - Active
+      'widget_active_header': '다음 Sweet Spot',
+      'widget_active_remaining': '{n}분 남음',
+      'widget_hint_green': '💡 아기가 졸려할 시간이에요',
+      'widget_hint_yellow': '💡 곧 잠들기 좋은 시간이에요',
+      'widget_hint_red': '💡 지금 재우면 좋아요!',
+
+      // Widget States - Urgent
+      'widget_urgent_header': '💤 지금이 Sweet Spot!',
+      'widget_urgent_body': '아기가 가장 편하게 잠들 수 있는 시간이에요',
+      'widget_urgent_cta': '😴 수면 시작 기록',
 
       // Authentication
       'welcome_to_lulu': 'Lulu에 오신 것을 환영합니다',

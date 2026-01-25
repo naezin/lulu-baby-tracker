@@ -245,8 +245,8 @@ class ChainOfThoughtReasoner {
 
       evidenceList.add(MedicalEvidence(
         hypothesis: hypothesis.cause,
-        evidence: evidence,
-        source: source,
+        evidence: evidence ?? '증거 없음',
+        source: source ?? '출처 없음',
       ));
     }
 

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../../../data/models/activity_model.dart';
 import '../../../data/services/local_storage_service.dart';
 import '../../../data/services/widget_service.dart';
 import '../../../core/localization/app_localizations.dart';
-import '../../widgets/log/context_hint_card.dart';
-import '../../widgets/log/post_record_feedback.dart';
+import '../../widgets/log_screen_template.dart';
+import '../../widgets/lulu_time_picker.dart';
+import '../../providers/sweet_spot_provider.dart';
 
 /// 수면 기록 화면
 class LogSleepScreen extends StatefulWidget {
@@ -18,14 +20,15 @@ class LogSleepScreen extends StatefulWidget {
 class _LogSleepScreenState extends State<LogSleepScreen> {
   final _storage = LocalStorageService();
   final _widgetService = WidgetService();
+  static const Color _themeColor = Color(0xFFB39DDB); // Purple/Lavender for sleep
 
   DateTime _startTime = DateTime.now().subtract(const Duration(hours: 2));
   DateTime? _endTime = DateTime.now();
-  String _location = 'crib'; // Internal key - translation happens in UI
-  String _quality = 'good'; // Internal key - translation happens in UI
+  String _location = 'crib';
+  String _quality = 'good';
   final _notesController = TextEditingController();
-
   bool _isOngoing = false;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -36,205 +39,285 @@ class _LogSleepScreenState extends State<LogSleepScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.translate('log_sleep')),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+
+    return LogScreenTemplate(
+      title: l10n.translate('log_sleep'),
+      subtitle: l10n.translate('track_sleep_patterns') ?? '수면 패턴을 기록하세요',
+      icon: Icons.bedtime_rounded,
+      themeColor: _themeColor,
+      contextHint: _buildContextHint(),
+      inputSection: _buildInputSection(),
+      saveButtonText: _isOngoing
+          ? l10n.translate('start_sleep_timer')
+          : l10n.translate('save_sleep_record'),
+      onSave: _saveSleep,
+      isLoading: _isLoading,
+    );
+  }
+
+  Widget _buildContextHint() {
+    return FutureBuilder<String>(
+      future: _getContextHintText(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const SizedBox.shrink();
+        }
+        return Text(
+          snapshot.data!,
+          style: const TextStyle(
+            fontSize: 14,
+            color: Colors.white70,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<String> _getContextHintText() async {
+    final l10n = AppLocalizations.of(context);
+    final activities = await _storage.getActivities();
+    final now = DateTime.now();
+
+    final lastSleep = activities
+        .where((a) => a.type == ActivityType.sleep)
+        .toList()
+      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+    if (lastSleep.isNotEmpty) {
+      final lastSleepTime = DateTime.parse(lastSleep.first.timestamp);
+      final awakeMinutes = now.difference(lastSleepTime).inMinutes;
+      final lastDuration = lastSleep.first.durationMinutes ?? 0;
+      final timeAgo = _formatTimeAgo(awakeMinutes);
+
+      return l10n.translate('sleep_last_sleep')
+          ?.replaceAll('{time}', timeAgo)
+          .replaceAll('{duration}', lastDuration.toString())
+          ?? 'Last sleep: $timeAgo ($lastDuration min)\n${l10n.translate('sleep_recommended_wake_time') ?? 'Recommended wake time: 1 hour 30 min'}';
+    }
+
+    return l10n.translate('sleep_first_record') ?? 'First sleep record! Please select the start time.';
+  }
+
+  String _formatTimeAgo(int minutes) {
+    final l10n = AppLocalizations.of(context);
+    if (minutes < 60) {
+      return l10n.translate('sleep_time_ago_minutes')?.replaceAll('{minutes}', minutes.toString())
+          ?? '$minutes min ago';
+    }
+    final hours = minutes ~/ 60;
+    final mins = minutes % 60;
+    return l10n.translate('sleep_time_ago_hours')
+        ?.replaceAll('{hours}', hours.toString())
+        .replaceAll('{minutes}', mins.toString())
+        ?? '$hours hr $mins min ago';
+  }
+
+  Widget _buildInputSection() {
+    final l10n = AppLocalizations.of(context);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Sleep Status Toggle
+        _buildSectionLabel(l10n.translate('sleep_status') ?? '수면 상태'),
+        const SizedBox(height: 8),
+        Row(
           children: [
-            // Context Hint
-            FutureBuilder<ContextHintData>(
-              future: _buildContextHint(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) return const SizedBox.shrink();
-                final data = snapshot.data!;
-                return ContextHintCard(
-                  title: '수면 기록 전 참고하세요',
-                  hints: data.hints,
-                  status: data.status,
-                );
-              },
-            ),
-
-            const SizedBox(height: 16),
-
-            // Sleep Status
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    const Icon(Icons.bedtime, size: 32, color: Colors.purple),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _isOngoing ? l10n.translate('sleep_in_progress') : l10n.translate('record_past_sleep'),
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _isOngoing
-                                ? l10n.translate('sleep_timer_running')
-                                : l10n.translate('log_completed_sleep'),
-                            style: TextStyle(color: Colors.grey[600]),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Switch(
-                      value: _isOngoing,
-                      onChanged: (value) {
-                        setState(() {
-                          _isOngoing = value;
-                          if (value) {
-                            _endTime = null;
-                          } else {
-                            _endTime = DateTime.now();
-                          }
-                        });
-                      },
-                    ),
-                  ],
-                ),
+            Expanded(
+              child: LogOptionButton(
+                label: l10n.translate('record_past_sleep') ?? '과거 수면 기록',
+                icon: Icons.history_rounded,
+                isSelected: !_isOngoing,
+                themeColor: _themeColor,
+                onTap: () {
+                  setState(() {
+                    _isOngoing = false;
+                    _endTime = DateTime.now();
+                  });
+                },
               ),
             ),
-
-            const SizedBox(height: 24),
-
-            // Start Time
-            _buildSectionTitle(l10n.translate('start_time')),
-            const SizedBox(height: 8),
-            _buildTimeSelector(
-              time: _startTime,
-              onTap: () => _selectTime(isStartTime: true),
-            ),
-
-            const SizedBox(height: 24),
-
-            // End Time
-            if (!_isOngoing) ...[
-              _buildSectionTitle(l10n.translate('end_time_wake_up')),
-              const SizedBox(height: 8),
-              _buildTimeSelector(
-                time: _endTime!,
-                onTap: () => _selectTime(isStartTime: false),
-              ),
-              const SizedBox(height: 16),
-              _buildDurationDisplay(),
-              const SizedBox(height: 24),
-            ],
-
-            // Location
-            _buildSectionTitle(l10n.translate('sleep_location')),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              children: [
-                _buildLocationChip('crib', '🛏️', l10n.translate('sleep_crib')),
-                _buildLocationChip('bed', '🛌', l10n.translate('sleep_bed')),
-                _buildLocationChip('stroller', '🚼', l10n.translate('sleep_stroller')),
-                _buildLocationChip('car', '🚗', l10n.translate('sleep_car')),
-                _buildLocationChip('arms', '🤱', l10n.translate('sleep_arms')),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // Quality
-            _buildSectionTitle(l10n.translate('sleep_quality')),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              children: [
-                _buildQualityChip('good', '😊', l10n.translate('sleep_quality_good')),
-                _buildQualityChip('fair', '😐', l10n.translate('sleep_quality_fair')),
-                _buildQualityChip('poor', '😔', l10n.translate('sleep_quality_poor')),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // Notes
-            _buildSectionTitle(l10n.translate('notes_optional')),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _notesController,
-              maxLines: 3,
-              decoration: InputDecoration(
-                hintText: l10n.translate('observations_hint_sleep'),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: Colors.grey[50],
-              ),
-            ),
-
-            const SizedBox(height: 32),
-
-            // Save Button
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton.icon(
-                onPressed: _saveSleep,
-                icon: const Icon(Icons.check),
-                label: Text(
-                  _isOngoing ? l10n.translate('start_sleep_timer') : l10n.translate('save_sleep_record'),
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.purple,
-                  foregroundColor: Colors.white,
-                ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: LogOptionButton(
+                label: l10n.translate('sleep_in_progress') ?? '진행 중',
+                icon: Icons.nights_stay_rounded,
+                isSelected: _isOngoing,
+                themeColor: _themeColor,
+                onTap: () {
+                  setState(() {
+                    _isOngoing = true;
+                    _endTime = null;
+                  });
+                },
               ),
             ),
           ],
         ),
-      ),
+
+        const SizedBox(height: 16),
+
+        // Start Time
+        _buildSectionLabel(l10n.translate('start_time')),
+        const SizedBox(height: 12),
+        _buildTimeSelector(
+          time: _startTime,
+          onTap: () => _selectTime(isStartTime: true),
+        ),
+
+        const SizedBox(height: 16),
+
+        // End Time (if not ongoing)
+        if (!_isOngoing) ...[
+          _buildSectionLabel(l10n.translate('end_time_wake_up')),
+          const SizedBox(height: 8),
+          _buildTimeSelector(
+            time: _endTime!,
+            onTap: () => _selectTime(isStartTime: false),
+          ),
+          const SizedBox(height: 8),
+          _buildDurationDisplay(),
+          const SizedBox(height: 16),
+        ],
+
+        // Location
+        _buildSectionLabel(l10n.translate('sleep_location')),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            LogOptionButton(
+              label: l10n.translate('sleep_crib'),
+              isSelected: _location == 'crib',
+              themeColor: _themeColor,
+              onTap: () => setState(() => _location = 'crib'),
+            ),
+            LogOptionButton(
+              label: l10n.translate('sleep_bed'),
+              isSelected: _location == 'bed',
+              themeColor: _themeColor,
+              onTap: () => setState(() => _location = 'bed'),
+            ),
+            LogOptionButton(
+              label: l10n.translate('sleep_stroller'),
+              isSelected: _location == 'stroller',
+              themeColor: _themeColor,
+              onTap: () => setState(() => _location = 'stroller'),
+            ),
+            LogOptionButton(
+              label: l10n.translate('sleep_car'),
+              isSelected: _location == 'car',
+              themeColor: _themeColor,
+              onTap: () => setState(() => _location = 'car'),
+            ),
+            LogOptionButton(
+              label: l10n.translate('sleep_arms'),
+              isSelected: _location == 'arms',
+              themeColor: _themeColor,
+              onTap: () => setState(() => _location = 'arms'),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 16),
+
+        // Quality
+        _buildSectionLabel(l10n.translate('sleep_quality')),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            LogOptionButton(
+              label: l10n.translate('sleep_quality_good'),
+              isSelected: _quality == 'good',
+              themeColor: _themeColor,
+              onTap: () => setState(() => _quality = 'good'),
+            ),
+            LogOptionButton(
+              label: l10n.translate('sleep_quality_fair'),
+              isSelected: _quality == 'fair',
+              themeColor: _themeColor,
+              onTap: () => setState(() => _quality = 'fair'),
+            ),
+            LogOptionButton(
+              label: l10n.translate('sleep_quality_poor'),
+              isSelected: _quality == 'poor',
+              themeColor: _themeColor,
+              onTap: () => setState(() => _quality = 'poor'),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 16),
+
+        // Notes
+        _buildSectionLabel(l10n.translate('notes_optional')),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _notesController,
+          maxLines: 3,
+          style: const TextStyle(color: Colors.white),
+          decoration: InputDecoration(
+            hintText: l10n.translate('observations_hint_sleep'),
+            hintStyle: TextStyle(color: Colors.grey[600]),
+            filled: true,
+            fillColor: const Color(0xFF1A2332),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: _themeColor, width: 2),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionLabel(String label) {
     return Text(
-      title,
+      label,
       style: const TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: Colors.white70,
       ),
     );
   }
 
   Widget _buildTimeSelector({required DateTime time, required VoidCallback onTap}) {
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.grey[100],
+          color: const Color(0xFF1A2332),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[300]!),
+          border: Border.all(color: Colors.white.withOpacity(0.1)),
         ),
         child: Row(
           children: [
-            const Icon(Icons.access_time, color: Colors.purple),
-            const SizedBox(width: 16),
+            Icon(Icons.access_time_rounded, color: _themeColor, size: 20),
+            const SizedBox(width: 12),
             Text(
               DateFormat('MMM d, yyyy  h:mm a').format(time),
               style: const TextStyle(
                 fontSize: 16,
+                color: Colors.white,
                 fontWeight: FontWeight.w500,
               ),
             ),
+            const Spacer(),
+            Icon(Icons.edit_rounded, color: Colors.grey[600], size: 18),
           ],
         ),
       ),
@@ -244,28 +327,31 @@ class _LogSleepScreenState extends State<LogSleepScreen> {
   Widget _buildDurationDisplay() {
     if (_endTime == null) return const SizedBox.shrink();
 
+    final l10n = AppLocalizations.of(context);
     final duration = _endTime!.difference(_startTime);
     final hours = duration.inHours;
     final minutes = duration.inMinutes % 60;
-    final l10n = AppLocalizations.of(context);
 
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.purple[50],
-        borderRadius: BorderRadius.circular(8),
+        color: _themeColor.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.timer, color: Colors.purple),
+          Icon(Icons.timer_rounded, color: _themeColor, size: 18),
           const SizedBox(width: 8),
           Text(
-            l10n.translate('duration_format').replaceAll('{hours}', hours.toString()).replaceAll('{minutes}', minutes.toString()),
+            l10n.translate('sleep_total_duration')
+                ?.replaceAll('{hours}', hours.toString())
+                .replaceAll('{minutes}', minutes.toString())
+                ?? 'Total sleep time: $hours hr $minutes min',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 14,
+              color: _themeColor,
               fontWeight: FontWeight.w600,
-              color: Colors.purple[900],
             ),
           ),
         ],
@@ -273,199 +359,99 @@ class _LogSleepScreenState extends State<LogSleepScreen> {
     );
   }
 
-  Widget _buildLocationChip(String value, String emoji, String label) {
-    final isSelected = _location == value;
-    return ChoiceChip(
-      label: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(emoji),
-          const SizedBox(width: 4),
-          Text(label),
-        ],
-      ),
-      selected: isSelected,
-      onSelected: (selected) {
-        setState(() {
-          _location = value;
-        });
-      },
-      selectedColor: Colors.purple[100],
-    );
-  }
-
-  Widget _buildQualityChip(String value, String emoji, String label) {
-    final isSelected = _quality == value;
-    return ChoiceChip(
-      label: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(emoji),
-          const SizedBox(width: 4),
-          Text(label),
-        ],
-      ),
-      selected: isSelected,
-      onSelected: (selected) {
-        setState(() {
-          _quality = value;
-        });
-      },
-      selectedColor: Colors.blue[100],
-    );
-  }
-
   Future<void> _selectTime({required bool isStartTime}) async {
     final currentTime = isStartTime ? _startTime : _endTime!;
 
-    final date = await showDatePicker(
+    final selectedTime = await LuluTimePicker.show(
       context: context,
-      initialDate: currentTime,
-      firstDate: DateTime.now().subtract(const Duration(days: 7)),
-      lastDate: DateTime.now().add(const Duration(days: 1)),
+      initialTime: currentTime,
+      dateRangeDays: 7,
+      allowFutureTime: false,
     );
 
-    if (date == null) return;
-
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(currentTime),
-    );
-
-    if (time == null) return;
-
-    final newDateTime = DateTime(
-      date.year,
-      date.month,
-      date.day,
-      time.hour,
-      time.minute,
-    );
+    if (selectedTime == null) return;
 
     setState(() {
       if (isStartTime) {
-        _startTime = newDateTime;
+        _startTime = selectedTime;
       } else {
-        _endTime = newDateTime;
+        _endTime = selectedTime;
       }
     });
   }
 
   Future<void> _saveSleep() async {
-    final activity = ActivityModel.sleep(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      startTime: _startTime,
-      endTime: _endTime,
-      location: _location,
-      quality: _quality,
-      notes: _notesController.text.trim().isEmpty
-          ? null
-          : _notesController.text.trim(),
-    );
+    setState(() => _isLoading = true);
 
-    await _storage.saveActivity(activity);
-
-    // Update widgets with new data
-    await _widgetService.updateAllWidgets();
-
-    if (mounted) {
-      // Post-Record Feedback 표시
-      final totalToday = await _calculateTodaySleepTotal();
-      final yesterdayTotal = await _calculateYesterdaySleepTotal();
-      final diff = totalToday - yesterdayTotal;
-
-      await PostRecordFeedback.show(
-        context,
-        title: '수면 기록 완료! 😴',
-        items: [
-          FeedbackItem(
-            emoji: '⏱️',
-            label: '오늘 총 수면',
-            value: '${totalToday ~/ 60}시간 ${totalToday % 60}분',
-            trend: diff > 0 ? '+$diff분' : diff < 0 ? '$diff분' : '평균',
-            color: Colors.purple,
-            trendColor: diff >= 0 ? Colors.green : Colors.orange,
-          ),
-          FeedbackItem(
-            emoji: '🎯',
-            label: '방금 기록한 수면',
-            value: _endTime != null
-                ? '${_endTime!.difference(_startTime).inMinutes}분'
-                : '진행 중',
-            color: Colors.blue,
-          ),
-        ],
-        nextAction: '인사이트 보기',
-        onNextActionTap: () {
-          Navigator.pop(context);
-          // TODO: Navigate to insights
-        },
+    try {
+      final activity = ActivityModel.sleep(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        startTime: _startTime,
+        endTime: _endTime,
+        location: _location,
+        quality: _quality,
+        notes: _notesController.text.trim().isEmpty
+            ? null
+            : _notesController.text.trim(),
       );
 
-      Navigator.pop(context, true); // true = data was saved
-    }
-  }
+      await _storage.saveActivity(activity);
+      await _widgetService.updateAllWidgets();
 
-  /// Context Hint 데이터 생성
-  Future<ContextHintData> _buildContextHint() async {
-    final activities = await _storage.getActivities();
-    final now = DateTime.now();
-
-    // 마지막 수면 찾기
-    final lastSleep = activities
-        .where((a) => a.type == ActivityType.sleep)
-        .toList()
-      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
-
-    final hints = <ContextHintItem>[];
-    ContextStatus status = ContextStatus.neutral;
-
-    if (lastSleep.isNotEmpty) {
-      final lastSleepTime = DateTime.parse(lastSleep.first.timestamp);
-      final awakeMinutes = now.difference(lastSleepTime).inMinutes;
-      final lastDuration = lastSleep.first.durationMinutes ?? 0;
-
-      hints.add(ContextHintItem(
-        emoji: '⏰',
-        text: '마지막 수면: ${_formatTimeAgo(awakeMinutes)} ($lastDuration분간)',
-      ));
-
-      // 월령 기반 권장 깨어있는 시간 (예: 2개월 = 60-90분)
-      const recommendedAwake = 90; // TODO: 월령에 따라 계산
-
-      hints.add(const ContextHintItem(
-        emoji: '📊',
-        text: '권장 깨어있는 시간: ${recommendedAwake ~/ 60}시간 ${recommendedAwake % 60}분',
-      ));
-
-      if (awakeMinutes >= recommendedAwake - 15 && awakeMinutes <= recommendedAwake + 30) {
-        status = ContextStatus.good;
-        hints.add(const ContextHintItem(
-          emoji: '✅',
-          text: '지금 재우기 좋은 타이밍이에요!',
-        ));
-      } else if (awakeMinutes > recommendedAwake + 30) {
-        status = ContextStatus.caution;
-        hints.add(const ContextHintItem(
-          emoji: '⚠️',
-          text: '깨어있는 시간이 길어졌어요. 피로 누적 주의!',
-        ));
+      // SweetSpotProvider 업데이트 - 수면이 종료된 경우 기상 시각 업데이트
+      if (_endTime != null && mounted) {
+        final provider = Provider.of<SweetSpotProvider>(context, listen: false);
+        provider.onSleepActivityRecorded(wakeUpTime: _endTime!);
+        print('✅ [LogSleepScreen] SweetSpot updated with wake time: $_endTime');
       }
-    } else {
-      hints.add(const ContextHintItem(
-        emoji: '📝',
-        text: '첫 수면 기록이에요! 시작 시간을 선택해주세요.',
-      ));
+
+      // HomeDataProvider 업데이트 - Today's Snapshot 새로고침
+      if (mounted) {
+        final homeDataProvider = Provider.of<HomeDataProvider>(context, listen: false);
+        await homeDataProvider.refreshDailySummary();
+        print('✅ [LogSleepScreen] HomeDataProvider daily summary refreshed');
+      }
+
+      if (mounted) {
+        setState(() => _isLoading = false);
+
+        // Calculate feedback data
+        final totalToday = await _calculateTodaySleepTotal();
+        final yesterdayTotal = await _calculateYesterdaySleepTotal();
+        final diff = totalToday - yesterdayTotal;
+
+        final l10n = AppLocalizations.of(context);
+        final insights = [
+          l10n.translate('sleep_today_total')
+              ?.replaceAll('{hours}', (totalToday ~/ 60).toString())
+              .replaceAll('{minutes}', (totalToday % 60).toString())
+              ?? '⏱️ Total sleep today: ${totalToday ~/ 60} hr ${totalToday % 60} min',
+          if (diff > 0)
+            l10n.translate('sleep_yesterday_diff_plus')?.replaceAll('{diff}', diff.toString())
+                ?? '📈 +$diff min from yesterday'
+          else if (diff < 0)
+            l10n.translate('sleep_yesterday_diff_minus')?.replaceAll('{diff}', diff.abs().toString())
+                ?? '📉 ${diff.abs()} min from yesterday',
+          l10n.translate('sleep_this_record')?.replaceAll('{minutes}',
+              _endTime != null ? _endTime!.difference(_startTime).inMinutes.toString() : l10n.translate('sleep_in_progress_label') ?? 'in progress')
+              ?? '🎯 This record: ${_endTime != null ? "${_endTime!.difference(_startTime).inMinutes} min" : "in progress"}',
+        ];
+
+        showPostRecordFeedback(
+          context: context,
+          title: l10n.translate('sleep_record_complete') ?? 'Sleep Record Complete! 😴',
+          insights: insights,
+          themeColor: _themeColor,
+        );
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.translate('sleep_save_failed')?.replaceAll('{error}', e.toString()) ?? 'Save failed: $e')),
+        );
+      }
     }
-
-    return ContextHintData(hints: hints, status: status);
-  }
-
-  String _formatTimeAgo(int minutes) {
-    if (minutes < 60) return '$minutes분 전';
-    final hours = minutes ~/ 60;
-    final mins = minutes % 60;
-    return '$hours시간 $mins분 전';
   }
 
   Future<int> _calculateTodaySleepTotal() async {
@@ -496,12 +482,4 @@ class _LogSleepScreenState extends State<LogSleepScreen> {
         })
         .fold<int>(0, (sum, a) => sum + (a.durationMinutes ?? 0));
   }
-}
-
-/// Context Hint 데이터
-class ContextHintData {
-  final List<ContextHintItem> hints;
-  final ContextStatus status;
-
-  ContextHintData({required this.hints, required this.status});
 }

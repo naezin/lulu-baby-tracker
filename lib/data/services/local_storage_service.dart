@@ -60,21 +60,28 @@ class LocalStorageService {
   }
 
   /// 마지막 기상 시간 가져오기
+  /// 수면이 끝난 시간 (endTime)을 기준으로 마지막 기상 시간을 반환
+  /// 진행 중인 수면이 있고 이전에 끝난 수면이 있으면, 이전 수면의 endTime 사용
+  /// 진행 중인 수면만 있으면 null 반환 (아직 깨어나지 않음)
   Future<DateTime?> getLastWakeUpTime() async {
     final sleepActivities = await getActivitiesByType(ActivityType.sleep);
 
     if (sleepActivities.isEmpty) return null;
 
-    // 최근 수면 활동 찾기
+    // 최근 수면 활동부터 정렬
     sleepActivities.sort((a, b) =>
       DateTime.parse(b.timestamp).compareTo(DateTime.parse(a.timestamp))
     );
 
-    final lastSleep = sleepActivities.first;
-    if (lastSleep.endTime != null) {
-      return DateTime.parse(lastSleep.endTime!);
+    // endTime이 있는 (끝난) 수면 활동 찾기
+    for (var sleep in sleepActivities) {
+      if (sleep.endTime != null) {
+        return DateTime.parse(sleep.endTime!);
+      }
     }
 
+    // 끝난 수면이 없으면 null 반환
+    // (모든 수면이 진행 중이거나, 수면 기록이 endTime 없이 저장된 경우)
     return null;
   }
 

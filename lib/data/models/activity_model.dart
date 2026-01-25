@@ -1,3 +1,5 @@
+import '../../domain/entities/activity_entity.dart' as entity;
+
 /// 활동 타입
 enum ActivityType {
   sleep,
@@ -41,6 +43,9 @@ class ActivityModel {
   final double? dosageAmount;
   final String? dosageUnit; // 'ml', 'mg'
   final DateTime? nextDoseTime; // For medication safety timer
+  final double? weightKg; // 체중 기록 (kg)
+  final double? lengthCm; // 신장 기록 (cm)
+  final double? headCircumferenceCm; // 머리둘레 (cm)
 
   ActivityModel({
     required this.id,
@@ -65,6 +70,9 @@ class ActivityModel {
     this.dosageAmount,
     this.dosageUnit,
     this.nextDoseTime,
+    this.weightKg,
+    this.lengthCm,
+    this.headCircumferenceCm,
   });
 
   factory ActivityModel.fromJson(Map<String, dynamic> json) {
@@ -97,6 +105,9 @@ class ActivityModel {
       nextDoseTime: json['nextDoseTime'] != null
           ? DateTime.parse(json['nextDoseTime'] as String)
           : null,
+      weightKg: json['weightKg'] as double?,
+      lengthCm: json['lengthCm'] as double?,
+      headCircumferenceCm: json['headCircumferenceCm'] as double?,
     );
   }
 
@@ -124,6 +135,9 @@ class ActivityModel {
       'dosageAmount': dosageAmount,
       'dosageUnit': dosageUnit,
       'nextDoseTime': nextDoseTime?.toIso8601String(),
+      'weightKg': weightKg,
+      'lengthCm': lengthCm,
+      'headCircumferenceCm': headCircumferenceCm,
     };
   }
 
@@ -257,5 +271,99 @@ class ActivityModel {
       nextDoseTime: nextDose,
       notes: notes,
     );
+  }
+
+  /// Entity → Model 변환
+  factory ActivityModel.fromEntity(entity.ActivityEntity entityObj) {
+    return ActivityModel(
+      id: entityObj.id,
+      type: _entityTypeToModel(entityObj.type),
+      timestamp: entityObj.timestamp.toIso8601String(),
+      endTime: entityObj.endTime?.toIso8601String(),
+      durationMinutes: entityObj.durationMinutes,
+      notes: entityObj.notes,
+      sleepLocation: entityObj.sleepLocation,
+      sleepQuality: entityObj.sleepQuality,
+      feedingType: entityObj.feedingType,
+      amountMl: entityObj.amountMl,
+      amountOz: entityObj.amountOz,
+      breastSide: entityObj.breastSide,
+      diaperType: entityObj.diaperType,
+      playActivityType: entityObj.playActivityType,
+      developmentTags: entityObj.developmentTags,
+      temperatureCelsius: entityObj.temperatureCelsius,
+      temperatureUnit: entityObj.temperatureUnit,
+      medicationType: entityObj.medicationType,
+      medicationName: entityObj.medicationName,
+      dosageAmount: entityObj.dosageAmount,
+      dosageUnit: entityObj.dosageUnit,
+      nextDoseTime: entityObj.nextDoseTime,
+      weightKg: entityObj.weightKg,
+      lengthCm: entityObj.lengthCm,
+      headCircumferenceCm: entityObj.headCircumferenceCm,
+    );
+  }
+
+  /// Model → Entity 변환
+  entity.ActivityEntity toEntity() {
+    return entity.ActivityEntity(
+      id: id,
+      type: _modelTypeToEntity(type),
+      timestamp: DateTime.parse(timestamp),
+      endTime: endTime != null ? DateTime.parse(endTime!) : null,
+      durationMinutes: durationMinutes,
+      notes: notes,
+      sleepLocation: sleepLocation,
+      sleepQuality: sleepQuality,
+      feedingType: feedingType,
+      amountMl: amountMl,
+      amountOz: amountOz,
+      breastSide: breastSide,
+      diaperType: diaperType,
+      playActivityType: playActivityType,
+      developmentTags: developmentTags,
+      temperatureCelsius: temperatureCelsius,
+      temperatureUnit: temperatureUnit,
+      medicationType: medicationType,
+      medicationName: medicationName,
+      dosageAmount: dosageAmount,
+      dosageUnit: dosageUnit,
+      nextDoseTime: nextDoseTime,
+      weightKg: weightKg,
+      lengthCm: lengthCm,
+      headCircumferenceCm: headCircumferenceCm,
+    );
+  }
+
+  /// Entity Type → Model Type
+  static ActivityType _entityTypeToModel(entity.ActivityType entityType) {
+    switch (entityType) {
+      case entity.ActivityType.sleep:
+        return ActivityType.sleep;
+      case entity.ActivityType.feeding:
+        return ActivityType.feeding;
+      case entity.ActivityType.diaper:
+        return ActivityType.diaper;
+      case entity.ActivityType.play:
+        return ActivityType.play;
+      case entity.ActivityType.health:
+        return ActivityType.health;
+    }
+  }
+
+  /// Model Type → Entity Type
+  static entity.ActivityType _modelTypeToEntity(ActivityType modelType) {
+    switch (modelType) {
+      case ActivityType.sleep:
+        return entity.ActivityType.sleep;
+      case ActivityType.feeding:
+        return entity.ActivityType.feeding;
+      case ActivityType.diaper:
+        return entity.ActivityType.diaper;
+      case ActivityType.play:
+        return entity.ActivityType.play;
+      case ActivityType.health:
+        return entity.ActivityType.health;
+    }
   }
 }

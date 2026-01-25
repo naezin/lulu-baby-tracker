@@ -7,6 +7,12 @@ class EnvironmentValidator {
     'OPENAI_API_KEY': 'AI 채팅 기능에 필요합니다',
   };
 
+  /// Supabase 환경 변수 (Optional - 없으면 로컬 모드)
+  static const _supabaseVars = {
+    'SUPABASE_URL': 'Supabase 프로젝트 URL',
+    'SUPABASE_ANON_KEY': 'Supabase 익명 키 (공개 키)',
+  };
+
   /// 환경 변수 검증 실행
   static ValidationResult validate() {
     final missing = <String, String>{};
@@ -35,6 +41,22 @@ class EnvironmentValidator {
   static String? get openAIApiKey {
     const key = String.fromEnvironment('OPENAI_API_KEY');
     return key.isNotEmpty ? key : null;
+  }
+
+  /// Supabase 환경 변수들
+  static String? get supabaseUrl {
+    const url = String.fromEnvironment('SUPABASE_URL');
+    return url.isNotEmpty ? url : null;
+  }
+
+  static String? get supabaseAnonKey {
+    const key = String.fromEnvironment('SUPABASE_ANON_KEY');
+    return key.isNotEmpty ? key : null;
+  }
+
+  /// Supabase가 설정되어 있는지 확인
+  static bool get hasSupabaseConfig {
+    return supabaseUrl != null && supabaseAnonKey != null;
   }
 
   /// 현재 환경 모드

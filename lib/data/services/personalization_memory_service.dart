@@ -1,12 +1,14 @@
-import '../../../data/services/firestore_stub.dart';
-// import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart'; // ❌ Firebase 제거됨
+import '../../domain/repositories/i_preference_repository.dart';
+import '../../domain/entities/preference_entity.dart';
 
-/// 개인화 메모리 서비스
+/// 개인화 메모리 서비스 (✅ Repository 패턴 적용 완료)
 class PersonalizationMemoryService {
-  final FirebaseFirestore _firestore;
+  final IPreferenceRepository _preferenceRepository;
 
-  PersonalizationMemoryService({required FirebaseFirestore firestore})
-      : _firestore = firestore;
+  PersonalizationMemoryService({
+    required IPreferenceRepository preferenceRepository,
+  }) : _preferenceRepository = preferenceRepository;
 
   /// 사용자 피드백 메모리 저장
   Future<void> saveUserPreference({
@@ -15,16 +17,19 @@ class PersonalizationMemoryService {
     required String preference,
     required String context,
   }) async {
-    await _firestore
-        .collection('babies')
-        .doc(babyId)
-        .collection('preferences')
-        .add({
-      'category': category,
-      'preference': preference,
-      'context': context,
-      'timestamp': Timestamp.now(),
-    });
+    final now = DateTime.now();
+    await _preferenceRepository.savePreference(
+      babyId: babyId,
+      preference: PreferenceEntity(
+        id: '', // Repository에서 생성
+        babyId: babyId,
+        category: category,
+        preference: preference,
+        context: context,
+        timestamp: now,
+        createdAt: now,
+      ),
+    );
   }
 
   /// 사용자 선호도 조회
@@ -33,23 +38,20 @@ class PersonalizationMemoryService {
     String? category,
     int limit = 50,
   }) async {
-    Query query = _firestore
-        .collection('babies')
-        .doc(babyId)
-        .collection('preferences')
-        .orderBy('timestamp', descending: true);
+    final preferences = await _preferenceRepository.getPreferences(
+      babyId: babyId,
+      category: category,
+      limit: limit,
+    );
 
-    if (category != null) {
-      query = query.where('category', isEqualTo: category);
-    }
-
-    final snapshot = await query.limit(limit).get();
-
-    return snapshot.docs
-        .map((doc) => UserPreference.fromJson({
-              ...doc.data(),
-              'id': doc.id,
-            }))
+    return preferences
+        .map((entity) => UserPreference(
+              id: entity.id,
+              category: entity.category,
+              preference: entity.preference,
+              context: entity.context,
+              timestamp: entity.timestamp,
+            ))
         .toList();
   }
 
@@ -60,16 +62,19 @@ class PersonalizationMemoryService {
     required String? aiResponse,
     required String extractedContext,
   }) async {
-    await _firestore
-        .collection('babies')
-        .doc(babyId)
-        .collection('conversation_memory')
-        .add({
-      'userMessage': userMessage,
-      'aiResponse': aiResponse,
-      'extractedContext': extractedContext,
-      'timestamp': Timestamp.now(),
-    });
+    final now = DateTime.now();
+    await _preferenceRepository.saveConversationSnippet(
+      babyId: babyId,
+      snippet: ConversationSnippet(
+        id: '', // Repository에서 생성
+        babyId: babyId,
+        userMessage: userMessage,
+        assistantResponse: aiResponse,
+        topics: [extractedContext], // extractedContext를 topics 리스트로 변환
+        timestamp: now,
+        createdAt: now,
+      ),
+    );
   }
 
   /// 개인화 컨텍스트 생성
@@ -194,7 +199,9 @@ class UserPreference {
       category: json['category'] as String,
       preference: json['preference'] as String,
       context: json['context'] as String,
-      timestamp: (json['timestamp'] as Timestamp).toDate(),
+      timestamp: json['timestamp'] is String
+          ? DateTime.parse(json['timestamp'] as String)
+          : (json['timestamp'] as DateTime),
     );
   }
 
@@ -204,7 +211,7 @@ class UserPreference {
       'category': category,
       'preference': preference,
       'context': context,
-      'timestamp': Timestamp.fromDate(timestamp),
+      'timestamp': timestamp.toIso8601String(),
     };
   }
 }

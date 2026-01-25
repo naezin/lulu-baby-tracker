@@ -19,6 +19,8 @@ class LuluWidgetProvider : AppWidgetProvider() {
     companion object {
         private const val PREFS_NAME = "HomeWidgetPreferences"
         private const val ACTION_SLEEP = "com.lulu.babytracker.SLEEP"
+        private const val ACTION_LOG_WAKE = "com.lulu.babytracker.LOG_WAKE"
+        private const val ACTION_LOG_SLEEP = "com.lulu.babytracker.LOG_SLEEP"
         private const val ACTION_FEEDING = "com.lulu.babytracker.FEEDING"
         private const val ACTION_DIAPER = "com.lulu.babytracker.DIAPER"
         private const val ACTION_OPEN_APP = "com.lulu.babytracker.OPEN_APP"
@@ -29,6 +31,49 @@ class LuluWidgetProvider : AppWidgetProvider() {
         private const val LAVENDER_MIST = "#FFC7ABE6"
         private const val WARNING_SOFT = "#FFFFD670"
         private const val INFO_SOFT = "#FF99D9FF"
+        private const val GREEN_URGENCY = "#FF66CC66"
+        private const val YELLOW_URGENCY = "#FFFFD670"
+        private const val RED_URGENCY = "#FFFF6666"
+    }
+
+    // Widget State Enum
+    enum class WidgetState {
+        EMPTY, ACTIVE, URGENT;
+
+        companion object {
+            fun fromString(value: String?): WidgetState {
+                return when (value?.lowercase()) {
+                    "empty" -> EMPTY
+                    "active" -> ACTIVE
+                    "urgent" -> URGENT
+                    else -> EMPTY
+                }
+            }
+        }
+    }
+
+    // Urgency Level Enum
+    enum class UrgencyLevel {
+        GREEN, YELLOW, RED;
+
+        companion object {
+            fun fromString(value: String?): UrgencyLevel? {
+                return when (value?.lowercase()) {
+                    "green" -> GREEN
+                    "yellow" -> YELLOW
+                    "red" -> RED
+                    else -> null
+                }
+            }
+        }
+
+        fun getColor(): String {
+            return when (this) {
+                GREEN -> GREEN_URGENCY
+                YELLOW -> YELLOW_URGENCY
+                RED -> RED_URGENCY
+            }
+        }
     }
 
     override fun onUpdate(
@@ -45,9 +90,16 @@ class LuluWidgetProvider : AppWidgetProvider() {
         super.onReceive(context, intent)
 
         when (intent.action) {
-            ACTION_SLEEP -> {
+            ACTION_LOG_WAKE -> {
                 val launchIntent = Intent(context, MainActivity::class.java).apply {
-                    putExtra("widget_action", "sleep")
+                    putExtra("widget_action", "log-wake")
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                }
+                context.startActivity(launchIntent)
+            }
+            ACTION_LOG_SLEEP, ACTION_SLEEP -> {
+                val launchIntent = Intent(context, MainActivity::class.java).apply {
+                    putExtra("widget_action", "log-sleep")
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
                 }
                 context.startActivity(launchIntent)
@@ -95,11 +147,21 @@ class LuluWidgetProvider : AppWidgetProvider() {
     private fun loadWidgetData(context: Context): WidgetData {
         val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
+        // Read widget state (NEW)
+        val state = WidgetState.fromString(prefs.getString("widget_state", "empty"))
+        val urgencyLevel = UrgencyLevel.fromString(prefs.getString("widget_urgency_level", null))
+        val minutesRemaining = if (prefs.contains("widget_minutes_remaining"))
+            prefs.getInt("widget_minutes_remaining", 0) else null
+        val confidenceScore = if (prefs.contains("widget_confidence_score"))
+            prefs.getInt("widget_confidence_score", 0) else null
+
         return WidgetData(
+            state = state,
+            urgencyLevel = urgencyLevel,
+            minutesRemaining = minutesRemaining,
+            confidenceScore = confidenceScore,
             nextSweetSpotTime = prefs.getString("widget_next_sweet_spot_time", "00:00") ?: "00:00",
-            minutesUntilSweetSpot = prefs.getInt("widget_minutes_until_sweet_spot", 0),
             sweetSpotProgress = prefs.getFloat("widget_sweet_spot_progress", 0f).toDouble(),
-            isUrgent = prefs.getBoolean("widget_is_urgent", false),
             totalSleepHours = prefs.getFloat("widget_total_sleep_hours", 0f).toDouble(),
             totalFeedingCount = prefs.getInt("widget_total_feeding_count", 0),
             totalDiaperCount = prefs.getInt("widget_total_diaper_count", 0),
@@ -113,25 +175,87 @@ class LuluWidgetProvider : AppWidgetProvider() {
     private fun createSmallWidget(context: Context, data: WidgetData): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_small)
 
-        // Set widget data
-        views.setTextViewText(R.id.minutes_text, "${data.minutesUntilSweetSpot}m")
-        views.setTextViewText(R.id.sweet_spot_time_text, data.nextSweetSpotTime)
+        when (data.state) {
+            WidgetState.EMPTY -> {
+                // Empty State: Show "Find your baby's golden time"
+                views.setViewVisibility(R.id.empty_state_container, android.view.View.VISIBLE)
+                views.setViewVisibility(R.id.active_state_container, android.view.View.GONE)
+                views.setViewVisibility(R.id.urgent_state_container, android.view.View.GONE)
 
-        // Set progress (circular progress requires custom view or approximation)
-        val progressPercent = (data.sweetSpotProgress * 100).toInt()
-        views.setProgressBar(R.id.progress_bar, 100, progressPercent, false)
+                views.setTextViewText(R.id.empty_header, "🌙")
+                views.setTextViewText(R.id.empty_title, "Find your\nbaby's\ngolden time")
+                views.setTextViewText(R.id.empty_subtitle, "Log wake time")
 
-        // Set click intent
-        val intent = Intent(context, LuluWidgetProvider::class.java).apply {
-            action = ACTION_SLEEP
+                // Set click intent to log wake
+                val intent = Intent(context, LuluWidgetProvider::class.java).apply {
+                    action = ACTION_LOG_WAKE
+                }
+                val pendingIntent = PendingIntent.getBroadcast(
+                    context, 0, intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                views.setOnClickPendingIntent(R.id.widget_container, pendingIntent)
+            }
+
+            WidgetState.ACTIVE -> {
+                // Active State: Show countdown with urgency indicator
+                views.setViewVisibility(R.id.empty_state_container, android.view.View.GONE)
+                views.setViewVisibility(R.id.active_state_container, android.view.View.VISIBLE)
+                views.setViewVisibility(R.id.urgent_state_container, android.view.View.GONE)
+
+                // Set urgency indicator color
+                data.urgencyLevel?.let { urgency ->
+                    views.setInt(R.id.urgency_indicator, "setBackgroundColor",
+                        Color.parseColor(urgency.getColor()))
+                }
+
+                // Set minutes remaining
+                data.minutesRemaining?.let { minutes ->
+                    views.setTextViewText(R.id.minutes_text, "$minutes")
+                    views.setTextViewText(R.id.minutes_label, "min left")
+                }
+
+                views.setTextViewText(R.id.sweet_spot_label, "Next Sweet Spot")
+                views.setTextViewText(R.id.sweet_spot_time_text, data.nextSweetSpotTime)
+
+                // Set confidence score
+                data.confidenceScore?.let { confidence ->
+                    views.setTextViewText(R.id.confidence_text, "$confidence% confidence")
+                }
+
+                // Set click intent to log sleep
+                val intent = Intent(context, LuluWidgetProvider::class.java).apply {
+                    action = ACTION_LOG_SLEEP
+                }
+                val pendingIntent = PendingIntent.getBroadcast(
+                    context, 0, intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                views.setOnClickPendingIntent(R.id.widget_container, pendingIntent)
+            }
+
+            WidgetState.URGENT -> {
+                // Urgent State: Show "It's Sweet Spot time!"
+                views.setViewVisibility(R.id.empty_state_container, android.view.View.GONE)
+                views.setViewVisibility(R.id.active_state_container, android.view.View.GONE)
+                views.setViewVisibility(R.id.urgent_state_container, android.view.View.VISIBLE)
+
+                views.setTextViewText(R.id.urgent_emoji, "💤")
+                views.setTextViewText(R.id.urgent_title, "It's Sweet\nSpot time!")
+                views.setTextViewText(R.id.urgent_time, data.nextSweetSpotTime)
+                views.setTextViewText(R.id.urgent_action, "Log sleep")
+
+                // Set click intent to log sleep
+                val intent = Intent(context, LuluWidgetProvider::class.java).apply {
+                    action = ACTION_LOG_SLEEP
+                }
+                val pendingIntent = PendingIntent.getBroadcast(
+                    context, 0, intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                views.setOnClickPendingIntent(R.id.widget_container, pendingIntent)
+            }
         }
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            0,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        views.setOnClickPendingIntent(R.id.widget_container, pendingIntent)
 
         return views
     }
@@ -139,31 +263,77 @@ class LuluWidgetProvider : AppWidgetProvider() {
     private fun createMediumWidget(context: Context, data: WidgetData): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_medium)
 
-        // Today's Summary
-        views.setTextViewText(R.id.sleep_hours_text, String.format("%.1fh", data.totalSleepHours))
-        views.setTextViewText(R.id.feeding_count_text, "${data.totalFeedingCount}×")
-        views.setTextViewText(R.id.diaper_count_text, "${data.totalDiaperCount}×")
+        when (data.state) {
+            WidgetState.EMPTY -> {
+                // Empty State: Show "Find your baby's golden time" with action button
+                views.setViewVisibility(R.id.empty_state_container, android.view.View.VISIBLE)
+                views.setViewVisibility(R.id.active_state_container, android.view.View.GONE)
+                views.setViewVisibility(R.id.urgent_state_container, android.view.View.GONE)
 
-        // Next Action
-        val nextActionLabel = if (data.nextActionType == "sleep") "Next Sleep" else "Next Feed"
-        views.setTextViewText(R.id.next_action_label, nextActionLabel)
-        views.setTextViewText(R.id.next_action_time, data.nextActionTime)
-        views.setTextViewText(R.id.next_action_minutes, "in ${data.nextActionMinutes}m")
+                views.setTextViewText(R.id.empty_emoji, "🌙")
+                views.setTextViewText(R.id.empty_title, "Find your baby's\ngolden time")
+                views.setTextViewText(R.id.empty_body, "Tell us when your baby\nwoke up")
 
-        // Set urgent color if needed
-        if (data.isUrgent) {
-            views.setTextColor(R.id.next_action_minutes, Color.parseColor("#FFFF7070"))
+                // Log wake button
+                val wakeIntent = createActionIntent(context, ACTION_LOG_WAKE)
+                views.setOnClickPendingIntent(R.id.log_wake_button, wakeIntent)
+            }
+
+            WidgetState.ACTIVE -> {
+                // Active State: Show Sweet Spot info + Today's summary
+                views.setViewVisibility(R.id.empty_state_container, android.view.View.GONE)
+                views.setViewVisibility(R.id.active_state_container, android.view.View.VISIBLE)
+                views.setViewVisibility(R.id.urgent_state_container, android.view.View.GONE)
+
+                // Sweet Spot Info (Left)
+                data.urgencyLevel?.let { urgency ->
+                    views.setInt(R.id.urgency_indicator, "setBackgroundColor",
+                        Color.parseColor(urgency.getColor()))
+                }
+
+                views.setTextViewText(R.id.sweet_spot_header, "Next Sweet Spot")
+
+                data.minutesRemaining?.let { minutes ->
+                    views.setTextViewText(R.id.minutes_large, "$minutes")
+                    views.setTextViewText(R.id.minutes_label, "min left")
+                }
+
+                views.setTextViewText(R.id.sweet_spot_time, data.nextSweetSpotTime)
+
+                data.confidenceScore?.let { confidence ->
+                    views.setTextViewText(R.id.confidence_text, "$confidence% confidence")
+                }
+
+                // Today's Summary (Right)
+                views.setTextViewText(R.id.today_header, "Today")
+                views.setTextViewText(R.id.sleep_hours_text, String.format("%.1fh", data.totalSleepHours))
+                views.setTextViewText(R.id.feeding_count_text, "${data.totalFeedingCount}×")
+                views.setTextViewText(R.id.diaper_count_text, "${data.totalDiaperCount}×")
+
+                // Action buttons
+                val sleepIntent = createActionIntent(context, ACTION_LOG_SLEEP)
+                views.setOnClickPendingIntent(R.id.sleep_button, sleepIntent)
+
+                val feedingIntent = createActionIntent(context, ACTION_FEEDING)
+                views.setOnClickPendingIntent(R.id.feeding_button, feedingIntent)
+            }
+
+            WidgetState.URGENT -> {
+                // Urgent State: Show "It's Sweet Spot time!" with prominent action
+                views.setViewVisibility(R.id.empty_state_container, android.view.View.GONE)
+                views.setViewVisibility(R.id.active_state_container, android.view.View.GONE)
+                views.setViewVisibility(R.id.urgent_state_container, android.view.View.VISIBLE)
+
+                views.setTextViewText(R.id.urgent_emoji, "💤")
+                views.setTextViewText(R.id.urgent_title, "It's Sweet Spot\ntime!")
+                views.setTextViewText(R.id.urgent_body, "This is when your baby\nfalls asleep most easily")
+                views.setTextViewText(R.id.urgent_time_display, data.nextSweetSpotTime)
+
+                // Log sleep button
+                val sleepIntent = createActionIntent(context, ACTION_LOG_SLEEP)
+                views.setOnClickPendingIntent(R.id.log_sleep_button, sleepIntent)
+            }
         }
-
-        // Action button intents
-        val sleepIntent = createActionIntent(context, ACTION_SLEEP)
-        views.setOnClickPendingIntent(R.id.sleep_button, sleepIntent)
-
-        val feedingIntent = createActionIntent(context, ACTION_FEEDING)
-        views.setOnClickPendingIntent(R.id.feeding_button, feedingIntent)
-
-        val diaperIntent = createActionIntent(context, ACTION_DIAPER)
-        views.setOnClickPendingIntent(R.id.diaper_button, diaperIntent)
 
         return views
     }
@@ -181,13 +351,22 @@ class LuluWidgetProvider : AppWidgetProvider() {
     }
 
     data class WidgetData(
+        // Widget State (NEW)
+        val state: WidgetState,
+        val urgencyLevel: UrgencyLevel?,
+        val minutesRemaining: Int?,
+        val confidenceScore: Int?,
+
+        // Sweet Spot Data
         val nextSweetSpotTime: String,
-        val minutesUntilSweetSpot: Int,
         val sweetSpotProgress: Double,
-        val isUrgent: Boolean,
+
+        // Today's Summary
         val totalSleepHours: Double,
         val totalFeedingCount: Int,
         val totalDiaperCount: Int,
+
+        // Legacy fields (for backward compatibility)
         val nextActionType: String,
         val nextActionTime: String,
         val nextActionMinutes: Int,

@@ -1,23 +1,27 @@
-import '../../../data/services/firestore_stub.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'package:csv/csv.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-// import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/localization/app_localizations.dart';
+import '../../domain/repositories/i_activity_repository.dart';
+import '../../domain/entities/activity_entity.dart';
 
 /// 진행률 콜백 타입
 typedef ExportProgressCallback = void Function(double progress, String message);
 
-/// CSV 내보내기 서비스
+/// CSV 내보내기 서비스 (✅ Repository 패턴 적용 완료)
 class CsvExportService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final IActivityRepository _activityRepository;
+
+  CsvExportService({
+    required IActivityRepository activityRepository,
+  }) : _activityRepository = activityRepository;
 
   /// 모든 데이터를 CSV로 내보내기
   Future<File> exportAllDataToCsv({
-    required String userId,
+    required String babyId,
     required AppLocalizations l10n,
     ExportProgressCallback? onProgress,
   }) async {
@@ -25,15 +29,15 @@ class CsvExportService {
       onProgress?.call(0.1, l10n.translate('export_progress_fetching_sleep'));
 
       // 1. 수면 기록 가져오기
-      final sleepRecords = await fetchSleepRecords(userId, l10n);
+      final sleepRecords = await fetchSleepRecords(babyId, l10n);
       onProgress?.call(0.3, l10n.translate('export_progress_fetching_feeding'));
 
       // 2. 수유 기록 가져오기
-      final feedingRecords = await fetchFeedingRecords(userId, l10n);
+      final feedingRecords = await fetchFeedingRecords(babyId, l10n);
       onProgress?.call(0.5, l10n.translate('export_progress_fetching_diaper'));
 
       // 3. 기저귀 기록 가져오기
-      final diaperRecords = await fetchDiaperRecords(userId, l10n);
+      final diaperRecords = await fetchDiaperRecords(babyId, l10n);
       onProgress?.call(0.7, l10n.translate('export_progress_creating_csv'));
 
       // 4. CSV 파일 생성
@@ -52,70 +56,64 @@ class CsvExportService {
   }
 
   /// 수면 기록 가져오기
-  Future<List<Map<String, dynamic>>> fetchSleepRecords(String userId, AppLocalizations l10n) async {
-    final snapshot = await _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('sleep_records')
-        .orderBy('start_time', descending: true)
-        .get();
+  Future<List<Map<String, dynamic>>> fetchSleepRecords(String babyId, AppLocalizations l10n) async {
+    final activities = await _activityRepository.getActivities(
+      babyId: babyId,
+      type: ActivityType.sleep,
+      limit: 10000, // Export all records
+    );
 
-    return snapshot.docs.map((doc) {
-      final data = doc.data();
+    return activities.map((activity) {
       return {
-        'id': doc.id,
+        'id': activity.id,
         'type': l10n.translate('csv_type_sleep'),
-        'start_time': (data['start_time'] as Timestamp?)?.toDate(),
-        'end_time': (data['end_time'] as Timestamp?)?.toDate(),
-        'duration_minutes': data['duration_minutes'],
-        'quality': data['quality'],
-        'location': data['location'],
-        'notes': data['notes'],
+        'start_time': activity.timestamp,
+        'end_time': activity.endTime,
+        'duration_minutes': activity.durationMinutes,
+        'quality': activity.sleepQuality,
+        'location': activity.sleepLocation,
+        'notes': activity.notes,
       };
     }).toList();
   }
 
   /// 수유 기록 가져오기
-  Future<List<Map<String, dynamic>>> fetchFeedingRecords(String userId, AppLocalizations l10n) async {
-    final snapshot = await _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('feeding_records')
-        .orderBy('time', descending: true)
-        .get();
+  Future<List<Map<String, dynamic>>> fetchFeedingRecords(String babyId, AppLocalizations l10n) async {
+    final activities = await _activityRepository.getActivities(
+      babyId: babyId,
+      type: ActivityType.feeding,
+      limit: 10000, // Export all records
+    );
 
-    return snapshot.docs.map((doc) {
-      final data = doc.data();
+    return activities.map((activity) {
       return {
-        'id': doc.id,
+        'id': activity.id,
         'type': l10n.translate('csv_type_feeding'),
-        'time': (data['time'] as Timestamp?)?.toDate(),
-        'feeding_type': data['type'],
-        'amount_ml': data['amount_ml'],
-        'duration_minutes': data['duration_minutes'],
-        'side': data['side'],
-        'notes': data['notes'],
+        'time': activity.timestamp,
+        'feeding_type': activity.feedingType,
+        'amount_ml': activity.amountMl,
+        'duration_minutes': activity.durationMinutes,
+        'side': activity.breastSide,
+        'notes': activity.notes,
       };
     }).toList();
   }
 
   /// 기저귀 기록 가져오기
-  Future<List<Map<String, dynamic>>> fetchDiaperRecords(String userId, AppLocalizations l10n) async {
-    final snapshot = await _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('diaper_records')
-        .orderBy('time', descending: true)
-        .get();
+  Future<List<Map<String, dynamic>>> fetchDiaperRecords(String babyId, AppLocalizations l10n) async {
+    final activities = await _activityRepository.getActivities(
+      babyId: babyId,
+      type: ActivityType.diaper,
+      limit: 10000, // Export all records
+    );
 
-    return snapshot.docs.map((doc) {
-      final data = doc.data();
+    return activities.map((activity) {
       return {
-        'id': doc.id,
+        'id': activity.id,
         'type': l10n.translate('csv_type_diaper'),
-        'time': (data['time'] as Timestamp?)?.toDate(),
-        'diaper_type': data['type'],
-        'notes': data['notes'],
+        'time': activity.timestamp,
+        'diaper_type': activity.diaperType,
+        'notes': activity.notes,
       };
     }).toList();
   }

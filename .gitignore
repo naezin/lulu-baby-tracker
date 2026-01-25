@@ -116,3 +116,6 @@ android/keystore.properties
 **/oauth-credentials.json
 **/*-credentials.json
 client_secret*.json
+
+# Build performance logs
+build_performance_log.txt

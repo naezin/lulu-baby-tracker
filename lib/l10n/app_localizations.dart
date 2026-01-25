@@ -551,13 +551,13 @@ abstract class AppLocalizations {
   /// No description provided for @criticalAlertTitle.
   ///
   /// In en, this message translates to:
-  /// **'Expert Consultation Recommended'**
+  /// **'Consider talking to your pediatrician'**
   String get criticalAlertTitle;
 
   /// No description provided for @criticalAlertMessage.
   ///
   /// In en, this message translates to:
-  /// **'Your baby\'s condition requires careful observation. We recommend consulting with a pediatrician and can generate a report to share with your doctor.'**
+  /// **'If you\'re concerned, your pediatrician can provide personalized guidance. We can generate a report to share with your doctor.'**
   String get criticalAlertMessage;
 
   /// No description provided for @generatePDFReport.
@@ -707,13 +707,13 @@ abstract class AppLocalizations {
   /// No description provided for @alertSleepUrgentTitle.
   ///
   /// In en, this message translates to:
-  /// **'Baby has been awake too long!'**
+  /// **'Time for a sleep break'**
   String get alertSleepUrgentTitle;
 
   /// No description provided for @alertSleepUrgentMessage.
   ///
   /// In en, this message translates to:
-  /// **'{minutes}min over recommended. Put to sleep now.'**
+  /// **'Baby might be getting sleepy. Consider putting down soon.'**
   String alertSleepUrgentMessage(int minutes);
 
   /// No description provided for @alertSleepWarningTitle.
@@ -725,19 +725,19 @@ abstract class AppLocalizations {
   /// No description provided for @alertSleepWarningMessage.
   ///
   /// In en, this message translates to:
-  /// **'Put to sleep in {minutes}min.'**
+  /// **'Consider putting to sleep in {minutes}min.'**
   String alertSleepWarningMessage(int minutes);
 
   /// No description provided for @alertFeedingUrgentTitle.
   ///
   /// In en, this message translates to:
-  /// **'Feeding time overdue!'**
+  /// **'Feeding time is here'**
   String get alertFeedingUrgentTitle;
 
   /// No description provided for @alertFeedingUrgentMessage.
   ///
   /// In en, this message translates to:
-  /// **'{minutes}min delayed.'**
+  /// **'Baby might be hungry soon.'**
   String alertFeedingUrgentMessage(int minutes);
 
   /// No description provided for @alertFeedingWarningTitle.
@@ -749,19 +749,19 @@ abstract class AppLocalizations {
   /// No description provided for @alertFeedingWarningMessage.
   ///
   /// In en, this message translates to:
-  /// **'Feed in {minutes}min.'**
+  /// **'Baby might be ready to eat in {minutes}min.'**
   String alertFeedingWarningMessage(int minutes);
 
   /// No description provided for @alertDiaperWarningTitle.
   ///
   /// In en, this message translates to:
-  /// **'Check diaper'**
+  /// **'Diaper check'**
   String get alertDiaperWarningTitle;
 
   /// No description provided for @alertDiaperWarningMessage.
   ///
   /// In en, this message translates to:
-  /// **'{hours}h since last change.'**
+  /// **'Might be time for a diaper change.'**
   String alertDiaperWarningMessage(int hours);
 
   /// No description provided for @recordsFilterAllPeriod.
@@ -785,13 +785,13 @@ abstract class AppLocalizations {
   /// No description provided for @insightWarning.
   ///
   /// In en, this message translates to:
-  /// **'Warning'**
+  /// **'Heads up'**
   String get insightWarning;
 
   /// No description provided for @insightConcern.
   ///
   /// In en, this message translates to:
-  /// **'Concern'**
+  /// **'Worth noting'**
   String get insightConcern;
 
   /// No description provided for @insightNeutral.
@@ -821,7 +821,7 @@ abstract class AppLocalizations {
   /// No description provided for @trendDeclining.
   ///
   /// In en, this message translates to:
-  /// **'Declining'**
+  /// **'A bit lower'**
   String get trendDeclining;
 
   /// No description provided for @trendStable.
@@ -859,6 +859,744 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Daily Average'**
   String get dailyAverage;
+
+  /// No description provided for @log_sleep.
+  ///
+  /// In en, this message translates to:
+  /// **'Sleep Log'**
+  String get log_sleep;
+
+  /// No description provided for @track_sleep_patterns.
+  ///
+  /// In en, this message translates to:
+  /// **'Track sleep patterns'**
+  String get track_sleep_patterns;
+
+  /// No description provided for @start_sleep_timer.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Sleep Timer'**
+  String get start_sleep_timer;
+
+  /// No description provided for @save_sleep_record.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Sleep Record'**
+  String get save_sleep_record;
+
+  /// No description provided for @sleep_last_sleep.
+  ///
+  /// In en, this message translates to:
+  /// **'Last sleep: {time} ({duration} min)'**
+  String sleep_last_sleep(String time, int duration);
+
+  /// No description provided for @sleep_recommended_wake_time.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended wake time: 1 hour 30 min'**
+  String get sleep_recommended_wake_time;
+
+  /// No description provided for @sleep_first_record.
+  ///
+  /// In en, this message translates to:
+  /// **'First sleep record! Please select the start time.'**
+  String get sleep_first_record;
+
+  /// No description provided for @sleep_time_ago_minutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min ago'**
+  String sleep_time_ago_minutes(int minutes);
+
+  /// No description provided for @sleep_time_ago_hours.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours} hr {minutes} min ago'**
+  String sleep_time_ago_hours(int hours, int minutes);
+
+  /// No description provided for @sleep_status.
+  ///
+  /// In en, this message translates to:
+  /// **'Sleep Status'**
+  String get sleep_status;
+
+  /// No description provided for @record_past_sleep.
+  ///
+  /// In en, this message translates to:
+  /// **'Record Past Sleep'**
+  String get record_past_sleep;
+
+  /// No description provided for @sleep_in_progress.
+  ///
+  /// In en, this message translates to:
+  /// **'In Progress'**
+  String get sleep_in_progress;
+
+  /// No description provided for @start_time.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Time'**
+  String get start_time;
+
+  /// No description provided for @end_time_wake_up.
+  ///
+  /// In en, this message translates to:
+  /// **'End Time (Wake Up)'**
+  String get end_time_wake_up;
+
+  /// No description provided for @sleep_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Sleep Location'**
+  String get sleep_location;
+
+  /// No description provided for @sleep_crib.
+  ///
+  /// In en, this message translates to:
+  /// **'Crib'**
+  String get sleep_crib;
+
+  /// No description provided for @sleep_bed.
+  ///
+  /// In en, this message translates to:
+  /// **'Bed'**
+  String get sleep_bed;
+
+  /// No description provided for @sleep_stroller.
+  ///
+  /// In en, this message translates to:
+  /// **'Stroller'**
+  String get sleep_stroller;
+
+  /// No description provided for @sleep_car.
+  ///
+  /// In en, this message translates to:
+  /// **'Car'**
+  String get sleep_car;
+
+  /// No description provided for @sleep_arms.
+  ///
+  /// In en, this message translates to:
+  /// **'Arms'**
+  String get sleep_arms;
+
+  /// No description provided for @sleep_quality.
+  ///
+  /// In en, this message translates to:
+  /// **'Sleep Quality'**
+  String get sleep_quality;
+
+  /// No description provided for @sleep_quality_good.
+  ///
+  /// In en, this message translates to:
+  /// **'Good'**
+  String get sleep_quality_good;
+
+  /// No description provided for @sleep_quality_fair.
+  ///
+  /// In en, this message translates to:
+  /// **'Fair'**
+  String get sleep_quality_fair;
+
+  /// No description provided for @sleep_quality_poor.
+  ///
+  /// In en, this message translates to:
+  /// **'Poor'**
+  String get sleep_quality_poor;
+
+  /// No description provided for @notes_optional.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes (Optional)'**
+  String get notes_optional;
+
+  /// No description provided for @observations_hint_sleep.
+  ///
+  /// In en, this message translates to:
+  /// **'Any observations? (e.g., woke up crying, slept soundly)'**
+  String get observations_hint_sleep;
+
+  /// No description provided for @sleep_total_duration.
+  ///
+  /// In en, this message translates to:
+  /// **'Total sleep time: {hours} hr {minutes} min'**
+  String sleep_total_duration(int hours, int minutes);
+
+  /// No description provided for @sleep_record_complete.
+  ///
+  /// In en, this message translates to:
+  /// **'Sleep Record Complete! 😴'**
+  String get sleep_record_complete;
+
+  /// No description provided for @sleep_save_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Save failed: {error}'**
+  String sleep_save_failed(String error);
+
+  /// No description provided for @sleep_today_total.
+  ///
+  /// In en, this message translates to:
+  /// **'⏱️ Total sleep today: {hours} hr {minutes} min'**
+  String sleep_today_total(int hours, int minutes);
+
+  /// No description provided for @sleep_yesterday_diff_plus.
+  ///
+  /// In en, this message translates to:
+  /// **'📈 +{diff} min from yesterday'**
+  String sleep_yesterday_diff_plus(int diff);
+
+  /// No description provided for @sleep_yesterday_diff_minus.
+  ///
+  /// In en, this message translates to:
+  /// **'📉 {diff} min from yesterday'**
+  String sleep_yesterday_diff_minus(int diff);
+
+  /// No description provided for @sleep_this_record.
+  ///
+  /// In en, this message translates to:
+  /// **'🎯 This record: {minutes} min'**
+  String sleep_this_record(int minutes);
+
+  /// No description provided for @sleep_in_progress_label.
+  ///
+  /// In en, this message translates to:
+  /// **'In progress'**
+  String get sleep_in_progress_label;
+
+  /// No description provided for @log_feeding.
+  ///
+  /// In en, this message translates to:
+  /// **'Feeding Log'**
+  String get log_feeding;
+
+  /// No description provided for @track_feeding_types.
+  ///
+  /// In en, this message translates to:
+  /// **'Track different feeding types'**
+  String get track_feeding_types;
+
+  /// No description provided for @save_feeding_record.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Feeding Record'**
+  String get save_feeding_record;
+
+  /// No description provided for @feeding_last_time.
+  ///
+  /// In en, this message translates to:
+  /// **'Last feeding: {time} ago'**
+  String feeding_last_time(String time);
+
+  /// No description provided for @feeding_recommended_interval.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended interval: 2-3 hours'**
+  String get feeding_recommended_interval;
+
+  /// No description provided for @feeding_first_record.
+  ///
+  /// In en, this message translates to:
+  /// **'First feeding record! Please enter feeding information.'**
+  String get feeding_first_record;
+
+  /// No description provided for @feeding_time.
+  ///
+  /// In en, this message translates to:
+  /// **'Feeding Time'**
+  String get feeding_time;
+
+  /// No description provided for @feeding_type.
+  ///
+  /// In en, this message translates to:
+  /// **'Feeding Type'**
+  String get feeding_type;
+
+  /// No description provided for @bottle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bottle'**
+  String get bottle;
+
+  /// No description provided for @breast.
+  ///
+  /// In en, this message translates to:
+  /// **'Breast'**
+  String get breast;
+
+  /// No description provided for @solid_food.
+  ///
+  /// In en, this message translates to:
+  /// **'Solid Food'**
+  String get solid_food;
+
+  /// No description provided for @amount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get amount;
+
+  /// No description provided for @breast_side.
+  ///
+  /// In en, this message translates to:
+  /// **'Breast Side'**
+  String get breast_side;
+
+  /// No description provided for @left.
+  ///
+  /// In en, this message translates to:
+  /// **'Left'**
+  String get left;
+
+  /// No description provided for @right.
+  ///
+  /// In en, this message translates to:
+  /// **'Right'**
+  String get right;
+
+  /// No description provided for @both.
+  ///
+  /// In en, this message translates to:
+  /// **'Both'**
+  String get both;
+
+  /// No description provided for @observations_hint_feeding.
+  ///
+  /// In en, this message translates to:
+  /// **'Any observations? (e.g., good appetite, refused milk)'**
+  String get observations_hint_feeding;
+
+  /// No description provided for @feeding_record_complete.
+  ///
+  /// In en, this message translates to:
+  /// **'Feeding Record Complete! 🍼'**
+  String get feeding_record_complete;
+
+  /// No description provided for @feeding_today_count.
+  ///
+  /// In en, this message translates to:
+  /// **'🍼 Today\'s feedings: {count}'**
+  String feeding_today_count(int count);
+
+  /// No description provided for @feeding_bottle_amount.
+  ///
+  /// In en, this message translates to:
+  /// **'📊 {ml} ml ({oz} oz)'**
+  String feeding_bottle_amount(int ml, String oz);
+
+  /// No description provided for @feeding_breast_both.
+  ///
+  /// In en, this message translates to:
+  /// **'🤱 Both sides'**
+  String get feeding_breast_both;
+
+  /// No description provided for @feeding_breast_left.
+  ///
+  /// In en, this message translates to:
+  /// **'🤱 Left'**
+  String get feeding_breast_left;
+
+  /// No description provided for @feeding_breast_right.
+  ///
+  /// In en, this message translates to:
+  /// **'🤱 Right'**
+  String get feeding_breast_right;
+
+  /// No description provided for @log_diaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Diaper Log'**
+  String get log_diaper;
+
+  /// No description provided for @track_diaper_types.
+  ///
+  /// In en, this message translates to:
+  /// **'Track diaper types'**
+  String get track_diaper_types;
+
+  /// No description provided for @save_diaper_record.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Diaper Record'**
+  String get save_diaper_record;
+
+  /// No description provided for @diaper_last_change.
+  ///
+  /// In en, this message translates to:
+  /// **'Last diaper change: {time} ago'**
+  String diaper_last_change(String time);
+
+  /// No description provided for @diaper_recommended_interval.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended change interval: 2-3 hours'**
+  String get diaper_recommended_interval;
+
+  /// No description provided for @diaper_first_record.
+  ///
+  /// In en, this message translates to:
+  /// **'First diaper record! Please select the diaper status.'**
+  String get diaper_first_record;
+
+  /// No description provided for @diaper_change_time.
+  ///
+  /// In en, this message translates to:
+  /// **'Diaper Change Time'**
+  String get diaper_change_time;
+
+  /// No description provided for @diaper_type.
+  ///
+  /// In en, this message translates to:
+  /// **'Diaper Type'**
+  String get diaper_type;
+
+  /// No description provided for @wet_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Wet'**
+  String get wet_desc;
+
+  /// No description provided for @urineOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Urine only'**
+  String get urineOnly;
+
+  /// No description provided for @dirty_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Dirty'**
+  String get dirty_desc;
+
+  /// No description provided for @bowelMovement.
+  ///
+  /// In en, this message translates to:
+  /// **'Bowel movement'**
+  String get bowelMovement;
+
+  /// No description provided for @both_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Both'**
+  String get both_desc;
+
+  /// No description provided for @wet_and_dirty.
+  ///
+  /// In en, this message translates to:
+  /// **'Wet and dirty'**
+  String get wet_and_dirty;
+
+  /// No description provided for @observations_hint_diaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Any observations? (e.g., color, consistency)'**
+  String get observations_hint_diaper;
+
+  /// No description provided for @diaper_record_complete.
+  ///
+  /// In en, this message translates to:
+  /// **'Diaper Record Complete!'**
+  String get diaper_record_complete;
+
+  /// No description provided for @diaper_today_count.
+  ///
+  /// In en, this message translates to:
+  /// **'🧷 Today\'s changes: {count}'**
+  String diaper_today_count(int count);
+
+  /// No description provided for @diaper_wet_only.
+  ///
+  /// In en, this message translates to:
+  /// **'💧 Wet only'**
+  String get diaper_wet_only;
+
+  /// No description provided for @diaper_dirty_only.
+  ///
+  /// In en, this message translates to:
+  /// **'💩 Dirty'**
+  String get diaper_dirty_only;
+
+  /// No description provided for @diaper_both.
+  ///
+  /// In en, this message translates to:
+  /// **'💧💩 Wet and dirty'**
+  String get diaper_both;
+
+  /// No description provided for @health_record.
+  ///
+  /// In en, this message translates to:
+  /// **'Health Record'**
+  String get health_record;
+
+  /// No description provided for @medication.
+  ///
+  /// In en, this message translates to:
+  /// **'Medication'**
+  String get medication;
+
+  /// No description provided for @temperature_unit.
+  ///
+  /// In en, this message translates to:
+  /// **'Temperature Unit'**
+  String get temperature_unit;
+
+  /// No description provided for @celsius.
+  ///
+  /// In en, this message translates to:
+  /// **'Celsius (°C)'**
+  String get celsius;
+
+  /// No description provided for @fahrenheit.
+  ///
+  /// In en, this message translates to:
+  /// **'Fahrenheit (°F)'**
+  String get fahrenheit;
+
+  /// No description provided for @time.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get time;
+
+  /// No description provided for @highFever.
+  ///
+  /// In en, this message translates to:
+  /// **'⚠️ High fever - consider contacting your pediatrician'**
+  String get highFever;
+
+  /// No description provided for @additionalObservationsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Any additional observations?'**
+  String get additionalObservationsHint;
+
+  /// No description provided for @saveTemperature.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Temperature'**
+  String get saveTemperature;
+
+  /// No description provided for @enterValidTemperature.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid temperature'**
+  String get enterValidTemperature;
+
+  /// No description provided for @errorWithMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Error: {message}'**
+  String errorWithMessage(String message);
+
+  /// No description provided for @temperature_record_baby.
+  ///
+  /// In en, this message translates to:
+  /// **'Record baby\'s temperature'**
+  String get temperature_record_baby;
+
+  /// No description provided for @temperature_normal_range.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal range: 36.5-37.5°C (97.7-99.5°F)\n38°C or higher is considered fever.'**
+  String get temperature_normal_range;
+
+  /// No description provided for @temperature_fever_status.
+  ///
+  /// In en, this message translates to:
+  /// **'⚠️ Fever detected'**
+  String get temperature_fever_status;
+
+  /// No description provided for @temperature_normal_status.
+  ///
+  /// In en, this message translates to:
+  /// **'✅ Normal temperature'**
+  String get temperature_normal_status;
+
+  /// No description provided for @temperature_record_complete.
+  ///
+  /// In en, this message translates to:
+  /// **'Temperature Record Complete!'**
+  String get temperature_record_complete;
+
+  /// No description provided for @medication_type.
+  ///
+  /// In en, this message translates to:
+  /// **'Medication Type'**
+  String get medication_type;
+
+  /// No description provided for @feverReducer.
+  ///
+  /// In en, this message translates to:
+  /// **'Fever Reducer'**
+  String get feverReducer;
+
+  /// No description provided for @antibiotic.
+  ///
+  /// In en, this message translates to:
+  /// **'Antibiotic'**
+  String get antibiotic;
+
+  /// No description provided for @medicationOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get medicationOther;
+
+  /// No description provided for @dosage.
+  ///
+  /// In en, this message translates to:
+  /// **'Dosage'**
+  String get dosage;
+
+  /// No description provided for @reasonForMedicationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason for medication?'**
+  String get reasonForMedicationHint;
+
+  /// No description provided for @saveMedication.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Medication'**
+  String get saveMedication;
+
+  /// No description provided for @medication_record_info.
+  ///
+  /// In en, this message translates to:
+  /// **'Record medication information'**
+  String get medication_record_info;
+
+  /// No description provided for @medication_record_complete.
+  ///
+  /// In en, this message translates to:
+  /// **'Medication Record Complete!'**
+  String get medication_record_complete;
+
+  /// No description provided for @growth_record_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Growth Record'**
+  String get growth_record_title;
+
+  /// No description provided for @growth_record_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Record baby\'s height, weight, and head circumference'**
+  String get growth_record_subtitle;
+
+  /// No description provided for @growth_track_progress.
+  ///
+  /// In en, this message translates to:
+  /// **'Track regularly to monitor growth trends'**
+  String get growth_track_progress;
+
+  /// No description provided for @growth_weight_kg.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight (kg)'**
+  String get growth_weight_kg;
+
+  /// No description provided for @growth_height_cm.
+  ///
+  /// In en, this message translates to:
+  /// **'Height (cm)'**
+  String get growth_height_cm;
+
+  /// No description provided for @growth_head_cm.
+  ///
+  /// In en, this message translates to:
+  /// **'Head Circumference (cm)'**
+  String get growth_head_cm;
+
+  /// No description provided for @growth_save_record.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Growth Record'**
+  String get growth_save_record;
+
+  /// No description provided for @growth_min_one_value.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter at least one measurement'**
+  String get growth_min_one_value;
+
+  /// No description provided for @growth_record_complete.
+  ///
+  /// In en, this message translates to:
+  /// **'Growth Record Complete!'**
+  String get growth_record_complete;
+
+  /// No description provided for @log_play_activity.
+  ///
+  /// In en, this message translates to:
+  /// **'Play Activity'**
+  String get log_play_activity;
+
+  /// No description provided for @play_track_developmental.
+  ///
+  /// In en, this message translates to:
+  /// **'Track developmental play activities'**
+  String get play_track_developmental;
+
+  /// No description provided for @save_activity.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Activity'**
+  String get save_activity;
+
+  /// No description provided for @play_context_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Select age-appropriate play activities.\nRegular play helps baby\'s physical and cognitive development.'**
+  String get play_context_hint;
+
+  /// No description provided for @select_activity.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Activity'**
+  String get select_activity;
+
+  /// No description provided for @duration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get duration;
+
+  /// No description provided for @activity_notes_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add activity notes...'**
+  String get activity_notes_hint;
+
+  /// No description provided for @development_benefits.
+  ///
+  /// In en, this message translates to:
+  /// **'Development Benefits:'**
+  String get development_benefits;
+
+  /// No description provided for @play_select_time.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select activity and duration'**
+  String get play_select_time;
+
+  /// No description provided for @play_record_complete.
+  ///
+  /// In en, this message translates to:
+  /// **'Play Activity Complete! 🎉'**
+  String get play_record_complete;
+
+  /// No description provided for @play_today_count.
+  ///
+  /// In en, this message translates to:
+  /// **'🎯 Today\'s activities: {count}'**
+  String play_today_count(int count);
+
+  /// No description provided for @play_duration_minutes.
+  ///
+  /// In en, this message translates to:
+  /// **'⏱️ {minutes} min'**
+  String play_duration_minutes(int minutes);
 }
 
 class _AppLocalizationsDelegate

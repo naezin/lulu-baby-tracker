@@ -2,27 +2,59 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidTimestamp(timestamp) {
+      return timestamp is string && timestamp.size() > 0;
+    }
+
+    function isValidActivityType(type) {
+      return type in ['sleep', 'feeding', 'diaper', 'play', 'health'];
+    }
+
     // 사용자 데이터: 본인만 접근 가능
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // User profile read/write
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId);
 
-      // 아기 데이터: 부모만 접근 가능
+      // 활동 기록: 본인만 접근 가능
+      match /activities/{activityId} {
+        allow read: if isOwner(userId);
+
+        // Create: 인증된 사용자, 유효한 데이터 구조
+        allow create: if isOwner(userId)
+          && request.resource.data.keys().hasAll(['id', 'type', 'timestamp'])
+          && isValidTimestamp(request.resource.data.timestamp)
+          && isValidActivityType(request.resource.data.type);
+
+        // Update: 본인만, 타임스탬프 변경 불가
+        allow update: if isOwner(userId)
+          && request.resource.data.timestamp == resource.data.timestamp;
+
+        // Delete: 본인만
+        allow delete: if isOwner(userId);
+      }
+
+      // 아기 데이터 (향후 사용)
       match /babies/{babyId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, write: if isOwner(userId);
+      }
 
-        // 활동 기록
-        match /activities/{activityId} {
-          allow read, write: if request.auth != null && request.auth.uid == userId;
-        }
-
-        // 선호도 데이터
-        match /preferences/{prefId} {
-          allow read, write: if request.auth != null && request.auth.uid == userId;
-        }
+      // 선호도 데이터 (향후 사용)
+      match /preferences/{prefId} {
+        allow read, write: if isOwner(userId);
       }
     }
 
-    // 기본 거부
+    // 기본 거부 - 명시되지 않은 모든 경로는 접근 거부
     match /{document=**} {
       allow read, write: if false;
     }

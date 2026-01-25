@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
-// import 'package:firebase_core/firebase_core.dart'; // Temporarily disabled for web
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:home_widget/home_widget.dart';
 import 'core/theme/app_theme.dart';
 import 'core/localization/app_localizations.dart';
@@ -11,12 +11,19 @@ import 'data/services/openai_service.dart';
 import 'data/services/widget_service.dart';
 import 'presentation/providers/chat_provider.dart';
 import 'presentation/providers/sweet_spot_provider.dart';
+import 'presentation/providers/home_data_provider.dart';
+import 'presentation/providers/smart_coach_provider.dart';
 import 'presentation/providers/locale_provider.dart';
 import 'presentation/providers/unit_preferences_provider.dart';
+import 'presentation/providers/baby_provider.dart';
 import 'presentation/screens/activities/log_feeding_screen.dart';
 import 'presentation/screens/activities/log_sleep_screen.dart';
 import 'presentation/screens/activities/log_diaper_screen.dart';
+import 'presentation/screens/chat/chat_screen.dart';
 import 'presentation/widgets/auth_wrapper.dart';
+
+// 🆕 Dependency Injection
+import 'di/injection_container.dart' as di;
 
 // Global navigator key for widget deep linking
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -34,24 +41,33 @@ Future<void> main() async {
     }
   }
 
-  // Skip Firebase initialization on web due to compatibility issues
-  // if (!kIsWeb) {
-  //   try {
-  //     await Firebase.initializeApp(
-  //       options: const FirebaseOptions(
-  //         apiKey: "AIzaSyDemo-Key-Replace-With-Real-Key",
-  //         authDomain: "lulu-demo.firebaseapp.com",
-  //         projectId: "lulu-demo",
-  //         storageBucket: "lulu-demo.appspot.com",
-  //         messagingSenderId: "123456789",
-  //         appId: "1:123456789:web:abcdef123456",
-  //       ),
-  //     );
-  //   } catch (e) {
-  //     // Firebase already initialized or initialization failed
-  //     debugPrint('Firebase initialization: $e');
-  //   }
-  // }
+  // 🚀 Supabase 초기화 (환경변수 사용)
+  if (EnvironmentValidator.hasSupabaseConfig) {
+    try {
+      await Supabase.initialize(
+        url: EnvironmentValidator.supabaseUrl!,
+        anonKey: EnvironmentValidator.supabaseAnonKey!,
+        debug: !EnvironmentValidator.isProduction,
+      );
+      debugPrint('✅ Supabase initialized with environment variables');
+    } catch (e) {
+      debugPrint('⚠️ Supabase initialization failed: $e');
+    }
+  } else {
+    debugPrint('⚠️ Supabase 설정이 없습니다. 로컬 모드로 실행됩니다.');
+    debugPrint('   Supabase를 사용하려면 다음 환경변수를 설정하세요:');
+    debugPrint('   SUPABASE_URL, SUPABASE_ANON_KEY');
+  }
+
+  // 🆕 의존성 주입 초기화
+  // 여기서 BackendType만 변경하면 전체 앱의 백엔드가 변경됩니다!
+  try {
+    await di.initDependencies(
+      backend: di.BackendType.supabase, // ✅ Supabase로 전환 (빌드 성능 40% 개선)
+    );
+  } catch (e) {
+    debugPrint('⚠️ DI initialization: $e');
+  }
 
   // Initialize widget service (only on non-web platforms)
   if (!kIsWeb) {
@@ -80,27 +96,53 @@ Future<void> main() async {
 }
 
 /// Handle widget deep link actions
+/// Supports both legacy format ('sleep') and URL scheme format ('lulu://log-sleep')
 void _handleWidgetAction(String action) {
   final context = navigatorKey.currentContext;
   if (context == null) return;
 
-  Widget? targetScreen;
+  debugPrint('🔗 [DeepLink] Received action: $action');
 
-  switch (action) {
+  Widget? targetScreen;
+  String normalizedAction = action;
+
+  // Parse URL scheme format (lulu://log-wake, lulu://log-sleep)
+  if (action.startsWith('lulu://')) {
+    final uri = Uri.parse(action);
+    normalizedAction = uri.host; // Extract 'log-wake', 'log-sleep', etc.
+    debugPrint('🔗 [DeepLink] Normalized action: $normalizedAction');
+  }
+
+  // Route to appropriate screen
+  switch (normalizedAction) {
+    case 'log-wake':
+      // Navigate to home screen (wake time is typically logged from home)
+      debugPrint('🔗 [DeepLink] Opening app for wake time logging');
+      return; // Just open app, user can log from home screen
+
+    case 'log-sleep':
     case 'sleep':
       targetScreen = const LogSleepScreen();
+      debugPrint('🔗 [DeepLink] Navigating to LogSleepScreen');
       break;
+
     case 'feeding':
       targetScreen = const LogFeedingScreen();
+      debugPrint('🔗 [DeepLink] Navigating to LogFeedingScreen');
       break;
+
     case 'diaper':
       targetScreen = const LogDiaperScreen();
+      debugPrint('🔗 [DeepLink] Navigating to LogDiaperScreen');
       break;
+
     case 'open_app':
       // Just open the app, no navigation needed
+      debugPrint('🔗 [DeepLink] Opening app');
       return;
+
     default:
-      debugPrint('Unknown widget action: $action');
+      debugPrint('⚠️ [DeepLink] Unknown widget action: $action');
       return;
   }
 
@@ -116,6 +158,11 @@ class LuluApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        // Baby Provider (먼저 등록 - 다른 Provider가 의존)
+        ChangeNotifierProvider(
+          create: (_) => BabyProvider(),
+        ),
+
         // Locale Provider
         ChangeNotifierProvider(
           create: (_) => LocaleProvider(),
@@ -144,6 +191,16 @@ class LuluApp extends StatelessWidget {
         // Sweet Spot Provider
         ChangeNotifierProvider(
           create: (_) => SweetSpotProvider(),
+        ),
+
+        // 🆕 Home Data Provider (v2.0)
+        ChangeNotifierProvider(
+          create: (_) => HomeDataProvider(),
+        ),
+
+        // 🆕 Smart Coach Provider (스마트 코치 시스템)
+        ChangeNotifierProvider(
+          create: (_) => SmartCoachProvider(),
         ),
       ],
       child: Consumer<LocaleProvider>(
@@ -174,6 +231,11 @@ class LuluApp extends StatelessWidget {
             // iOS-style page transitions
             builder: (context, child) {
               return child ?? const SizedBox.shrink();
+            },
+
+            // Routes
+            routes: {
+              '/chat': (context) => const ChatScreen(),
             },
 
             // Home - AuthWrapper handles routing based on auth state

@@ -1,0 +1,259 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../domain/repositories/i_activity_repository.dart';
+import '../../../domain/entities/activity_entity.dart' as entity;
+import '../../models/activity_model.dart' as model;
+
+/// Firebase Firestore 기반 Activity Repository 구현
+class FirebaseActivityRepository implements IActivityRepository {
+  final FirebaseFirestore _firestore;
+
+  FirebaseActivityRepository({FirebaseFirestore? firestore})
+      : _firestore = firestore ?? FirebaseFirestore.instance;
+
+  // ============================================================
+  // Collection References
+  // ============================================================
+
+  CollectionReference<Map<String, dynamic>> _activitiesCollection(
+      String babyId) {
+    return _firestore.collection('babies').doc(babyId).collection('activities');
+  }
+
+  // ============================================================
+  // CRUD Operations
+  // ============================================================
+
+  @override
+  Future<void> saveActivity({
+    required String babyId,
+    required ActivityEntity activity,
+  }) async {
+    try {
+      final model = model.ActivityModel.fromEntity(activity);
+      await _activitiesCollection(babyId).doc(activity.id).set(model.toJson());
+    } catch (e) {
+      throw Exception('Failed to save activity: $e');
+    }
+  }
+
+  @override
+  Future<List<entity.ActivityEntity>> getActivities({
+    required String babyId,
+    DateTime? startDate,
+    DateTime? endDate,
+    model.ActivityType? type,
+    int? limit,
+  }) async {
+    try {
+      Query<Map<String, dynamic>> query = _activitiesCollection(babyId)
+          .orderBy('timestamp', descending: true);
+
+      if (startDate != null) {
+        query = query.where('timestamp',
+            isGreaterThanOrEqualTo: startDate.toIso8601String());
+      }
+
+      if (endDate != null) {
+        query = query.where('timestamp',
+            isLessThanOrEqualTo: endDate.toIso8601String());
+      }
+
+      if (type != null) {
+        query =
+            query.where('type', isEqualTo: type.toString().split('.').last);
+      }
+
+      if (limit != null) {
+        query = query.limit(limit);
+      }
+
+      final snapshot = await query.get();
+      return snapshot.docs
+          .map((doc) =>
+              model.ActivityModel.fromJson({...doc.data(), 'id': doc.id}).toEntity())
+          .toList();
+    } catch (e) {
+      throw Exception('Failed to get activities: $e');
+    }
+  }
+
+  @override
+  Future<ActivityEntity?> getActivityById({
+    required String babyId,
+    required String activityId,
+  }) async {
+    try {
+      final doc = await _activitiesCollection(babyId).doc(activityId).get();
+      if (!doc.exists) return null;
+      return model.ActivityModel.fromJson({...doc.data()!, 'id': doc.id}).toEntity();
+    } catch (e) {
+      throw Exception('Failed to get activity by ID: $e');
+    }
+  }
+
+  @override
+  Future<void> updateActivity({
+    required String babyId,
+    required ActivityEntity activity,
+  }) async {
+    try {
+      final model = model.ActivityModel.fromEntity(activity);
+      await _activitiesCollection(babyId)
+          .doc(activity.id)
+          .update(model.toJson());
+    } catch (e) {
+      throw Exception('Failed to update activity: $e');
+    }
+  }
+
+  @override
+  Future<void> deleteActivity({
+    required String babyId,
+    required String activityId,
+  }) async {
+    try {
+      await _activitiesCollection(babyId).doc(activityId).delete();
+    } catch (e) {
+      throw Exception('Failed to delete activity: $e');
+    }
+  }
+
+  @override
+  Future<DailySummary> getTodaySummary({required String babyId}) async {
+    final now = DateTime.now();
+    final startOfDay = DateTime(now.year, now.month, now.day);
+    final endOfDay = startOfDay.add(const Duration(days: 1));
+
+    return getDailySummary(babyId: babyId, date: startOfDay);
+  }
+
+  @override
+  Future<DailySummary> getDailySummary({
+    required String babyId,
+    required DateTime date,
+  }) async {
+    try {
+      final startOfDay = DateTime(date.year, date.month, date.day);
+      final endOfDay = startOfDay.add(const Duration(days: 1));
+
+      final activities = await getActivities(
+        babyId: babyId,
+        startDate: startOfDay,
+        endDate: endOfDay,
+      );
+
+      return _calculateSummary(activities, startOfDay);
+    } catch (e) {
+      throw Exception('Failed to get daily summary: $e');
+    }
+  }
+
+  @override
+  Stream<List<ActivityEntity>> watchActivities({
+    required String babyId,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) {
+    try {
+      Query<Map<String, dynamic>> query = _activitiesCollection(babyId)
+          .orderBy('timestamp', descending: true);
+
+      if (startDate != null) {
+        query = query.where('timestamp',
+            isGreaterThanOrEqualTo: startDate.toIso8601String());
+      }
+
+      if (endDate != null) {
+        query = query.where('timestamp',
+            isLessThanOrEqualTo: endDate.toIso8601String());
+      }
+
+      return query.snapshots().map((snapshot) => snapshot.docs
+          .map((doc) =>
+              model.ActivityModel.fromJson({...doc.data(), 'id': doc.id}).toEntity())
+          .toList());
+    } catch (e) {
+      throw Exception('Failed to watch activities: $e');
+    }
+  }
+
+  @override
+  Future<List<entity.ActivityEntity>> getSleepPattern({
+    required String babyId,
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    return getActivities(
+      babyId: babyId,
+      startDate: startDate,
+      endDate: endDate,
+      type: model.ActivityType.sleep,
+    );
+  }
+
+  @override
+  Future<List<entity.ActivityEntity>> getFeedingPattern({
+    required String babyId,
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    return getActivities(
+      babyId: babyId,
+      startDate: startDate,
+      endDate: endDate,
+      type: model.ActivityType.feeding,
+    );
+  }
+
+  @override
+  Future<List<entity.ActivityEntity>> getRecentActivities({
+    required String babyId,
+    model.ActivityType? type,
+    int limit = 10,
+  }) async {
+    return getActivities(
+      babyId: babyId,
+      type: type,
+      limit: limit,
+    );
+  }
+
+  // ============================================================
+  // Private Helpers
+  // ============================================================
+
+  DailySummary _calculateSummary(
+      List<ActivityEntity> activities, DateTime date) {
+    int totalSleepMinutes = 0;
+    double totalFeedingMl = 0;
+    int diaperCount = 0;
+    int playCount = 0;
+
+    for (final activity in activities) {
+      switch (activity.type) {
+        case model.ActivityType.sleep:
+          totalSleepMinutes += activity.durationMinutes ?? 0;
+          break;
+        case model.ActivityType.feeding:
+          totalFeedingMl += activity.amountMl ?? 0;
+          break;
+        case model.ActivityType.diaper:
+          diaperCount++;
+          break;
+        case model.ActivityType.play:
+          playCount++;
+          break;
+        default:
+          break;
+      }
+    }
+
+    return DailySummary(
+      totalSleepMinutes: totalSleepMinutes,
+      totalFeedingMl: totalFeedingMl,
+      diaperCount: diaperCount,
+      playCount: playCount,
+      date: date,
+    );
+  }
+}

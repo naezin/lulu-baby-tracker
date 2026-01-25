@@ -85,8 +85,8 @@
   "aiCoachingFeedbackThanks": "Thank you for your feedback! We'll use it to improve our advice.",
   "aiAnalysisAvailable": "AI Analysis Available",
   "tapChartForAnalysis": "Tap on the chart to have AI analyze that time period",
-  "criticalAlertTitle": "Expert Consultation Recommended",
-  "criticalAlertMessage": "Your baby's condition requires careful observation. We recommend consulting with a pediatrician and can generate a report to share with your doctor.",
+  "criticalAlertTitle": "Consider talking to your pediatrician",
+  "criticalAlertMessage": "If you're concerned, your pediatrician can provide personalized guidance. We can generate a report to share with your doctor.",
   "generatePDFReport": "Generate PDF Report",
   "longestSleepStretch": "Longest Sleep Stretch",
   "hours": "hours",
@@ -111,36 +111,36 @@
   "todaysSnapshotFeeding": "Feeding",
   "smartAlertsTitle": "Smart Alerts",
   "smartAlertsViewAll": "View All",
-  "alertSleepUrgentTitle": "Baby has been awake too long!",
-  "alertSleepUrgentMessage": "{minutes}min over recommended. Put to sleep now.",
+  "alertSleepUrgentTitle": "Time for a sleep break",
+  "alertSleepUrgentMessage": "Baby might be getting sleepy. Consider putting down soon.",
   "@alertSleepUrgentMessage": {
     "placeholders": {
       "minutes": {"type": "int"}
     }
   },
   "alertSleepWarningTitle": "Almost time for sleep",
-  "alertSleepWarningMessage": "Put to sleep in {minutes}min.",
+  "alertSleepWarningMessage": "Consider putting to sleep in {minutes}min.",
   "@alertSleepWarningMessage": {
     "placeholders": {
       "minutes": {"type": "int"}
     }
   },
-  "alertFeedingUrgentTitle": "Feeding time overdue!",
-  "alertFeedingUrgentMessage": "{minutes}min delayed.",
+  "alertFeedingUrgentTitle": "Feeding time is here",
+  "alertFeedingUrgentMessage": "Baby might be hungry soon.",
   "@alertFeedingUrgentMessage": {
     "placeholders": {
       "minutes": {"type": "int"}
     }
   },
   "alertFeedingWarningTitle": "Feeding time soon",
-  "alertFeedingWarningMessage": "Feed in {minutes}min.",
+  "alertFeedingWarningMessage": "Baby might be ready to eat in {minutes}min.",
   "@alertFeedingWarningMessage": {
     "placeholders": {
       "minutes": {"type": "int"}
     }
   },
-  "alertDiaperWarningTitle": "Check diaper",
-  "alertDiaperWarningMessage": "{hours}h since last change.",
+  "alertDiaperWarningTitle": "Diaper check",
+  "alertDiaperWarningMessage": "Might be time for a diaper change.",
   "@alertDiaperWarningMessage": {
     "placeholders": {
       "hours": {"type": "int"}
@@ -149,17 +149,235 @@
   "recordsFilterAllPeriod": "All Time",
   "recordsFilterSearch": "Search",
   "insightPositive": "Good",
-  "insightWarning": "Warning",
-  "insightConcern": "Concern",
+  "insightWarning": "Heads up",
+  "insightConcern": "Worth noting",
   "insightNeutral": "Info",
   "weeklyInsightsTitle": "This Week's Insights",
   "weeklyInsightsNoData": "Record data to see weekly insights",
   "trendImproving": "Improving",
-  "trendDeclining": "Declining",
+  "trendDeclining": "A bit lower",
   "trendStable": "Stable",
   "viewDetails": "View Details",
   "averageSleep": "Average Sleep",
   "sleepCount": "Sleep Count",
   "averageFeeding": "Average Feeding",
-  "dailyAverage": "Daily Average"
+  "dailyAverage": "Daily Average",
+
+  "log_sleep": "Sleep Log",
+  "track_sleep_patterns": "Track sleep patterns",
+  "start_sleep_timer": "Start Sleep Timer",
+  "save_sleep_record": "Save Sleep Record",
+  "sleep_last_sleep": "Last sleep: {time} ({duration} min)",
+  "@sleep_last_sleep": {
+    "placeholders": {
+      "time": {"type": "String"},
+      "duration": {"type": "int"}
+    }
+  },
+  "sleep_recommended_wake_time": "Recommended wake time: 1 hour 30 min",
+  "sleep_first_record": "First sleep record! Please select the start time.",
+  "sleep_time_ago_minutes": "{minutes} min ago",
+  "@sleep_time_ago_minutes": {
+    "placeholders": {
+      "minutes": {"type": "int"}
+    }
+  },
+  "sleep_time_ago_hours": "{hours} hr {minutes} min ago",
+  "@sleep_time_ago_hours": {
+    "placeholders": {
+      "hours": {"type": "int"},
+      "minutes": {"type": "int"}
+    }
+  },
+  "sleep_status": "Sleep Status",
+  "record_past_sleep": "Record Past Sleep",
+  "sleep_in_progress": "In Progress",
+  "start_time": "Start Time",
+  "end_time_wake_up": "End Time (Wake Up)",
+  "sleep_location": "Sleep Location",
+  "sleep_crib": "Crib",
+  "sleep_bed": "Bed",
+  "sleep_stroller": "Stroller",
+  "sleep_car": "Car",
+  "sleep_arms": "Arms",
+  "sleep_quality": "Sleep Quality",
+  "sleep_quality_good": "Good",
+  "sleep_quality_fair": "Fair",
+  "sleep_quality_poor": "Poor",
+  "notes_optional": "Notes (Optional)",
+  "observations_hint_sleep": "Any observations? (e.g., woke up crying, slept soundly)",
+  "sleep_total_duration": "Total sleep time: {hours} hr {minutes} min",
+  "@sleep_total_duration": {
+    "placeholders": {
+      "hours": {"type": "int"},
+      "minutes": {"type": "int"}
+    }
+  },
+  "sleep_record_complete": "Sleep Record Complete! 😴",
+  "sleep_save_failed": "Save failed: {error}",
+  "@sleep_save_failed": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "sleep_today_total": "⏱️ Total sleep today: {hours} hr {minutes} min",
+  "@sleep_today_total": {
+    "placeholders": {
+      "hours": {"type": "int"},
+      "minutes": {"type": "int"}
+    }
+  },
+  "sleep_yesterday_diff_plus": "📈 +{diff} min from yesterday",
+  "@sleep_yesterday_diff_plus": {
+    "placeholders": {
+      "diff": {"type": "int"}
+    }
+  },
+  "sleep_yesterday_diff_minus": "📉 {diff} min from yesterday",
+  "@sleep_yesterday_diff_minus": {
+    "placeholders": {
+      "diff": {"type": "int"}
+    }
+  },
+  "sleep_this_record": "🎯 This record: {minutes} min",
+  "@sleep_this_record": {
+    "placeholders": {
+      "minutes": {"type": "int"}
+    }
+  },
+  "sleep_in_progress_label": "In progress",
+
+  "log_feeding": "Feeding Log",
+  "track_feeding_types": "Track different feeding types",
+  "save_feeding_record": "Save Feeding Record",
+  "feeding_last_time": "Last feeding: {time} ago",
+  "@feeding_last_time": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+  "feeding_recommended_interval": "Recommended interval: 2-3 hours",
+  "feeding_first_record": "First feeding record! Please enter feeding information.",
+  "feeding_time": "Feeding Time",
+  "feeding_type": "Feeding Type",
+  "bottle": "Bottle",
+  "breast": "Breast",
+  "solid_food": "Solid Food",
+  "amount": "Amount",
+  "breast_side": "Breast Side",
+  "left": "Left",
+  "right": "Right",
+  "both": "Both",
+  "observations_hint_feeding": "Any observations? (e.g., good appetite, refused milk)",
+  "feeding_record_complete": "Feeding Record Complete! 🍼",
+  "feeding_today_count": "🍼 Today's feedings: {count}",
+  "@feeding_today_count": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "feeding_bottle_amount": "📊 {ml} ml ({oz} oz)",
+  "@feeding_bottle_amount": {
+    "placeholders": {
+      "ml": {"type": "int"},
+      "oz": {"type": "String"}
+    }
+  },
+  "feeding_breast_both": "🤱 Both sides",
+  "feeding_breast_left": "🤱 Left",
+  "feeding_breast_right": "🤱 Right",
+
+  "log_diaper": "Diaper Log",
+  "track_diaper_types": "Track diaper types",
+  "save_diaper_record": "Save Diaper Record",
+  "diaper_last_change": "Last diaper change: {time} ago",
+  "@diaper_last_change": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+  "diaper_recommended_interval": "Recommended change interval: 2-3 hours",
+  "diaper_first_record": "First diaper record! Please select the diaper status.",
+  "diaper_change_time": "Diaper Change Time",
+  "diaper_type": "Diaper Type",
+  "wet_desc": "Wet",
+  "urineOnly": "Urine only",
+  "dirty_desc": "Dirty",
+  "bowelMovement": "Bowel movement",
+  "both_desc": "Both",
+  "wet_and_dirty": "Wet and dirty",
+  "observations_hint_diaper": "Any observations? (e.g., color, consistency)",
+  "diaper_record_complete": "Diaper Record Complete!",
+  "diaper_today_count": "🧷 Today's changes: {count}",
+  "@diaper_today_count": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "diaper_wet_only": "💧 Wet only",
+  "diaper_dirty_only": "💩 Dirty",
+  "diaper_both": "💧💩 Wet and dirty",
+
+  "health_record": "Health Record",
+  "medication": "Medication",
+  "temperature_unit": "Temperature Unit",
+  "celsius": "Celsius (°C)",
+  "fahrenheit": "Fahrenheit (°F)",
+  "time": "Time",
+  "highFever": "⚠️ High fever - consider contacting your pediatrician",
+  "additionalObservationsHint": "Any additional observations?",
+  "saveTemperature": "Save Temperature",
+  "enterValidTemperature": "Please enter a valid temperature",
+  "errorWithMessage": "Error: {message}",
+  "@errorWithMessage": {
+    "placeholders": {
+      "message": {"type": "String"}
+    }
+  },
+  "temperature_record_baby": "Record baby's temperature",
+  "temperature_normal_range": "Normal range: 36.5-37.5°C (97.7-99.5°F)\n38°C or higher is considered fever.",
+  "temperature_fever_status": "⚠️ Fever detected",
+  "temperature_normal_status": "✅ Normal temperature",
+  "temperature_record_complete": "Temperature Record Complete!",
+  "medication_type": "Medication Type",
+  "feverReducer": "Fever Reducer",
+  "antibiotic": "Antibiotic",
+  "medicationOther": "Other",
+  "dosage": "Dosage",
+  "reasonForMedicationHint": "Reason for medication?",
+  "saveMedication": "Save Medication",
+  "medication_record_info": "Record medication information",
+  "medication_record_complete": "Medication Record Complete!",
+  "growth_record_title": "Growth Record",
+  "growth_record_subtitle": "Record baby's height, weight, and head circumference",
+  "growth_track_progress": "Track regularly to monitor growth trends",
+  "growth_weight_kg": "Weight (kg)",
+  "growth_height_cm": "Height (cm)",
+  "growth_head_cm": "Head Circumference (cm)",
+  "growth_save_record": "Save Growth Record",
+  "growth_min_one_value": "Please enter at least one measurement",
+  "growth_record_complete": "Growth Record Complete!",
+
+  "log_play_activity": "Play Activity",
+  "play_track_developmental": "Track developmental play activities",
+  "save_activity": "Save Activity",
+  "play_context_hint": "Select age-appropriate play activities.\nRegular play helps baby's physical and cognitive development.",
+  "select_activity": "Select Activity",
+  "duration": "Duration",
+  "activity_notes_hint": "Add activity notes...",
+  "development_benefits": "Development Benefits:",
+  "play_select_time": "Please select activity and duration",
+  "play_record_complete": "Play Activity Complete! 🎉",
+  "play_today_count": "🎯 Today's activities: {count}",
+  "@play_today_count": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "play_duration_minutes": "⏱️ {minutes} min",
+  "@play_duration_minutes": {
+    "placeholders": {
+      "minutes": {"type": "int"}
+    }
+  }
 }

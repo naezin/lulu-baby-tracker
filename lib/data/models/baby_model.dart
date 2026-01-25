@@ -1,3 +1,5 @@
+import '../../domain/entities/baby_entity.dart' as entity;
+
 /// Baby 데이터 모델
 class BabyModel {
   final String id;
@@ -8,7 +10,12 @@ class BabyModel {
   final bool isPremature;
   final String? gender; // 'male', 'female', 'other'
   final String? photoUrl;
-  final double? weightKg; // 몸무게 (kg)
+
+  // 출생 시 신체 정보 (필수)
+  final double? birthWeightKg; // 출생 시 체중 (kg)
+  final double? birthHeightCm; // 출생 시 키 (cm)
+  final double? birthHeadCircumferenceCm; // 출생 시 머리둘레 (cm)
+
   final String? weightUnit; // 'kg' or 'lb'
   final SleepGoals? sleepGoals;
   final String createdAt;
@@ -23,7 +30,9 @@ class BabyModel {
     required this.isPremature,
     this.gender,
     this.photoUrl,
-    this.weightKg,
+    this.birthWeightKg,
+    this.birthHeightCm,
+    this.birthHeadCircumferenceCm,
     this.weightUnit,
     this.sleepGoals,
     required this.createdAt,
@@ -40,7 +49,9 @@ class BabyModel {
       isPremature: json['isPremature'] as bool? ?? false,
       gender: json['gender'] as String?,
       photoUrl: json['photoUrl'] as String?,
-      weightKg: json['weightKg'] as double?,
+      birthWeightKg: json['birthWeightKg'] as double?,
+      birthHeightCm: json['birthHeightCm'] as double?,
+      birthHeadCircumferenceCm: json['birthHeadCircumferenceCm'] as double?,
       weightUnit: json['weightUnit'] as String?,
       sleepGoals: json['sleepGoals'] != null
           ? SleepGoals.fromJson(json['sleepGoals'] as Map<String, dynamic>)
@@ -60,7 +71,9 @@ class BabyModel {
       'isPremature': isPremature,
       'gender': gender,
       'photoUrl': photoUrl,
-      'weightKg': weightKg,
+      'birthWeightKg': birthWeightKg,
+      'birthHeightCm': birthHeightCm,
+      'birthHeadCircumferenceCm': birthHeadCircumferenceCm,
       'weightUnit': weightUnit,
       'sleepGoals': sleepGoals?.toJson(),
       'createdAt': createdAt,
@@ -91,7 +104,9 @@ class BabyModel {
     bool? isPremature,
     String? gender,
     String? photoUrl,
-    double? weightKg,
+    double? birthWeightKg,
+    double? birthHeightCm,
+    double? birthHeadCircumferenceCm,
     String? weightUnit,
     SleepGoals? sleepGoals,
     String? createdAt,
@@ -106,11 +121,67 @@ class BabyModel {
       isPremature: isPremature ?? this.isPremature,
       gender: gender ?? this.gender,
       photoUrl: photoUrl ?? this.photoUrl,
-      weightKg: weightKg ?? this.weightKg,
+      birthWeightKg: birthWeightKg ?? this.birthWeightKg,
+      birthHeightCm: birthHeightCm ?? this.birthHeightCm,
+      birthHeadCircumferenceCm: birthHeadCircumferenceCm ?? this.birthHeadCircumferenceCm,
       weightUnit: weightUnit ?? this.weightUnit,
       sleepGoals: sleepGoals ?? this.sleepGoals,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  /// Entity → Model 변환
+  factory BabyModel.fromEntity(entity.BabyEntity entityObj) {
+    return BabyModel(
+      id: entityObj.id,
+      userId: entityObj.userId,
+      name: entityObj.name,
+      birthDate: entityObj.birthDate.toIso8601String(),
+      dueDate: entityObj.dueDate?.toIso8601String(),
+      isPremature: entityObj.isPremature,
+      gender: entityObj.gender,
+      photoUrl: entityObj.photoUrl,
+      birthWeightKg: entityObj.birthWeightKg,
+      birthHeightCm: entityObj.birthHeightCm,
+      birthHeadCircumferenceCm: entityObj.birthHeadCircumferenceCm,
+      weightUnit: entityObj.weightUnit,
+      sleepGoals: entityObj.sleepGoals != null
+          ? SleepGoals(
+              nightSleepHours: entityObj.sleepGoals!.nightSleepHours,
+              napCount: entityObj.sleepGoals!.napCount,
+              totalDailySleepHours: entityObj.sleepGoals!.totalDailySleepHours,
+            )
+          : null,
+      createdAt: entityObj.createdAt.toIso8601String(),
+      updatedAt: entityObj.updatedAt.toIso8601String(),
+    );
+  }
+
+  /// Model → Entity 변환
+  entity.BabyEntity toEntity() {
+    return entity.BabyEntity(
+      id: id,
+      userId: userId,
+      name: name,
+      birthDate: DateTime.parse(birthDate),
+      dueDate: dueDate != null ? DateTime.parse(dueDate!) : null,
+      isPremature: isPremature,
+      gender: gender,
+      photoUrl: photoUrl,
+      birthWeightKg: birthWeightKg,
+      birthHeightCm: birthHeightCm,
+      birthHeadCircumferenceCm: birthHeadCircumferenceCm,
+      weightUnit: weightUnit,
+      sleepGoals: sleepGoals != null
+          ? entity.SleepGoals(
+              nightSleepHours: sleepGoals!.nightSleepHours,
+              napCount: sleepGoals!.napCount,
+              totalDailySleepHours: sleepGoals!.totalDailySleepHours,
+            )
+          : null,
+      createdAt: DateTime.parse(createdAt),
+      updatedAt: DateTime.parse(updatedAt),
     );
   }
 }

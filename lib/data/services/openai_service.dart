@@ -58,23 +58,31 @@ class OpenAIService {
         ...messages.map((msg) => msg.toJson()),
       ];
 
-      // API 호출
-      final response = await http.post(
-        Uri.parse('$baseUrl/chat/completions'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $apiKey',
-        },
-        body: jsonEncode({
-          'model': model,
-          'messages': apiMessages,
-          'temperature': 0.7,
-          'max_tokens': 1000,
-          'top_p': 1.0,
-          'frequency_penalty': 0.0,
-          'presence_penalty': 0.0,
-        }),
-      );
+      // API 호출 (30초 타임아웃 - CLAUDE.md 6.1 준수)
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/chat/completions'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $apiKey',
+            },
+            body: jsonEncode({
+              'model': model,
+              'messages': apiMessages,
+              'temperature': 0.7,
+              'max_tokens': 1000,
+              'top_p': 1.0,
+              'frequency_penalty': 0.0,
+              'presence_penalty': 0.0,
+            }),
+          )
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () => throw OpenAIException(
+              statusCode: 408,
+              message: 'Request timed out after 30 seconds',
+            ),
+          );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -135,7 +143,14 @@ class OpenAIService {
         'stream': true,
       });
 
-      final streamedResponse = await request.send();
+      // 스트리밍 요청 시작 (30초 타임아웃 - CLAUDE.md 6.1 준수)
+      final streamedResponse = await request.send().timeout(
+        const Duration(seconds: 30),
+        onTimeout: () => throw OpenAIException(
+          statusCode: 408,
+          message: 'Streaming request timed out after 30 seconds',
+        ),
+      );
 
       await for (var chunk in streamedResponse.stream.transform(utf8.decoder)) {
         final lines = chunk.split('\n');

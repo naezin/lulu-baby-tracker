@@ -43,7 +43,6 @@ class _MainNavigationState extends State<MainNavigation> {
       const HomeScreen(),
       const RecordsScreen(),
       const AnalysisScreen(),
-      const ChatScreen(),
       const SettingsScreen(),
     ];
   }
@@ -79,11 +78,6 @@ class _MainNavigationState extends State<MainNavigation> {
             icon: const Icon(Icons.analytics_outlined),
             selectedIcon: const Icon(Icons.analytics),
             label: l10n.navInsights,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.chat_bubble_outline),
-            selectedIcon: const Icon(Icons.chat_bubble),
-            label: l10n.navLulu,
           ),
           NavigationDestination(
             icon: const Icon(Icons.more_horiz_outlined),

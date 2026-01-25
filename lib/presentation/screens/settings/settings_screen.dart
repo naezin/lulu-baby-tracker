@@ -3,11 +3,13 @@ import 'package:provider/provider.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../providers/locale_provider.dart';
 import '../../providers/unit_preferences_provider.dart';
+import '../../utils/snackbar_utils.dart';
 import '../export/export_data_screen.dart';
 import '../import/import_data_screen.dart';
 import '../demo_setup_screen.dart';
 import '../../../data/services/notification_service.dart';
 import 'widget_settings_screen.dart';
+import 'privacy_policy_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -300,6 +302,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
               );
             },
           ),
+          const Divider(),
+
+          // Privacy & Legal Section
+          _buildSectionHeader(context, 'Privacy & Legal'),
+          ListTile(
+            leading: const Icon(Icons.privacy_tip_outlined),
+            title: const Text('Privacy Policy'),
+            subtitle: const Text('How we protect your family\'s data'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.description_outlined),
+            title: const Text('Terms of Service'),
+            subtitle: const Text('App usage terms and conditions'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              // TODO: Implement Terms of Service screen
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Terms of Service coming soon'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.shield_outlined),
+            title: const Text('Data & Security'),
+            subtitle: const Text('Learn how your data is protected'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              // TODO: Implement Data & Security screen
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Data & Security info coming soon'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 20),
         ],
       ),
     );
@@ -320,12 +369,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showSnackBar(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.red : Colors.green,
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    if (isError) {
+      LuluSnackBar.showError(context, message: message);
+    } else {
+      LuluSnackBar.showSuccess(context, message: message, duration: const Duration(seconds: 2));
+    }
   }
 }

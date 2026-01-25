@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../data/models/play_activity_model.dart';
 import '../../../data/models/activity_model.dart';
 import '../../../data/services/local_storage_service.dart';
 import '../../../data/services/widget_service.dart';
+import '../../widgets/log_screen_template.dart';
+import '../../widgets/lulu_time_picker.dart';
 
-/// 🎯 Log Play Activity Screen
-/// 놀이 활동 기록 화면 (BabyTime-style Quick Log)
+/// 놀이 활동 기록 화면
 class LogPlayScreen extends StatefulWidget {
   final PlayActivityType? preselectedType;
 
@@ -22,36 +21,29 @@ class LogPlayScreen extends StatefulWidget {
   State<LogPlayScreen> createState() => _LogPlayScreenState();
 }
 
-class _LogPlayScreenState extends State<LogPlayScreen>
-    with SingleTickerProviderStateMixin {
+class _LogPlayScreenState extends State<LogPlayScreen> {
+  final _storage = LocalStorageService();
+  final _widgetService = WidgetService();
+  static const Color _themeColor = Color(0xFF5FB37B); // Teal green for play
+
   PlayActivityType? _selectedType;
   DateTime _startTime = DateTime.now();
   int? _durationMinutes;
-  String _notes = '';
-  late AnimationController _animController;
-  late Animation<double> _fadeAnimation;
+  final _notesController = TextEditingController();
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     _selectedType = widget.preselectedType;
-
-    _animController = AnimationController(
-      duration: const Duration(milliseconds: 400),
-      vsync: this,
-    );
-
-    _fadeAnimation = CurvedAnimation(
-      parent: _animController,
-      curve: Curves.easeIn,
-    );
-
-    _animController.forward();
+    if (_selectedType != null) {
+      _durationMinutes = _selectedType!.recommendedDurationMinutes;
+    }
   }
 
   @override
   void dispose() {
-    _animController.dispose();
+    _notesController.dispose();
     super.dispose();
   }
 
@@ -59,86 +51,107 @@ class _LogPlayScreenState extends State<LogPlayScreen>
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
-    return Scaffold(
-      backgroundColor: AppTheme.surfaceDark,
-      appBar: AppBar(
-        title: Text(l10n.translate('log_play_activity') ?? 'Log Play'),
-        leading: IconButton(
-          icon: const Icon(Icons.close_rounded),
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            Navigator.pop(context);
-          },
-        ),
-      ),
-      body: FadeTransition(
-        opacity: _fadeAnimation,
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Activity Type Selection
-              _buildSectionTitle(context, l10n, l10n.translate('select_activity')),
-              const SizedBox(height: 16),
-              _buildActivityTypeGrid(context, l10n),
-
-              const SizedBox(height: 32),
-
-              // Selected Activity Info
-              if (_selectedType != null) ...[
-                _buildSelectedActivityCard(context, l10n),
-                const SizedBox(height: 32),
-              ],
-
-              // Time Selection
-              _buildSectionTitle(context, l10n, l10n.translate('start_time')),
-              const SizedBox(height: 16),
-              _buildTimeSelector(context, l10n),
-
-              const SizedBox(height: 32),
-
-              // Duration
-              _buildSectionTitle(context, l10n, l10n.translate('duration')),
-              const SizedBox(height: 16),
-              _buildDurationSelector(context, l10n),
-
-              const SizedBox(height: 32),
-
-              // Notes (Optional)
-              _buildSectionTitle(context, l10n, l10n.translate('notes_optional')),
-              const SizedBox(height: 16),
-              _buildNotesInput(context, l10n),
-
-              const SizedBox(height: 40),
-
-              // Save Button
-              _buildSaveButton(context, l10n),
-
-              const SizedBox(height: 20),
-            ],
-          ),
-        ),
-      ),
+    return LogScreenTemplate(
+      title: l10n.translate('log_play_activity') ?? '놀이 활동',
+      subtitle: l10n.translate('play_track_developmental') ?? '발달에 도움이 되는 놀이를 기록하세요',
+      icon: Icons.sports_esports_rounded,
+      themeColor: _themeColor,
+      contextHint: _buildContextHint(),
+      inputSection: _buildInputSection(),
+      saveButtonText: l10n.translate('save_activity') ?? '활동 저장',
+      onSave: _saveActivity,
+      isLoading: _isLoading,
     );
   }
 
-  Widget _buildSectionTitle(
-    BuildContext context,
-    AppLocalizations l10n,
-    String title,
-  ) {
+  Widget _buildContextHint() {
+    final l10n = AppLocalizations.of(context);
     return Text(
-      title,
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: AppTheme.textPrimary,
-            fontWeight: FontWeight.bold,
-          ),
+      l10n.translate('play_context_hint') ?? 'Select age-appropriate play activities.\nRegular play helps baby\'s physical and cognitive development.',
+      style: const TextStyle(
+        fontSize: 14,
+        color: Colors.white70,
+      ),
     );
   }
 
-  Widget _buildActivityTypeGrid(BuildContext context, AppLocalizations l10n) {
+  Widget _buildInputSection() {
+    final l10n = AppLocalizations.of(context);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Activity Type Selection
+        _buildSectionLabel(l10n.translate('select_activity') ?? '활동 선택'),
+        const SizedBox(height: 8),
+        _buildActivityTypeGrid(),
+
+        const SizedBox(height: 16),
+
+        // Selected Activity Info
+        if (_selectedType != null) ...[
+          _buildSelectedActivityCard(),
+          const SizedBox(height: 16),
+        ],
+
+        // Start Time
+        _buildSectionLabel(l10n.translate('start_time')),
+        const SizedBox(height: 8),
+        _buildTimeSelector(),
+
+        const SizedBox(height: 16),
+
+        // Duration
+        _buildSectionLabel(l10n.translate('duration')),
+        const SizedBox(height: 8),
+        _buildDurationSelector(),
+
+        const SizedBox(height: 16),
+
+        // Notes
+        _buildSectionLabel(l10n.translate('notes_optional')),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _notesController,
+          maxLines: 3,
+          style: const TextStyle(color: Colors.white),
+          decoration: InputDecoration(
+            hintText: l10n.translate('activity_notes_hint') ?? '활동 메모 추가...',
+            hintStyle: TextStyle(color: Colors.grey[600]),
+            filled: true,
+            fillColor: const Color(0xFF1A2332),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: _themeColor, width: 2),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSectionLabel(String label) {
+    return Text(
+      label,
+      style: const TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: Colors.white70,
+      ),
+    );
+  }
+
+  Widget _buildActivityTypeGrid() {
+    final l10n = AppLocalizations.of(context);
     const activities = PlayActivityType.values;
 
     return GridView.builder(
@@ -158,7 +171,6 @@ class _LogPlayScreenState extends State<LogPlayScreen>
 
         return GestureDetector(
           onTap: () {
-            HapticFeedback.lightImpact();
             setState(() {
               _selectedType = activity;
               _durationMinutes = activity.recommendedDurationMinutes;
@@ -167,19 +179,16 @@ class _LogPlayScreenState extends State<LogPlayScreen>
           child: Container(
             decoration: BoxDecoration(
               color: isSelected
-                  ? const Color(0xFF5FB37B).withOpacity(0.2)
-                  : AppTheme.surfaceCard,
-              borderRadius: BorderRadius.circular(16),
+                  ? _themeColor.withOpacity(0.2)
+                  : const Color(0xFF1A2332),
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isSelected
-                    ? const Color(0xFF5FB37B)
-                    : AppTheme.softBlue.withOpacity(0.3),
+                color: isSelected ? _themeColor : Colors.white.withOpacity(0.1),
                 width: isSelected ? 2 : 1,
               ),
             ),
             child: Stack(
               children: [
-                // Main content
                 Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -192,11 +201,9 @@ class _LogPlayScreenState extends State<LogPlayScreen>
                       Text(
                         l10n.translate('activity_${activity.name}') ?? activity.name,
                         style: TextStyle(
-                          color: isSelected
-                              ? const Color(0xFF5FB37B)
-                              : AppTheme.textSecondary,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                          color: isSelected ? _themeColor : Colors.white70,
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                         ),
                         textAlign: TextAlign.center,
                         maxLines: 2,
@@ -205,8 +212,6 @@ class _LogPlayScreenState extends State<LogPlayScreen>
                     ],
                   ),
                 ),
-
-                // Recommended badge
                 if (isRecommended)
                   Positioned(
                     top: 6,
@@ -217,8 +222,8 @@ class _LogPlayScreenState extends State<LogPlayScreen>
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF5FB37B),
-                        borderRadius: BorderRadius.circular(6),
+                        color: _themeColor,
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Text(
                         '⭐',
@@ -234,23 +239,24 @@ class _LogPlayScreenState extends State<LogPlayScreen>
     );
   }
 
-  Widget _buildSelectedActivityCard(BuildContext context, AppLocalizations l10n) {
+  Widget _buildSelectedActivityCard() {
+    final l10n = AppLocalizations.of(context);
     final activity = _selectedType!;
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFF5FB37B).withOpacity(0.15),
-            const Color(0xFF5FB37B).withOpacity(0.05),
+            _themeColor.withOpacity(0.15),
+            _themeColor.withOpacity(0.05),
           ],
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color(0xFF5FB37B).withOpacity(0.3),
+          color: _themeColor.withOpacity(0.3),
           width: 1,
         ),
       ),
@@ -267,21 +273,22 @@ class _LogPlayScreenState extends State<LogPlayScreen>
               Expanded(
                 child: Text(
                   l10n.translate('activity_${activity.name}') ?? activity.name,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: AppTheme.textPrimary,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Text(
-            l10n.translate('development_benefits') ?? 'Development Benefits:',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppTheme.textSecondary,
-                  fontSize: 12,
-                ),
+            l10n.translate('development_benefits') ?? '발달 효과:',
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.white70,
+            ),
           ),
           const SizedBox(height: 8),
           Wrap(
@@ -290,18 +297,18 @@ class _LogPlayScreenState extends State<LogPlayScreen>
             children: activity.developmentTags.map((tag) {
               return Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
+                  horizontal: 10,
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF5FB37B).withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
+                  color: _themeColor.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   '${tag.emoji} ${l10n.translate('dev_tag_${tag.name}') ?? tag.name}',
-                  style: const TextStyle(
-                    color: Color(0xFF5FB37B),
+                  style: TextStyle(
                     fontSize: 12,
+                    color: _themeColor,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -313,203 +320,140 @@ class _LogPlayScreenState extends State<LogPlayScreen>
     );
   }
 
-  Widget _buildTimeSelector(BuildContext context, AppLocalizations l10n) {
+  Widget _buildTimeSelector() {
     return GestureDetector(
       onTap: () async {
-        HapticFeedback.lightImpact();
-        final time = await showTimePicker(
+        final selectedTime = await LuluTimePicker.show(
           context: context,
-          initialTime: TimeOfDay.fromDateTime(_startTime),
-          builder: (context, child) {
-            return Theme(
-              data: Theme.of(context).copyWith(
-                timePickerTheme: const TimePickerThemeData(
-                  backgroundColor: AppTheme.surfaceCard,
-                  dialBackgroundColor: AppTheme.surfaceElevated,
-                  hourMinuteTextColor: AppTheme.textPrimary,
-                ),
-              ),
-              child: child!,
-            );
-          },
+          initialTime: _startTime,
+          dateRangeDays: 7,
+          allowFutureTime: false,
         );
 
-        if (time != null) {
+        if (selectedTime != null) {
           setState(() {
-            _startTime = DateTime(
-              _startTime.year,
-              _startTime.month,
-              _startTime.day,
-              time.hour,
-              time.minute,
-            );
+            _startTime = selectedTime;
           });
         }
       },
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppTheme.surfaceCard,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: AppTheme.softBlue.withOpacity(0.3),
-            width: 1,
-          ),
+          color: const Color(0xFF1A2332),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withOpacity(0.1)),
         ),
         child: Row(
           children: [
-            const Icon(
-              Icons.access_time_rounded,
-              color: AppTheme.lavenderMist,
-              size: 24,
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                '${_startTime.hour.toString().padLeft(2, '0')}:${_startTime.minute.toString().padLeft(2, '0')}',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: AppTheme.textPrimary,
-                      fontWeight: FontWeight.bold,
-                    ),
+            Icon(Icons.access_time_rounded, color: _themeColor, size: 20),
+            const SizedBox(width: 12),
+            Text(
+              '${_startTime.hour.toString().padLeft(2, '0')}:${_startTime.minute.toString().padLeft(2, '0')}',
+              style: const TextStyle(
+                fontSize: 20,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
               ),
             ),
-            const Icon(
-              Icons.arrow_forward_ios_rounded,
-              size: 16,
-              color: AppTheme.textTertiary,
-            ),
+            const Spacer(),
+            Icon(Icons.edit_rounded, color: Colors.grey[600], size: 18),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildDurationSelector(BuildContext context, AppLocalizations l10n) {
+  Widget _buildDurationSelector() {
+    final l10n = AppLocalizations.of(context);
     final durations = [5, 10, 15, 20, 30, 45, 60];
 
     return Wrap(
-      spacing: 12,
-      runSpacing: 12,
+      spacing: 8,
+      runSpacing: 8,
       children: durations.map((duration) {
         final isSelected = _durationMinutes == duration;
-        return GestureDetector(
+        return LogOptionButton(
+          label: l10n.locale.languageCode == 'ko' ? '$duration분' : '${duration}min',
+          isSelected: isSelected,
+          themeColor: _themeColor,
           onTap: () {
-            HapticFeedback.lightImpact();
             setState(() {
               _durationMinutes = duration;
             });
           },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? const Color(0xFF5FB37B).withOpacity(0.2)
-                  : AppTheme.surfaceCard,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isSelected
-                    ? const Color(0xFF5FB37B)
-                    : AppTheme.softBlue.withOpacity(0.3),
-                width: isSelected ? 2 : 1,
-              ),
-            ),
-            child: Text(
-              l10n.locale.languageCode == 'ko' ? '$duration분' : '${duration}min',
-              style: TextStyle(
-                color: isSelected
-                    ? const Color(0xFF5FB37B)
-                    : AppTheme.textSecondary,
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
         );
       }).toList(),
     );
   }
 
-  Widget _buildNotesInput(BuildContext context, AppLocalizations l10n) {
-    return TextField(
-      maxLines: 4,
-      style: const TextStyle(color: AppTheme.textPrimary),
-      decoration: InputDecoration(
-        hintText: l10n.translate('activity_notes_hint') ?? 'Add notes...',
-        filled: true,
-        fillColor: AppTheme.surfaceCard,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
-      ),
-      onChanged: (value) {
-        _notes = value;
-      },
-    );
-  }
-
-  Widget _buildSaveButton(BuildContext context, AppLocalizations l10n) {
-    final canSave = _selectedType != null && _durationMinutes != null;
-
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: canSave
-            ? () {
-                HapticFeedback.mediumImpact();
-                _saveActivity(context);
-              }
-            : null,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: canSave
-              ? const Color(0xFF5FB37B)
-              : AppTheme.softBlue.withOpacity(0.3),
-          foregroundColor: canSave
-              ? AppTheme.midnightNavy
-              : AppTheme.textTertiary,
-          padding: const EdgeInsets.symmetric(vertical: 18),
-        ),
-        child: Text(
-          l10n.translate('save_activity') ?? 'Save Activity',
-          style: const TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _saveActivity(BuildContext context) async {
-    if (_selectedType == null || _durationMinutes == null) return;
-
-    final activity = ActivityModel.play(
-      id: const Uuid().v4(),
-      startTime: _startTime,
-      endTime: _startTime.add(Duration(minutes: _durationMinutes!)),
-      durationMinutes: _durationMinutes,
-      playActivityType: _selectedType!.name,
-      developmentTags: _selectedType!.developmentTags.map((tag) => tag.name).toList(),
-      notes: _notes.isEmpty ? null : _notes,
-    );
-
-    await LocalStorageService().saveActivity(activity);
-    await WidgetService().updateAllWidgets();
-
-    if (!context.mounted) return;
-
-    Navigator.pop(context, true);
-
+  Future<void> _saveActivity() async {
     final l10n = AppLocalizations.of(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(l10n.locale.languageCode == 'ko' ? '활동이 기록되었습니다! 🎉' : 'Activity logged successfully! 🎉'),
-        backgroundColor: const Color(0xFF5FB37B),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-    );
+    if (_selectedType == null || _durationMinutes == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.translate('play_select_time') ?? '활동과 시간을 선택해주세요')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final activity = ActivityModel.play(
+        id: const Uuid().v4(),
+        startTime: _startTime,
+        endTime: _startTime.add(Duration(minutes: _durationMinutes!)),
+        durationMinutes: _durationMinutes,
+        playActivityType: _selectedType!.name,
+        developmentTags: _selectedType!.developmentTags.map((tag) => tag.name).toList(),
+        notes: _notesController.text.isEmpty ? null : _notesController.text,
+      );
+
+      await _storage.saveActivity(activity);
+      await _widgetService.updateAllWidgets();
+
+      if (mounted) {
+        setState(() => _isLoading = false);
+
+        final l10n = AppLocalizations.of(context);
+        final todayCount = await _calculateTodayPlayCount();
+
+        final insights = [
+          l10n.translate('play_today_count')?.replaceAll('{count}', todayCount.toString())
+              ?? '🎯 Today\'s activities: $todayCount',
+          l10n.translate('play_duration_minutes')?.replaceAll('{minutes}', _durationMinutes.toString())
+              ?? '⏱️ ${_durationMinutes} min',
+          '🌟 ${_selectedType!.developmentTags.map((t) => t.emoji).join(" ")}',
+        ];
+
+        showPostRecordFeedback(
+          context: context,
+          title: l10n.translate('play_record_complete') ?? '놀이 활동 기록 완료! 🎉',
+          insights: insights,
+          themeColor: _themeColor,
+        );
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        final l10n = AppLocalizations.of(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.translate('sleep_save_failed')?.replaceAll('{error}', e.toString()) ?? '저장 실패: $e')),
+        );
+      }
+    }
+  }
+
+  Future<int> _calculateTodayPlayCount() async {
+    final activities = await _storage.getActivities();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    return activities
+        .where((a) {
+          if (a.type != ActivityType.play) return false;
+          final time = DateTime.parse(a.timestamp);
+          return time.isAfter(today);
+        })
+        .length;
   }
 }

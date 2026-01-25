@@ -650,7 +650,7 @@ class _BabySetupScreenState extends State<BabySetupScreen> {
       // Create baby model
       final baby = BabyModel(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
-        userId: userId,
+        babyId: babyId,
         name: _nameController.text.trim(),
         birthDate: _birthDate.toIso8601String(),
         dueDate: null, // Could be added in future

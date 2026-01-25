@@ -1,0 +1,574 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../../../data/models/baby_model.dart';
+import '../../../data/services/local_storage_service.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../widgets/log_screen_template.dart';
+
+/// 👶 아기 프로필 입력/수정 화면
+class BabyProfileScreen extends StatefulWidget {
+  final BabyModel? existingBaby;
+
+  const BabyProfileScreen({
+    Key? key,
+    this.existingBaby,
+  }) : super(key: key);
+
+  @override
+  State<BabyProfileScreen> createState() => _BabyProfileScreenState();
+}
+
+class _BabyProfileScreenState extends State<BabyProfileScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _storage = LocalStorageService();
+
+  late final TextEditingController _nameController;
+  late final TextEditingController _birthWeightController;
+  late final TextEditingController _birthHeightController;
+  late final TextEditingController _birthHeadCircumferenceController;
+
+  DateTime? _selectedBirthDate;
+  DateTime? _selectedDueDate;
+  String? _selectedGender;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // 기존 데이터가 있으면 폼에 채우기
+    final baby = widget.existingBaby;
+    _nameController = TextEditingController(text: baby?.name ?? '');
+    _birthWeightController = TextEditingController(
+      text: baby?.birthWeightKg != null ? baby!.birthWeightKg!.toStringAsFixed(1) : '',
+    );
+    _birthHeightController = TextEditingController(
+      text: baby?.birthHeightCm != null ? baby!.birthHeightCm!.toStringAsFixed(1) : '',
+    );
+    _birthHeadCircumferenceController = TextEditingController(
+      text: baby?.birthHeadCircumferenceCm != null ? baby!.birthHeadCircumferenceCm!.toStringAsFixed(1) : '',
+    );
+
+    if (baby != null) {
+      _selectedBirthDate = DateTime.parse(baby.birthDate);
+      _selectedDueDate = baby.dueDate != null ? DateTime.parse(baby.dueDate!) : null;
+      _selectedGender = baby.gender;
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _birthWeightController.dispose();
+    _birthHeightController.dispose();
+    _birthHeadCircumferenceController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _selectBirthDate() async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: _selectedBirthDate ?? DateTime.now(),
+      firstDate: DateTime.now().subtract(const Duration(days: 365 * 5)),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.dark(
+              primary: AppTheme.lavenderMist,
+              onPrimary: Colors.white,
+              surface: AppTheme.surfaceCard,
+              onSurface: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (date != null) {
+      setState(() {
+        _selectedBirthDate = date;
+      });
+    }
+  }
+
+  Future<void> _selectDueDate() async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: _selectedDueDate ?? DateTime.now(),
+      firstDate: DateTime.now().subtract(const Duration(days: 365 * 5)),
+      lastDate: DateTime.now().add(const Duration(days: 30)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.dark(
+              primary: AppTheme.lavenderMist,
+              onPrimary: Colors.white,
+              surface: AppTheme.surfaceCard,
+              onSurface: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (date != null) {
+      setState(() {
+        _selectedDueDate = date;
+      });
+    }
+  }
+
+  Future<void> _saveBabyProfile() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    if (_selectedBirthDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('생년월일을 선택해주세요'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    if (_selectedGender == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('성별을 선택해주세요'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final now = DateTime.now().toIso8601String();
+
+      // 조산아 여부 자동 파악: 예정일이 생년월일보다 나중이면 조산아
+      final isPremature = _selectedDueDate != null &&
+          _selectedDueDate!.isAfter(_selectedBirthDate!);
+
+      final baby = BabyModel(
+        id: widget.existingBaby?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+        userId: widget.existingBaby?.userId ?? 'default_user',
+        name: _nameController.text.trim(),
+        birthDate: _selectedBirthDate!.toIso8601String(),
+        dueDate: _selectedDueDate?.toIso8601String(),
+        isPremature: isPremature,
+        gender: _selectedGender,
+        birthWeightKg: _birthWeightController.text.isNotEmpty
+            ? double.tryParse(_birthWeightController.text)
+            : null,
+        birthHeightCm: _birthHeightController.text.isNotEmpty
+            ? double.tryParse(_birthHeightController.text)
+            : null,
+        birthHeadCircumferenceCm: _birthHeadCircumferenceController.text.isNotEmpty
+            ? double.tryParse(_birthHeadCircumferenceController.text)
+            : null,
+        weightUnit: 'kg',
+        createdAt: widget.existingBaby?.createdAt ?? now,
+        updatedAt: now,
+      );
+
+      await _storage.saveBaby(baby);
+
+      if (mounted) {
+        HapticFeedback.heavyImpact();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(widget.existingBaby != null
+                ? '프로필이 수정되었습니다'
+                : '프로필이 저장되었습니다'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+
+        Navigator.pop(context, true); // true를 반환하여 변경사항 알림
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('저장 실패: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LogScreenTemplate(
+      title: widget.existingBaby != null ? '프로필 수정' : '아기 프로필',
+      subtitle: '아기의 기본 정보를 입력해주세요',
+      icon: Icons.child_care_rounded,
+      themeColor: AppTheme.lavenderMist,
+      saveButtonText: widget.existingBaby != null ? '수정하기' : '저장하기',
+      onSave: _saveBabyProfile,
+      isLoading: _isLoading,
+      contextHint: const Text(
+        '정확한 정보를 입력하면 더 정확한 성장 분석을 받을 수 있어요',
+        style: TextStyle(
+          fontSize: 14,
+          color: AppTheme.textSecondary,
+        ),
+      ),
+      inputSection: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 이름
+            const Text(
+              '이름',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _nameController,
+              style: const TextStyle(color: AppTheme.textPrimary),
+              decoration: InputDecoration(
+                hintText: '예: 민지',
+                hintStyle: TextStyle(color: Colors.grey[600]),
+                filled: true,
+                fillColor: AppTheme.surfaceCard,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppTheme.glassBorder),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppTheme.lavenderMist, width: 2),
+                ),
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return '이름을 입력해주세요';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 20),
+
+            // 생년월일
+            const Text(
+              '생년월일',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: _selectBirthDate,
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.surfaceCard,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppTheme.glassBorder),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      _selectedBirthDate != null
+                          ? '${_selectedBirthDate!.year}년 ${_selectedBirthDate!.month}월 ${_selectedBirthDate!.day}일'
+                          : '날짜 선택',
+                      style: TextStyle(
+                        color: _selectedBirthDate != null
+                            ? AppTheme.textPrimary
+                            : Colors.grey[600],
+                        fontSize: 16,
+                      ),
+                    ),
+                    const Icon(Icons.calendar_today, color: AppTheme.lavenderMist, size: 20),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // 성별
+            const Text(
+              '성별',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: LogOptionButton(
+                    label: '남아',
+                    icon: Icons.boy,
+                    isSelected: _selectedGender == 'male',
+                    themeColor: AppTheme.lavenderMist,
+                    onTap: () {
+                      setState(() {
+                        _selectedGender = 'male';
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: LogOptionButton(
+                    label: '여아',
+                    icon: Icons.girl,
+                    isSelected: _selectedGender == 'female',
+                    themeColor: AppTheme.lavenderMist,
+                    onTap: () {
+                      setState(() {
+                        _selectedGender = 'female';
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // 예정일 (선택사항)
+            const Text(
+              '예정일 (선택사항)',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '예정일을 입력하면 교정나이 기준 분석을 제공합니다',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey[400],
+              ),
+            ),
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: _selectDueDate,
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.surfaceCard,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppTheme.glassBorder),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      _selectedDueDate != null
+                          ? '${_selectedDueDate!.year}년 ${_selectedDueDate!.month}월 ${_selectedDueDate!.day}일'
+                          : '날짜 선택 (필요시)',
+                      style: TextStyle(
+                        color: _selectedDueDate != null
+                            ? AppTheme.textPrimary
+                            : Colors.grey[600],
+                        fontSize: 16,
+                      ),
+                    ),
+                    const Icon(Icons.calendar_today, color: AppTheme.lavenderMist, size: 20),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // 출생 시 신체 정보
+            const Text(
+              '출생 시 신체 정보',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '출생 시 정보를 입력하면 성장 추이를 확인할 수 있어요',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey[400],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // 출생 체중
+            const Text(
+              '출생 체중',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _birthWeightController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              style: const TextStyle(color: AppTheme.textPrimary),
+              decoration: InputDecoration(
+                hintText: '예: 3.2',
+                hintStyle: TextStyle(color: Colors.grey[600]),
+                suffixText: 'kg',
+                suffixStyle: const TextStyle(color: AppTheme.lavenderMist),
+                filled: true,
+                fillColor: AppTheme.surfaceCard,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppTheme.glassBorder),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppTheme.lavenderMist, width: 2),
+                ),
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return '출생 체중을 입력해주세요';
+                }
+                final weight = double.tryParse(value);
+                if (weight == null || weight <= 0 || weight > 10) {
+                  return '올바른 체중을 입력해주세요 (0~10kg)';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+
+            // 출생 키
+            const Text(
+              '출생 키',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _birthHeightController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              style: const TextStyle(color: AppTheme.textPrimary),
+              decoration: InputDecoration(
+                hintText: '예: 50',
+                hintStyle: TextStyle(color: Colors.grey[600]),
+                suffixText: 'cm',
+                suffixStyle: const TextStyle(color: AppTheme.lavenderMist),
+                filled: true,
+                fillColor: AppTheme.surfaceCard,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppTheme.glassBorder),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppTheme.lavenderMist, width: 2),
+                ),
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return '출생 키를 입력해주세요';
+                }
+                final height = double.tryParse(value);
+                if (height == null || height <= 0 || height > 100) {
+                  return '올바른 키를 입력해주세요 (0~100cm)';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+
+            // 출생 머리둘레
+            const Text(
+              '출생 머리둘레',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _birthHeadCircumferenceController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              style: const TextStyle(color: AppTheme.textPrimary),
+              decoration: InputDecoration(
+                hintText: '예: 34',
+                hintStyle: TextStyle(color: Colors.grey[600]),
+                suffixText: 'cm',
+                suffixStyle: const TextStyle(color: AppTheme.lavenderMist),
+                filled: true,
+                fillColor: AppTheme.surfaceCard,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppTheme.glassBorder),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppTheme.lavenderMist, width: 2),
+                ),
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return '출생 머리둘레를 입력해주세요';
+                }
+                final headCircumference = double.tryParse(value);
+                if (headCircumference == null || headCircumference <= 0 || headCircumference > 60) {
+                  return '올바른 머리둘레를 입력해주세요 (0~60cm)';
+                }
+                return null;
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

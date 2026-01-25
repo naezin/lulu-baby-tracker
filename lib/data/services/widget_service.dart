@@ -1,5 +1,7 @@
 import 'package:home_widget/home_widget.dart';
 import '../models/activity_model.dart';
+import '../models/baby_model.dart';
+import '../models/widget_data_model.dart';
 import 'local_storage_service.dart';
 import '../../core/utils/wake_window_calculator.dart';
 import '../../core/utils/feeding_interval_calculator.dart';
@@ -13,41 +15,92 @@ class WidgetService {
 
   final LocalStorageService _storage = LocalStorageService();
 
-  // Baby data (72 days old, born Nov 11, 2025, 2.46kg)
-  static const int babyAgeInDays = 72;
-  static final DateTime babyBirthDate = DateTime(2025, 11, 11);
-  static const double birthWeightKg = 2.46;
-
   /// Update all widget variants with latest data
   Future<void> updateAllWidgets() async {
     try {
-      final widgetData = await _getWidgetData();
+      print('🔄 [WidgetService] Starting widget update...');
+
+      // ✅ NEW: Get widget state using new State model
+      final widgetState = await getWidgetState();
+      await _saveWidgetState(widgetState);
+      print('✅ [WidgetService] Widget state saved: ${widgetState.state.name}');
+
+      // ✅ 동적으로 아기 데이터 가져오기 (기존 로직 유지)
+      final baby = await _storage.getBaby();
+
+      if (baby == null) {
+        print('❌ [WidgetService] No baby data found - using empty state');
+        // Trigger widget update even with empty state
+        await HomeWidget.updateWidget(
+          iOSName: 'LuluWidgetProvider',
+          androidName: 'LuluWidgetProvider',
+        );
+        return;
+      }
+      print('✅ [WidgetService] Baby data loaded: ${baby.name}');
+
+      final widgetData = await _getWidgetData(baby: baby);
+      print('✅ [WidgetService] Widget data calculated');
 
       // Update small widget (2x2)
       await _updateSmallWidget(widgetData);
+      print('✅ [WidgetService] Small widget data saved');
 
       // Update medium widget (4x2)
       await _updateMediumWidget(widgetData);
+      print('✅ [WidgetService] Medium widget data saved');
 
       // Update lock screen widget (iOS)
       await _updateLockScreenWidget(widgetData);
+      print('✅ [WidgetService] Lock screen widget data saved');
 
       // Trigger widget update
-      await HomeWidget.updateWidget(
+      final updateResult = await HomeWidget.updateWidget(
         iOSName: 'LuluWidgetProvider',
         androidName: 'LuluWidgetProvider',
       );
-    } catch (e) {
-      print('Widget update error: $e');
+      print('✅ [WidgetService] Widget update triggered. Result: $updateResult');
+
+      print('🎉 [WidgetService] Widget update completed successfully!');
+    } catch (e, stackTrace) {
+      print('❌ [WidgetService] Widget update error: $e');
+      print('📍 [WidgetService] Stack trace: $stackTrace');
     }
   }
 
   /// Get comprehensive widget data
-  Future<Map<String, dynamic>> _getWidgetData() async {
+  Future<Map<String, dynamic>> _getWidgetData({required BabyModel baby}) async {
     final now = DateTime.now();
 
+    // ✅ Calculate baby age from actual data
+    final birthDate = DateTime.parse(baby.birthDate);
+    final ageInDays = now.difference(birthDate).inDays;
+    final ageInMonths = (ageInDays / 30).floor();
+
     // Get last wake time
-    final lastWakeTime = await _storage.getLastWakeUpTime();
+    DateTime? lastWakeTime = await _storage.getLastWakeUpTime();
+
+    // 🔧 FIX: 끝난 수면이 없으면, 가장 최근 수면 활동을 확인
+    if (lastWakeTime == null) {
+      final allSleepActivities = await _storage.getActivitiesByType(ActivityType.sleep);
+      if (allSleepActivities.isNotEmpty) {
+        // 최근 수면 활동 정렬
+        allSleepActivities.sort((a, b) =>
+          DateTime.parse(b.timestamp).compareTo(DateTime.parse(a.timestamp))
+        );
+
+        final latestSleep = allSleepActivities.first;
+
+        // 진행 중인 수면이면 시작 시간 사용, 끝난 수면이면 endTime 사용
+        if (latestSleep.endTime != null) {
+          lastWakeTime = DateTime.parse(latestSleep.endTime!);
+        } else {
+          // 진행 중인 수면: 수면 시작 시간을 마지막 "활동" 시간으로 간주
+          // Sweet Spot은 계산하지 않고 null로 유지
+          lastWakeTime = null;
+        }
+      }
+    }
 
     // Get last feeding
     final feedingActivities = await _storage.getActivitiesByType(ActivityType.feeding);
@@ -65,7 +118,7 @@ class WidgetService {
     if (lastWakeTime != null) {
       sleepPrediction = WakeWindowCalculator.calculateNextSleepTime(
         lastWakeTime: lastWakeTime,
-        ageInDays: babyAgeInDays,
+        ageInDays: ageInDays,
       );
     }
 
@@ -79,7 +132,7 @@ class WidgetService {
       feedingPrediction = FeedingIntervalCalculator.calculateNextFeedingTime(
         lastFeedingTime: lastFeedTime,
         lastFeedingAmountMl: amountMl,
-        ageInDays: babyAgeInDays,
+        ageInDays: ageInDays,
       );
     }
 
@@ -119,11 +172,18 @@ class WidgetService {
       final minutesUntil = sleepPrediction.minutesUntilSweetSpot;
       final urgency = sleepPrediction.urgencyLevel.name;
       final confidence = (sleepPrediction.confidence * 100).toInt();
+      // Calculate progress: how much of the wake window has passed
+      final minutesAwake = sleepPrediction.standardWakeWindow - minutesUntil;
+      final progress = (minutesAwake / sleepPrediction.standardWakeWindow).clamp(0.0, 1.0);
+      final isUrgent = sleepPrediction.isUrgent;
 
+      // Keys must match Swift widget expectations
       await HomeWidget.saveWidgetData('widget_type', 'small');
-      await HomeWidget.saveWidgetData('next_sleep_minutes', minutesUntil);
-      await HomeWidget.saveWidgetData('next_sleep_time',
+      await HomeWidget.saveWidgetData('widget_next_sweet_spot_time',
         '${sleepPrediction.nextSweetSpot.hour}:${sleepPrediction.nextSweetSpot.minute.toString().padLeft(2, '0')}');
+      await HomeWidget.saveWidgetData('widget_minutes_until_sweet_spot', minutesUntil);
+      await HomeWidget.saveWidgetData('widget_sweet_spot_progress', progress);
+      await HomeWidget.saveWidgetData('widget_is_urgent', isUrgent);
       await HomeWidget.saveWidgetData('sleep_urgency', urgency);
       await HomeWidget.saveWidgetData('sleep_confidence', confidence);
       await HomeWidget.saveWidgetData('has_sleep_data', true);
@@ -139,34 +199,53 @@ class WidgetService {
 
     await HomeWidget.saveWidgetData('widget_type', 'medium');
 
-    // Today's summary
-    await HomeWidget.saveWidgetData('total_sleep_hours',
-      ((data['totalSleepMinutes'] as int) / 60.0).toStringAsFixed(1));
-    await HomeWidget.saveWidgetData('total_feeding_ml',
-      (data['totalFeedingMl'] as double).toInt());
+    // Today's summary - Keys must match Swift widget expectations
+    final totalSleepHours = (data['totalSleepMinutes'] as int) / 60.0;
+    await HomeWidget.saveWidgetData('widget_total_sleep_hours', totalSleepHours);
+    await HomeWidget.saveWidgetData('widget_total_feeding_count', data['feedingCount']);
+    await HomeWidget.saveWidgetData('widget_total_diaper_count', data['diaperCount']);
+
+    // Legacy keys for compatibility
+    await HomeWidget.saveWidgetData('total_sleep_hours', totalSleepHours.toStringAsFixed(1));
+    await HomeWidget.saveWidgetData('total_feeding_ml', (data['totalFeedingMl'] as double).toInt());
     await HomeWidget.saveWidgetData('diaper_count', data['diaperCount']);
     await HomeWidget.saveWidgetData('feeding_count', data['feedingCount']);
 
     // Next action (prioritize most urgent)
-    String nextAction = 'No actions';
+    String nextActionType = 'sleep';
+    String nextActionTime = '00:00';
     int nextActionMinutes = 999;
+    bool isUrgent = false;
 
     if (sleepPrediction != null && sleepPrediction.isUrgent) {
-      nextAction = 'Sleep';
+      nextActionType = 'sleep';
       nextActionMinutes = sleepPrediction.minutesUntilSweetSpot.abs();
+      final nextTime = sleepPrediction.nextSweetSpot;
+      nextActionTime = '${nextTime.hour}:${nextTime.minute.toString().padLeft(2, '0')}';
+      isUrgent = true;
     } else if (feedingPrediction != null && feedingPrediction.isUrgent) {
-      nextAction = 'Feeding';
+      nextActionType = 'feeding';
       nextActionMinutes = feedingPrediction.minutesUntilFeeding.abs();
+      final nextTime = feedingPrediction.nextFeedingTime;
+      nextActionTime = '${nextTime.hour}:${nextTime.minute.toString().padLeft(2, '0')}';
+      isUrgent = true;
     } else if (sleepPrediction != null) {
-      nextAction = 'Sleep';
+      nextActionType = 'sleep';
       nextActionMinutes = sleepPrediction.minutesUntilSweetSpot;
+      final nextTime = sleepPrediction.nextSweetSpot;
+      nextActionTime = '${nextTime.hour}:${nextTime.minute.toString().padLeft(2, '0')}';
     } else if (feedingPrediction != null) {
-      nextAction = 'Feeding';
+      nextActionType = 'feeding';
       nextActionMinutes = feedingPrediction.minutesUntilFeeding;
+      final nextTime = feedingPrediction.nextFeedingTime;
+      nextActionTime = '${nextTime.hour}:${nextTime.minute.toString().padLeft(2, '0')}';
     }
 
-    await HomeWidget.saveWidgetData('next_action', nextAction);
-    await HomeWidget.saveWidgetData('next_action_minutes', nextActionMinutes);
+    // Keys must match Swift widget expectations
+    await HomeWidget.saveWidgetData('widget_next_action_type', nextActionType);
+    await HomeWidget.saveWidgetData('widget_next_action_time', nextActionTime);
+    await HomeWidget.saveWidgetData('widget_next_action_minutes', nextActionMinutes);
+    await HomeWidget.saveWidgetData('widget_is_urgent', isUrgent);
     await HomeWidget.saveWidgetData('has_medium_data', data['hasData']);
   }
 
@@ -176,11 +255,14 @@ class WidgetService {
 
     if (feedingPrediction != null) {
       final nextFeedTime = feedingPrediction.nextFeedingTime;
+      final formattedTime = '${nextFeedTime.hour.toString().padLeft(2, '0')}:${nextFeedTime.minute.toString().padLeft(2, '0')}';
+
       await HomeWidget.saveWidgetData('widget_type', 'lockscreen');
-      await HomeWidget.saveWidgetData('next_feed_time',
-        '${nextFeedTime.hour.toString().padLeft(2, '0')}:${nextFeedTime.minute.toString().padLeft(2, '0')}');
-      await HomeWidget.saveWidgetData('feed_minutes_until',
-        feedingPrediction.minutesUntilFeeding);
+      // Key must match Swift widget expectation
+      await HomeWidget.saveWidgetData('widget_next_feeding_time', formattedTime);
+      // Legacy keys for compatibility
+      await HomeWidget.saveWidgetData('next_feed_time', formattedTime);
+      await HomeWidget.saveWidgetData('feed_minutes_until', feedingPrediction.minutesUntilFeeding);
       await HomeWidget.saveWidgetData('has_lockscreen_data', true);
     } else {
       await HomeWidget.saveWidgetData('has_lockscreen_data', false);
@@ -190,7 +272,15 @@ class WidgetService {
   /// Schedule smart background updates
   /// Updates more frequently near sleep/feeding times
   Future<void> scheduleSmartUpdates() async {
-    final widgetData = await _getWidgetData();
+    // ✅ 동적으로 아기 데이터 가져오기
+    final baby = await _storage.getBaby();
+
+    if (baby == null) {
+      print('No baby data found - skipping smart update scheduling');
+      return;
+    }
+
+    final widgetData = await _getWidgetData(baby: baby);
     final sleepPrediction = widgetData['sleepPrediction'] as WakeWindowPrediction?;
     final feedingPrediction = widgetData['feedingPrediction'] as FeedingPrediction?;
 
@@ -226,5 +316,110 @@ class WidgetService {
   /// Get next update time recommendation
   DateTime getNextUpdateTime() {
     return DateTime.now().add(const Duration(minutes: 15));
+  }
+
+  /// Get WidgetData with proper state classification
+  Future<WidgetData> getWidgetState() async {
+    final baby = await _storage.getBaby();
+    if (baby == null) {
+      return WidgetData.empty();
+    }
+
+    final now = DateTime.now();
+    final birthDate = DateTime.parse(baby.birthDate);
+    final ageInDays = now.difference(birthDate).inDays;
+
+    // Get last wake time
+    DateTime? lastWakeTime = await _storage.getLastWakeUpTime();
+
+    if (lastWakeTime == null) {
+      final allSleepActivities = await _storage.getActivitiesByType(ActivityType.sleep);
+      if (allSleepActivities.isNotEmpty) {
+        allSleepActivities.sort((a, b) =>
+          DateTime.parse(b.timestamp).compareTo(DateTime.parse(a.timestamp))
+        );
+
+        final latestSleep = allSleepActivities.first;
+
+        if (latestSleep.endTime != null) {
+          lastWakeTime = DateTime.parse(latestSleep.endTime!);
+        }
+      }
+    }
+
+    // If still no wake time, return empty state
+    if (lastWakeTime == null) {
+      return WidgetData.empty();
+    }
+
+    // Calculate Sweet Spot prediction
+    final sleepPrediction = WakeWindowCalculator.calculateNextSleepTime(
+      lastWakeTime: lastWakeTime,
+      ageInDays: ageInDays,
+    );
+
+    if (sleepPrediction == null) {
+      return WidgetData.empty();
+    }
+
+    final minutesRemaining = sleepPrediction.minutesUntilSweetSpot;
+    final urgency = WidgetData.calculateUrgency(
+      sweetSpotStart: sleepPrediction.nextSweetSpot,
+      now: now,
+    );
+
+    // Determine state
+    if (minutesRemaining <= 0 || (urgency == UrgencyLevel.red && minutesRemaining <= 5)) {
+      // Urgent State: Sweet Spot 진입 또는 지남
+      return WidgetData.urgent(
+        sweetSpotTime: sleepPrediction.nextSweetSpot,
+        confidence: sleepPrediction.confidence,
+      );
+    } else {
+      // Active State: Sweet Spot 계산됨
+      return WidgetData.active(
+        sweetSpotTime: sleepPrediction.nextSweetSpot,
+        minutesRemaining: minutesRemaining,
+        urgency: urgency,
+        confidence: sleepPrediction.confidence,
+      );
+    }
+  }
+
+  /// Save widget state to native storage
+  Future<void> _saveWidgetState(WidgetData widgetData) async {
+    // Save state
+    await HomeWidget.saveWidgetData('widget_state', widgetData.state.name);
+
+    // Save common data
+    if (widgetData.nextSweetSpotTime != null) {
+      final time = widgetData.nextSweetSpotTime!;
+      final formattedTime = '${time.hour}:${time.minute.toString().padLeft(2, '0')}';
+      await HomeWidget.saveWidgetData('widget_next_sweet_spot_time', formattedTime);
+
+      // Save hour and minute separately for easier native access
+      await HomeWidget.saveWidgetData('widget_sweet_spot_hour', time.hour);
+      await HomeWidget.saveWidgetData('widget_sweet_spot_minute', time.minute);
+    }
+
+    if (widgetData.minutesRemaining != null) {
+      await HomeWidget.saveWidgetData('widget_minutes_remaining', widgetData.minutesRemaining);
+    }
+
+    if (widgetData.urgencyLevel != null) {
+      await HomeWidget.saveWidgetData('widget_urgency_level', widgetData.urgencyLevel!.name);
+    }
+
+    if (widgetData.confidenceScore != null) {
+      await HomeWidget.saveWidgetData('widget_confidence_score', (widgetData.confidenceScore! * 100).toInt());
+    }
+
+    // Save hint message key
+    if (widgetData.state == WidgetState.active && widgetData.urgencyLevel != null) {
+      await HomeWidget.saveWidgetData('widget_hint_key', widgetData.getHintMessageKey());
+    }
+
+    // Save last update time
+    await HomeWidget.saveWidgetData('widget_last_update', DateTime.now().toIso8601String());
   }
 }

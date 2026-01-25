@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:csv/csv.dart';
 import 'package:intl/intl.dart';
-// import 'package:cloud_firestore/cloud_firestore.dart'; // Temporarily disabled for web
-import 'firestore_stub.dart';
+import '../../domain/repositories/i_activity_repository.dart';
+import '../../domain/entities/activity_entity.dart';
 
 /// CSV Import 결과
 class ImportResult {
@@ -29,13 +29,17 @@ class ImportResult {
 /// 진행률 콜백 타입
 typedef ImportProgressCallback = void Function(double progress, String message);
 
-/// CSV 가져오기 서비스
+/// CSV 가져오기 서비스 (✅ Repository 패턴 적용 완료)
 class CsvImportService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final IActivityRepository _activityRepository;
 
-  /// CSV 파일을 읽어서 Firestore로 가져오기
+  CsvImportService({
+    required IActivityRepository activityRepository,
+  }) : _activityRepository = activityRepository;
+
+  /// CSV 파일을 읽어서 Repository로 가져오기
   Future<ImportResult> importFromCsv({
-    required String userId,
+    required String babyId,
     required File csvFile,
     ImportProgressCallback? onProgress,
   }) async {
@@ -63,7 +67,7 @@ class CsvImportService {
 
       // 중복 체크용 기존 타임스탬프 가져오기
       onProgress?.call(0.4, 'Checking for duplicates...');
-      final existingTimestamps = await _getExistingTimestamps(userId);
+      final existingTimestamps = await _getExistingTimestamps(babyId);
 
       // 카운터 초기화
       int sleepCount = 0;
@@ -77,7 +81,7 @@ class CsvImportService {
       if (classifiedData['sleep']!.isNotEmpty) {
         onProgress?.call(0.5, 'Importing sleep records...');
         final result = await _importSleepRecords(
-          userId: userId,
+          babyId: babyId,
           records: classifiedData['sleep']!,
           existingTimestamps: existingTimestamps['sleep']!,
         );
@@ -91,7 +95,7 @@ class CsvImportService {
       if (classifiedData['feeding']!.isNotEmpty) {
         onProgress?.call(0.7, 'Importing feeding records...');
         final result = await _importFeedingRecords(
-          userId: userId,
+          babyId: babyId,
           records: classifiedData['feeding']!,
           existingTimestamps: existingTimestamps['feeding']!,
         );
@@ -105,7 +109,7 @@ class CsvImportService {
       if (classifiedData['diaper']!.isNotEmpty) {
         onProgress?.call(0.9, 'Importing diaper records...');
         final result = await _importDiaperRecords(
-          userId: userId,
+          babyId: babyId,
           records: classifiedData['diaper']!,
           existingTimestamps: existingTimestamps['diaper']!,
         );
@@ -216,50 +220,33 @@ class CsvImportService {
   }
 
   /// 기존 타임스탬프 가져오기 (중복 체크용)
-  Future<Map<String, Set<String>>> _getExistingTimestamps(String userId) async {
+  Future<Map<String, Set<String>>> _getExistingTimestamps(String babyId) async {
     final sleepTimestamps = <String>{};
     final feedingTimestamps = <String>{};
     final diaperTimestamps = <String>{};
 
-    // 수면 기록
-    final sleepSnapshot = await _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('sleep_records')
-        .get();
-    for (var doc in sleepSnapshot.docs) {
-      final data = doc.data();
-      final timestamp = (data['start_time'] as Timestamp?)?.toDate();
-      if (timestamp != null) {
-        sleepTimestamps.add(timestamp.toIso8601String());
-      }
-    }
+    // 모든 활동 기록 가져오기
+    final activities = await _activityRepository.getActivities(
+      babyId: babyId,
+      limit: 10000, // CSV import는 모든 기록 체크 필요
+    );
 
-    // 수유 기록
-    final feedingSnapshot = await _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('feeding_records')
-        .get();
-    for (var doc in feedingSnapshot.docs) {
-      final data = doc.data();
-      final timestamp = (data['time'] as Timestamp?)?.toDate();
-      if (timestamp != null) {
-        feedingTimestamps.add(timestamp.toIso8601String());
-      }
-    }
+    // 타입별로 타임스탬프 분류
+    for (var activity in activities) {
+      final timestampStr = activity.timestamp.toIso8601String();
 
-    // 기저귀 기록
-    final diaperSnapshot = await _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('diaper_records')
-        .get();
-    for (var doc in diaperSnapshot.docs) {
-      final data = doc.data();
-      final timestamp = (data['time'] as Timestamp?)?.toDate();
-      if (timestamp != null) {
-        diaperTimestamps.add(timestamp.toIso8601String());
+      switch (activity.type) {
+        case ActivityType.sleep:
+          sleepTimestamps.add(timestampStr);
+          break;
+        case ActivityType.feeding:
+          feedingTimestamps.add(timestampStr);
+          break;
+        case ActivityType.diaper:
+          diaperTimestamps.add(timestampStr);
+          break;
+        default:
+          break;
       }
     }
 
@@ -272,7 +259,7 @@ class CsvImportService {
 
   /// 수면 기록 가져오기
   Future<Map<String, dynamic>> _importSleepRecords({
-    required String userId,
+    required String babyId,
     required List<Map<String, dynamic>> records,
     required Set<String> existingTimestamps,
   }) async {
@@ -299,19 +286,20 @@ class CsvImportService {
         final endTime = _parseDateTime(record['end_time']);
         final duration = _parseDuration(record['duration']);
 
-        // Firestore에 저장
-        await _firestore
-            .collection('users')
-            .doc(userId)
-            .collection('sleep_records')
-            .add({
-          'start_time': Timestamp.fromDate(startTime),
-          'end_time': endTime != null ? Timestamp.fromDate(endTime) : null,
-          'duration_minutes': duration,
-          'quality': record['quality'],
-          'location': record['location'],
-          'notes': record['notes'],
-        });
+        // Repository를 통해 저장
+        await _activityRepository.saveActivity(
+          babyId: babyId,
+          activity: ActivityEntity(
+            id: '', // Repository에서 생성
+            type: ActivityType.sleep,
+            timestamp: startTime,
+            endTime: endTime,
+            durationMinutes: duration,
+            sleepQuality: record['quality'],
+            sleepLocation: record['location'],
+            notes: record['notes'],
+          ),
+        );
 
         imported++;
       } catch (e) {
@@ -330,7 +318,7 @@ class CsvImportService {
 
   /// 수유 기록 가져오기
   Future<Map<String, dynamic>> _importFeedingRecords({
-    required String userId,
+    required String babyId,
     required List<Map<String, dynamic>> records,
     required Set<String> existingTimestamps,
   }) async {
@@ -357,19 +345,20 @@ class CsvImportService {
         final amount = _parseAmount(record['amount']);
         final duration = _parseDuration(record['duration']);
 
-        // Firestore에 저장
-        await _firestore
-            .collection('users')
-            .doc(userId)
-            .collection('feeding_records')
-            .add({
-          'time': Timestamp.fromDate(time),
-          'type': record['feeding_type'] ?? 'Unknown',
-          'amount_ml': amount,
-          'duration_minutes': duration,
-          'side': record['side'],
-          'notes': record['notes'],
-        });
+        // Repository를 통해 저장
+        await _activityRepository.saveActivity(
+          babyId: babyId,
+          activity: ActivityEntity(
+            id: '', // Repository에서 생성
+            type: ActivityType.feeding,
+            timestamp: time,
+            durationMinutes: duration,
+            feedingType: record['feeding_type'] ?? 'Unknown',
+            amountMl: amount?.toDouble(),
+            breastSide: record['side'],
+            notes: record['notes'],
+          ),
+        );
 
         imported++;
       } catch (e) {
@@ -388,7 +377,7 @@ class CsvImportService {
 
   /// 기저귀 기록 가져오기
   Future<Map<String, dynamic>> _importDiaperRecords({
-    required String userId,
+    required String babyId,
     required List<Map<String, dynamic>> records,
     required Set<String> existingTimestamps,
   }) async {
@@ -412,16 +401,17 @@ class CsvImportService {
           continue;
         }
 
-        // Firestore에 저장
-        await _firestore
-            .collection('users')
-            .doc(userId)
-            .collection('diaper_records')
-            .add({
-          'time': Timestamp.fromDate(time),
-          'type': record['diaper_type'] ?? 'Unknown',
-          'notes': record['notes'],
-        });
+        // Repository를 통해 저장
+        await _activityRepository.saveActivity(
+          babyId: babyId,
+          activity: ActivityEntity(
+            id: '', // Repository에서 생성
+            type: ActivityType.diaper,
+            timestamp: time,
+            diaperType: record['diaper_type'] ?? 'Unknown',
+            notes: record['notes'],
+          ),
+        );
 
         imported++;
       } catch (e) {

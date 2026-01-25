@@ -2,14 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../core/utils/sweet_spot_calculator.dart';
+import '../../data/services/daily_summary_service.dart';
+import '../providers/home_data_provider.dart';
 import '../providers/sweet_spot_provider.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
+import 'notification_toggle.dart';
 
-/// 🌟 Sweet Spot Hero Card - Huckleberry-inspired
-/// Prominently displays sleep prediction at dashboard center
+/// 🌟 Sweet Spot Hero Card v2.0
+/// - Today's Snapshot 통합
+/// - 스마트 알림 통합
 class SweetSpotHeroCard extends StatefulWidget {
-  const SweetSpotHeroCard({super.key});
+  final String babyName;
+
+  const SweetSpotHeroCard({
+    Key? key,
+    required this.babyName,
+  }) : super(key: key);
 
   @override
   State<SweetSpotHeroCard> createState() => _SweetSpotHeroCardState();
@@ -50,26 +59,99 @@ class _SweetSpotHeroCardState extends State<SweetSpotHeroCard>
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<SweetSpotProvider>(
-      builder: (context, provider, child) {
-        final sweetSpot = provider.currentSweetSpot;
+    return Consumer2<SweetSpotProvider, HomeDataProvider>(
+      builder: (context, sweetSpotProvider, homeDataProvider, child) {
+        // SweetSpotProvider에서 Sweet Spot 데이터 가져오기 (우선순위)
+        final sweetSpotFromProvider = sweetSpotProvider.currentSweetSpot;
+        final sweetSpotFromHome = homeDataProvider.sweetSpot;
+        final sweetSpot = sweetSpotFromProvider ?? sweetSpotFromHome;
+        final dailySummary = homeDataProvider.dailySummary;
+        final notificationState = homeDataProvider.notificationState;
 
         if (sweetSpot == null) {
           return _buildEmptyState(context);
         }
 
-        return _buildHeroCard(context, sweetSpot);
+        return _buildHeroCard(
+          context,
+          sweetSpot,
+          dailySummary,
+          notificationState,
+          homeDataProvider,
+        );
       },
     );
   }
 
   Widget _buildEmptyState(BuildContext context) {
-    // Don't show anything if there's no sweet spot data
-    return const SizedBox.shrink();
+    final l10n = AppLocalizations.of(context);
+    final isKorean = l10n.locale.languageCode == 'ko';
+
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          padding: const EdgeInsets.all(32),
+          decoration: BoxDecoration(
+            color: AppTheme.surfaceCard,
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: AppTheme.softBlue.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppTheme.lavenderMist.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.bedtime_outlined,
+                  size: 48,
+                  color: AppTheme.lavenderMist,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                isKorean ? '🌙 아기의 골든타임을 찾아요' : '🌙 Find Your Baby\'s Golden Time',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: AppTheme.textPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                isKorean
+                    ? '기상 시간을 알려주시면,\n아기가 가장 쉽게 잠들 시간을 예측해드릴게요'
+                    : 'Tell us when your baby woke up,\nand we\'ll predict the best sleep time',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppTheme.textTertiary,
+                      height: 1.5,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
-  Widget _buildHeroCard(BuildContext context, SweetSpotResult sweetSpot) {
+  Widget _buildHeroCard(
+    BuildContext context,
+    SweetSpotResult sweetSpot,
+    DailySummary? dailySummary,
+    notificationState,
+    HomeDataProvider provider,
+  ) {
     final l10n = AppLocalizations.of(context);
+    final isKorean = l10n.locale.languageCode == 'ko';
     final urgency = sweetSpot.urgencyLevel;
     final colorScheme = _getColorScheme(urgency);
 
@@ -78,7 +160,7 @@ class _SweetSpotHeroCardState extends State<SweetSpotHeroCard>
       child: ScaleTransition(
         scale: _scaleAnimation,
         child: GestureDetector(
-          onTap: () => _triggerHaptic(),
+          onTap: () => HapticFeedback.mediumImpact(),
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             decoration: BoxDecoration(
@@ -115,42 +197,54 @@ class _SweetSpotHeroCardState extends State<SweetSpotHeroCard>
 
                   // Main content
                   Padding(
-                    padding: const EdgeInsets.all(28),
+                    padding: const EdgeInsets.all(24),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Status chip
-                        _buildStatusChip(urgency),
+                        // Header: Status chip + Notification toggle
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            _buildStatusChip(urgency, isKorean),
+                            NotificationToggle(
+                              state: notificationState,
+                              onTap: () => _handleNotificationToggle(context, provider, l10n),
+                            ),
+                          ],
+                        ),
 
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 20),
 
                         // Main message
                         Text(
-                          sweetSpot.userFriendlyMessage,
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineMedium
-                              ?.copyWith(
+                          _getLocalizedMessage(sweetSpot, isKorean),
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
-                                height: 1.2,
+                                height: 1.3,
                               ),
                         ),
 
-                        const SizedBox(height: 28),
+                        const SizedBox(height: 24),
 
                         // Time window display
-                        _buildTimeWindow(context, sweetSpot, l10n),
+                        _buildTimeWindow(context, sweetSpot, isKorean),
 
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 20),
 
                         // Progress bar
-                        _buildProgressBar(context, sweetSpot, l10n),
+                        _buildProgressBar(context, sweetSpot, isKorean),
 
                         const SizedBox(height: 24),
 
-                        // Stats row
-                        _buildStatsRow(context, sweetSpot, l10n),
+                        // Stats row (Today's Snapshot 통합)
+                        _buildExpandedStatsRow(context, sweetSpot, dailySummary, isKorean),
+
+                        // Notification footer (조건부)
+                        if (notificationState.isEnabled) ...[
+                          const SizedBox(height: 16),
+                          _buildNotificationFooter(context, notificationState, isKorean),
+                        ],
                       ],
                     ),
                   ),
@@ -163,9 +257,9 @@ class _SweetSpotHeroCardState extends State<SweetSpotHeroCard>
     );
   }
 
-  Widget _buildStatusChip(UrgencyLevel urgency) {
+  Widget _buildStatusChip(UrgencyLevel urgency, bool isKorean) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.2),
         borderRadius: BorderRadius.circular(20),
@@ -177,16 +271,13 @@ class _SweetSpotHeroCardState extends State<SweetSpotHeroCard>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          Text(urgency.emoji, style: const TextStyle(fontSize: 16)),
+          const SizedBox(width: 6),
           Text(
-            urgency.emoji,
-            style: const TextStyle(fontSize: 18),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            urgency.displayName,
+            _getUrgencyName(urgency, isKorean),
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: FontWeight.w600,
               letterSpacing: -0.2,
             ),
@@ -196,10 +287,37 @@ class _SweetSpotHeroCardState extends State<SweetSpotHeroCard>
     );
   }
 
-  Widget _buildTimeWindow(
-      BuildContext context, SweetSpotResult sweetSpot, AppLocalizations l10n) {
+  String _getUrgencyName(UrgencyLevel urgency, bool isKorean) {
+    switch (urgency) {
+      case UrgencyLevel.tooEarly:
+        return isKorean ? '너무 빨라요' : 'Too Early';
+      case UrgencyLevel.approaching:
+        return isKorean ? '곧 시작' : 'Approaching';
+      case UrgencyLevel.optimal:
+        return isKorean ? '지금이에요!' : 'Now!';
+      case UrgencyLevel.overtired:
+        return isKorean ? '놓쳤어요' : 'Overtired';
+    }
+  }
+
+  String _getLocalizedMessage(SweetSpotResult sweetSpot, bool isKorean) {
+    switch (sweetSpot.urgencyLevel) {
+      case UrgencyLevel.tooEarly:
+        return isKorean
+            ? '아직 깨어있는 시간이에요! Sweet spot이 ${sweetSpot.minutesUntilSweetSpot}분 후에 시작됩니다.'
+            : 'Still awake time! Sweet spot starts in ${sweetSpot.minutesUntilSweetSpot} minutes.';
+      case UrgencyLevel.approaching:
+        return isKorean ? '곧 Sweet Spot이에요! 수면 루틴을 준비하세요' : 'Sweet Spot approaching! Prepare the sleep routine';
+      case UrgencyLevel.optimal:
+        return isKorean ? '✨ 지금이 최적의 수면 시간이에요!' : '✨ Perfect time for a nap!';
+      case UrgencyLevel.overtired:
+        return isKorean ? '괜찮아요, 지금 재워볼까요? 🌙' : 'It\'s okay, let\'s try now 🌙';
+    }
+  }
+
+  Widget _buildTimeWindow(BuildContext context, SweetSpotResult sweetSpot, bool isKorean) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.15),
         borderRadius: BorderRadius.circular(20),
@@ -213,19 +331,14 @@ class _SweetSpotHeroCardState extends State<SweetSpotHeroCard>
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.access_time_rounded,
-                color: Colors.white.withOpacity(0.9),
-                size: 20,
-              ),
-              const SizedBox(width: 8),
+              Icon(Icons.access_time_rounded, color: Colors.white.withOpacity(0.9), size: 22),
+              const SizedBox(width: 10),
               Text(
-                l10n.translate('sweet_spot_title_window'),
+                isKorean ? '스위트 스팟 시간대' : 'Sweet Spot Time',
                 style: TextStyle(
                   color: Colors.white.withOpacity(0.9),
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  letterSpacing: -0.2,
                 ),
               ),
             ],
@@ -235,20 +348,188 @@ class _SweetSpotHeroCardState extends State<SweetSpotHeroCard>
             sweetSpot.getFormattedTimeRange(),
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 32,
+              fontSize: 22,
               fontWeight: FontWeight.bold,
-              letterSpacing: -1,
-              height: 1.1,
+              letterSpacing: -0.5,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Text(
-            l10n
-                .translate('sweet_spot_label_wake_window_value')
-                .replaceAll('{range}', sweetSpot.wakeWindowData.displayRange),
+            _getRemainingTimeText(sweetSpot, isKorean),
             style: TextStyle(
-              color: Colors.white.withOpacity(0.8),
-              fontSize: 13,
+              color: Colors.white.withOpacity(0.85),
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getRemainingTimeText(SweetSpotResult sweetSpot, bool isKorean) {
+    // Use average of min and max for optimal wake window
+    final optimalMinutes = ((sweetSpot.wakeWindowData.minMinutes + sweetSpot.wakeWindowData.maxMinutes) / 2).round();
+
+    if (sweetSpot.isActive) {
+      final remaining = sweetSpot.minutesUntilSweetSpotEnd;
+      return isKorean ? '깨어있는 시간: ${optimalMinutes ~/ 60}h ${optimalMinutes % 60}m - ${remaining}분 남음'
+          : 'Awake time: ${optimalMinutes ~/ 60}h ${optimalMinutes % 60}m - $remaining min left';
+    } else if (sweetSpot.minutesUntilSweetSpot > 0) {
+      final hours = sweetSpot.minutesUntilSweetSpot ~/ 60;
+      final mins = sweetSpot.minutesUntilSweetSpot % 60;
+      return isKorean
+          ? '깨어있는 시간: ${optimalMinutes ~/ 60}h ${optimalMinutes % 60}m - ${hours > 0 ? "$hours시간 " : ""}${mins}분 후'
+          : 'Awake time: ${optimalMinutes ~/ 60}h ${optimalMinutes % 60}m - ${hours > 0 ? "${hours}h " : ""}${mins}m';
+    } else {
+      return isKorean ? '지금 재우세요' : 'Sleep now';
+    }
+  }
+
+  Widget _buildProgressBar(BuildContext context, SweetSpotResult sweetSpot, bool isKorean) {
+    final wakeWindow = ((sweetSpot.wakeWindowData.minMinutes + sweetSpot.wakeWindowData.maxMinutes) / 2).round();
+    final elapsed = sweetSpot.minutesSinceWakeUp;
+    final progress = (elapsed / wakeWindow).clamp(0.0, 1.0);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              isKorean ? '깨어있음: 5분' : 'Awake: 5min',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.8),
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            Text(
+              isKorean ? '80분 후' : '80min later',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.9),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: LinearProgressIndicator(
+            value: progress,
+            backgroundColor: Colors.white.withOpacity(0.2),
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.white.withOpacity(0.9)),
+            minHeight: 8,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 확장된 Stats Row (Today's Snapshot 통합)
+  Widget _buildExpandedStatsRow(
+    BuildContext context,
+    SweetSpotResult sweetSpot,
+    DailySummary? summary,
+    bool isKorean,
+  ) {
+    // 수면 시간 (시간 단위)
+    final sleepHours = summary != null ? (summary.totalSleepMinutes / 60).toStringAsFixed(1) : '--';
+
+    // 수유 횟수
+    final feedingCount = summary?.feedingCount.toString() ?? '--';
+
+    // 기저귀 횟수
+    final diaperCount = summary?.diaperCount.toString() ?? '--';
+
+    // 패턴 안정성
+    final patternStatus = _getPatternStatus(summary, isKorean);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.15),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildStatItem(
+            emoji: '💤',
+            value: '${sleepHours}h',
+            label: isKorean ? '총 수면' : 'Sleep',
+          ),
+          _buildStatDivider(),
+          _buildStatItem(
+            emoji: '🍼',
+            value: '${feedingCount}${isKorean ? "회" : "x"}',
+            label: isKorean ? '수유' : 'Feeds',
+          ),
+          _buildStatDivider(),
+          _buildStatItem(
+            emoji: '🧷',
+            value: '${diaperCount}${isKorean ? "회" : "x"}',
+            label: isKorean ? '기저귀' : 'Diapers',
+          ),
+          _buildStatDivider(),
+          _buildStatItem(
+            emoji: '📊',
+            value: patternStatus,
+            label: isKorean ? '패턴' : 'Pattern',
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getPatternStatus(DailySummary? summary, bool isKorean) {
+    if (summary == null) return '--';
+
+    // 간단한 패턴 안정성 판단
+    if (summary.totalSleepMinutes >= 600) {
+      // 10시간 이상
+      return isKorean ? '안정' : 'Stable';
+    } else if (summary.totalSleepMinutes >= 420) {
+      // 7시간 이상
+      return isKorean ? '보통' : 'Normal';
+    } else {
+      return isKorean ? '부족' : 'Low';
+    }
+  }
+
+  Widget _buildStatItem({
+    required String emoji,
+    required String value,
+    required String label,
+  }) {
+    return Expanded(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 18)),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              letterSpacing: -0.3,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.75),
+              fontSize: 11,
               letterSpacing: -0.1,
             ),
           ),
@@ -257,173 +538,79 @@ class _SweetSpotHeroCardState extends State<SweetSpotHeroCard>
     );
   }
 
-  Widget _buildProgressBar(
-      BuildContext context, SweetSpotResult sweetSpot, AppLocalizations l10n) {
-    final now = DateTime.now();
-    final totalWindow =
-        sweetSpot.sweetSpotEnd.difference(sweetSpot.lastWakeUpTime).inMinutes;
-    final elapsed = now.difference(sweetSpot.lastWakeUpTime).inMinutes;
-    final progress = (elapsed / totalWindow).clamp(0.0, 1.0);
+  Widget _buildStatDivider() {
+    return Container(
+      width: 1,
+      height: 40,
+      color: Colors.white.withOpacity(0.2),
+    );
+  }
 
-    return Column(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: LinearProgressIndicator(
-            value: progress,
-            backgroundColor: Colors.white.withOpacity(0.2),
-            valueColor: const AlwaysStoppedAnimation<Color>(
-              Colors.white,
-            ),
-            minHeight: 6,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              l10n
-                  .translate('sweet_spot_progress_awake_minutes')
-                  .replaceAll('{minutes}', '${sweetSpot.minutesSinceWakeUp}'),
+  /// 알림 Footer
+  Widget _buildNotificationFooter(BuildContext context, notificationState, bool isKorean) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              notificationState.getStatusMessage(isKorean: isKorean),
               style: TextStyle(
                 color: Colors.white.withOpacity(0.9),
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
-                letterSpacing: -0.1,
               ),
             ),
-            if (!sweetSpot.isActive)
-              Text(
-                l10n
-                    .translate('sweet_spot_progress_in_minutes')
-                    .replaceAll('{minutes}', '${sweetSpot.minutesUntilSweetSpot}'),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: -0.1,
-                ),
-              )
-            else
-              Text(
-                l10n
-                    .translate('sweet_spot_progress_minutes_left')
-                    .replaceAll(
-                        '{minutes}', '${sweetSpot.minutesUntilSweetSpotEnd}'),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: -0.1,
-                ),
-              ),
-          ],
-        ),
-      ],
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildStatsRow(
-      BuildContext context, SweetSpotResult sweetSpot, AppLocalizations l10n) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: [
-        _buildStatItem(
-          icon: Icons.child_care_rounded,
-          label: l10n.translate('sweet_spot_info_age'),
-          value: '${sweetSpot.ageInMonths}mo',
-        ),
-        Container(
-          width: 1,
-          height: 32,
-          color: Colors.white.withOpacity(0.2),
-        ),
-        if (sweetSpot.napNumber != null)
-          _buildStatItem(
-            icon: Icons.hotel_rounded,
-            label: l10n.translate('sweet_spot_info_nap'),
-            value: '#${sweetSpot.napNumber}',
-          ),
-        if (sweetSpot.napNumber != null)
-          Container(
-            width: 1,
-            height: 32,
-            color: Colors.white.withOpacity(0.2),
-          ),
-        _buildStatItem(
-          icon: Icons.repeat_rounded,
-          label: l10n.translate('sweet_spot_info_daily_naps'),
-          value: '${sweetSpot.wakeWindowData.recommendedNaps}',
-        ),
-      ],
+  Future<void> _handleNotificationToggle(
+    BuildContext context,
+    HomeDataProvider provider,
+    AppLocalizations l10n,
+  ) async {
+    final success = await provider.toggleNotification(
+      babyName: widget.babyName,
+      l10n: l10n,
     );
-  }
 
-  Widget _buildStatItem({
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
-    return Column(
-      children: [
-        Icon(
-          icon,
-          color: Colors.white.withOpacity(0.9),
-          size: 20,
-        ),
-        const SizedBox(height: 6),
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 17,
-            fontWeight: FontWeight.bold,
-            letterSpacing: -0.3,
+    if (!success && mounted) {
+      // 권한 거부 시 안내
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            l10n.locale.languageCode == 'ko'
+                ? '알림 권한이 필요합니다. 설정에서 허용해주세요.'
+                : 'Notification permission required. Please allow in settings.',
           ),
         ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.8),
-            fontSize: 11,
-            letterSpacing: -0.1,
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _triggerHaptic() {
-    HapticFeedback.mediumImpact();
+      );
+    }
   }
 
   _SweetSpotColorScheme _getColorScheme(UrgencyLevel urgency) {
     switch (urgency) {
       case UrgencyLevel.tooEarly:
-        return _SweetSpotColorScheme(
-          primaryColor: const Color(0xFF4A90E2),
-        );
+        return _SweetSpotColorScheme(primaryColor: const Color(0xFF4A90E2)); // 파란색
       case UrgencyLevel.approaching:
-        return _SweetSpotColorScheme(
-          primaryColor: const Color(0xFFF5A623),
-        );
+        return _SweetSpotColorScheme(primaryColor: const Color(0xFFF5A623)); // 주황색
       case UrgencyLevel.optimal:
-        return _SweetSpotColorScheme(
-          primaryColor: const Color(0xFF7ED321),
-        );
+        return _SweetSpotColorScheme(primaryColor: const Color(0xFF7ED321)); // 녹색
       case UrgencyLevel.overtired:
-        return _SweetSpotColorScheme(
-          primaryColor: const Color(0xFFE87878),
-        );
+        return _SweetSpotColorScheme(primaryColor: const Color(0xFFE87878)); // 빨간색
     }
   }
 }
 
 class _SweetSpotColorScheme {
   final Color primaryColor;
-
   _SweetSpotColorScheme({required this.primaryColor});
 }
 
