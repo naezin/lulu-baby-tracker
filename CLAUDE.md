@@ -2,7 +2,7 @@
 
 > **"18명의 Elite Agent가 하나의 목소리로, 전 세계 부모에게 안심을 전달한다."**
 >
-> **Last Updated**: 2026-01-26 | **Version**: 1.3 | **Maintained By**: Lulu Elite Agent Team
+> **Last Updated**: 2026-01-26 | **Version**: 1.4 | **Maintained By**: Lulu Elite Agent Team
 
 ---
 
@@ -69,23 +69,27 @@ Platforms: iOS, Android, Web
 Primary: Provider ^6.1.1
 Pattern: ChangeNotifier + Consumer
 
-# Backend & Authentication
-Authentication: firebase_auth ^4.16.0
-Database: cloud_firestore ^4.14.0
+# Backend & Authentication (v1.4 업데이트: Firebase → Supabase)
+Backend: supabase_flutter ^2.0.0
 Social Login: google_sign_in ^6.2.1
+# Note: Firebase는 v1.3에서 완전히 제거됨
+
+# Dependency Injection
+DI Container: get_it ^7.6.0
+Pattern: Service Locator with Repository interfaces
 
 # AI Integration
-AI Service: OpenAI API (GPT-4)
+AI Service: OpenAI API (GPT-4o-mini)
 HTTP Client: http ^1.1.0
 
 # Local Storage
 Preferences: shared_preferences ^2.2.2
-# Note: Hive 사용 시 암호화 필수
 
 # UI & Utilities
 Localization: intl ^0.20.2, flutter_localizations
 Charts: fl_chart ^0.69.0
 Icons: cupertino_icons ^1.0.2
+UUID: uuid ^4.5.2
 
 # Notifications
 Local: flutter_local_notifications ^17.0.0
@@ -108,18 +112,27 @@ Testing: flutter_test (SDK)
 ### 🧩 System Architect
 
 ```yaml
-Architecture: Clean Architecture
+Architecture: Clean Architecture + Repository Pattern
 
 Layer Separation:
   - core/: 비즈니스 로직과 독립적인 공통 유틸리티
-  - data/: 데이터 소스 및 모델
-  - presentation/: UI 레이어
+  - domain/: 순수 도메인 레이어 (Entities, Repository Interfaces)
+  - data/: 데이터 레이어 (Models, Repository 구현체, Services)
+  - di/: 의존성 주입 컨테이너 (GetIt 기반)
+  - presentation/: UI 레이어 (Providers, Screens, Widgets)
 
-Data Flow:
-  UI → Provider → Service → Firebase/API → Service → Provider → UI
+Data Flow (v1.4):
+  UI → Provider → Repository Interface → Repository Implementation → Backend/API
 
 Dependency Direction:
-  presentation → data → core (단방향 의존성)
+  presentation → domain ← data (의존성 역전)
+  presentation → data (서비스 직접 사용 시)
+  core: 어느 레이어에서든 참조 가능
+
+Repository Pattern:
+  - domain/repositories/: 추상 인터페이스 정의 (I*Repository)
+  - data/repositories/mock/: Mock 구현 (로컬 개발용)
+  - data/repositories/supabase/: Supabase 구현 (프로덕션용)
 ```
 
 ---
@@ -141,29 +154,76 @@ lulu/
 │   │   ├── theme/
 │   │   │   └── app_theme.dart         # Midnight Blue 테마
 │   │   └── utils/
-│   │       └── sweet_spot_calculator.dart  # 수면 예측 알고리즘
+│   │       ├── sweet_spot_calculator.dart     # 수면 예측 알고리즘
+│   │       ├── wake_window_calculator.dart    # 각성 시간 계산
+│   │       ├── feeding_interval_calculator.dart
+│   │       ├── premature_baby_calculator.dart
+│   │       ├── corrected_age_calculator.dart
+│   │       ├── date_formatter.dart
+│   │       └── unit_converter.dart
+│   │
+│   ├── domain/                        # 🏛️ 도메인 레이어 (v1.3 추가)
+│   │   ├── entities/                  # 순수 비즈니스 모델
+│   │   │   ├── activity_entity.dart
+│   │   │   ├── baby_entity.dart
+│   │   │   ├── user_entity.dart
+│   │   │   ├── insight_entity.dart
+│   │   │   └── preference_entity.dart
+│   │   └── repositories/              # 추상 인터페이스
+│   │       ├── i_activity_repository.dart
+│   │       ├── i_baby_repository.dart
+│   │       ├── i_auth_repository.dart
+│   │       ├── i_insight_repository.dart
+│   │       └── i_preference_repository.dart
+│   │
+│   ├── di/                            # 💉 의존성 주입 (v1.3 추가)
+│   │   └── injection_container.dart   # GetIt DI 컨테이너
 │   │
 │   ├── data/                          # 📊 데이터 레이어
 │   │   ├── models/
-│   │   │   ├── baby_model.dart
+│   │   │   ├── baby_model.dart        # JSON 직렬화 가능
 │   │   │   ├── activity_model.dart
 │   │   │   └── chat_message.dart
+│   │   ├── repositories/
+│   │   │   ├── mock/                  # Mock 구현 (로컬 개발)
+│   │   │   │   ├── mock_activity_repository.dart
+│   │   │   │   ├── mock_baby_repository.dart
+│   │   │   │   ├── mock_auth_repository.dart
+│   │   │   │   ├── mock_insight_repository.dart
+│   │   │   │   └── mock_preference_repository.dart
+│   │   │   └── supabase/              # Supabase 구현 (프로덕션)
 │   │   └── services/
 │   │       ├── openai_service.dart    # AI 채팅 서비스
+│   │       ├── ai_coaching_service.dart
 │   │       ├── widget_service.dart    # 홈 위젯 서비스
+│   │       ├── csv_import_service.dart
+│   │       ├── csv_export_service.dart
+│   │       ├── daily_summary_service.dart
 │   │       └── local_storage_service.dart
 │   │
+│   ├── l10n/                          # 🌐 번역 파일
+│   │   ├── app_en.arb                 # 영어 (기준)
+│   │   └── app_ko.arb                 # 한국어
+│   │
 │   └── presentation/                  # 🎨 UI 레이어
-│       ├── providers/
+│       ├── providers/                 # 7개 Provider
+│       │   ├── baby_provider.dart     # 아기 관리 (v1.4)
 │       │   ├── chat_provider.dart
 │       │   ├── sweet_spot_provider.dart
+│       │   ├── home_data_provider.dart
+│       │   ├── smart_coach_provider.dart
 │       │   ├── locale_provider.dart
 │       │   └── unit_preferences_provider.dart
+│       ├── design_system/
+│       │   └── components/            # 재사용 UI 컴포넌트
 │       ├── screens/
 │       │   ├── main/
 │       │   ├── chat/
 │       │   ├── activities/
 │       │   ├── records/
+│       │   ├── baby/                  # 아기 관리 화면 (v1.4)
+│       │   ├── analysis/
+│       │   ├── onboarding/
 │       │   └── settings/
 │       └── widgets/
 │           ├── auth_wrapper.dart
@@ -172,8 +232,14 @@ lulu/
 │
 ├── test/
 │   └── unit/
-│       └── utils/
-│           └── sweet_spot_calculator_test.dart
+│       ├── utils/
+│       │   └── sweet_spot_calculator_test.dart
+│       ├── models/
+│       │   └── activity_model_test.dart
+│       ├── services/
+│       │   └── widget_service_test.dart
+│       └── widgets/
+│           └── lulu_time_picker_test.dart
 │
 ├── ios/
 │   └── LuluWidget/                    # iOS WidgetKit
@@ -185,7 +251,9 @@ lulu/
 │
 ├── scripts/
 │   ├── check_i18n.dart               # i18n 검증 스크립트
-│   └── check_i18n.sh
+│   ├── check_i18n.sh
+│   ├── clean_build.sh                # 빌드 캐시 정리
+│   └── measure_build_time.sh         # 빌드 시간 측정
 │
 ├── .github/
 │   └── workflows/
@@ -339,19 +407,49 @@ class ChatProvider extends ChangeNotifier {
 ### 5.2 Provider 등록 (main.dart)
 
 ```dart
-// ✅ MultiProvider 설정
+// ✅ MultiProvider 설정 (v1.4 - 7개 Provider)
+
+import 'di/injection_container.dart' as di;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+
+  // Supabase 초기화 (환경변수 설정 시)
+  if (EnvironmentValidator.hasSupabaseConfig) {
+    await Supabase.initialize(
+      url: EnvironmentValidator.supabaseUrl!,
+      anonKey: EnvironmentValidator.supabaseAnonKey!,
+    );
+  }
+
+  // DI 컨테이너 초기화
+  await di.initDependencies(backend: di.BackendType.supabase);
 
   runApp(
     MultiProvider(
       providers: [
+        // 1. Baby Provider (다른 Provider가 의존하므로 먼저 등록)
+        ChangeNotifierProvider(
+          create: (_) => BabyProvider(
+            babyRepository: di.sl<IBabyRepository>(),
+            localStorage: di.sl<LocalStorageService>(),
+            widgetService: WidgetService(),
+          ),
+        ),
+        // 2. Locale Provider
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
+        // 3. Unit Preferences Provider
         ChangeNotifierProvider(create: (_) => UnitPreferencesProvider()),
-        ChangeNotifierProvider(create: (_) => ChatProvider()),
+        // 4. Chat Provider
+        ChangeNotifierProvider(
+          create: (_) => ChatProvider(openAIService: di.sl<OpenAIService>()),
+        ),
+        // 5. Sweet Spot Provider
         ChangeNotifierProvider(create: (_) => SweetSpotProvider()),
+        // 6. Home Data Provider
+        ChangeNotifierProvider(create: (_) => HomeDataProvider()),
+        // 7. Smart Coach Provider
+        ChangeNotifierProvider(create: (_) => SmartCoachProvider()),
       ],
       child: const LuluApp(),
     ),
@@ -431,41 +529,66 @@ class OpenAIService {
 }
 ```
 
-### 6.2 Firebase Firestore 규칙
+### 6.2 Repository 패턴 (v1.4)
 
 ```dart
-// ✅ Firestore 쿼리 패턴
+// ✅ Repository 인터페이스 정의 (domain/repositories/)
 
-// 1. 반드시 limit 사용
-Query query = FirebaseFirestore.instance
-    .collection('users')
-    .doc(userId)
-    .collection('activities')
-    .orderBy('timestamp', descending: true)
-    .limit(100);  // ⚠️ 필수: 무한 로딩 방지
+abstract class IActivityRepository {
+  /// 특정 기간의 활동 조회
+  Future<List<ActivityEntity>> getActivities({
+    required String babyId,
+    required DateTime start,
+    required DateTime end,
+  });
 
-// 2. 에러 핸들링
-StreamBuilder<QuerySnapshot>(
-  stream: query.snapshots(),
-  builder: (context, snapshot) {
-    // ⚠️ 필수: 에러 상태 체크
-    if (snapshot.hasError) {
-      return ErrorWidget(error: snapshot.error.toString());
-    }
+  /// 활동 저장
+  Future<void> saveActivity(ActivityEntity activity);
 
-    // ⚠️ 필수: 로딩 상태 체크
-    if (snapshot.connectionState == ConnectionState.waiting) {
-      return const LoadingWidget();
-    }
+  /// 활동 삭제
+  Future<void> deleteActivity(String activityId);
+}
+```
 
-    // ⚠️ 필수: 빈 데이터 체크
-    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-      return const EmptyStateWidget();
-    }
+```dart
+// ✅ Mock Repository 구현 (data/repositories/mock/)
 
-    return ListView(...);
-  },
-)
+class MockActivityRepository implements IActivityRepository {
+  final List<ActivityEntity> _activities = [];
+
+  @override
+  Future<List<ActivityEntity>> getActivities({
+    required String babyId,
+    required DateTime start,
+    required DateTime end,
+  }) async {
+    return _activities
+        .where((a) => a.babyId == babyId)
+        .where((a) => a.timestamp.isAfter(start))
+        .where((a) => a.timestamp.isBefore(end))
+        .toList();
+  }
+
+  @override
+  Future<void> saveActivity(ActivityEntity activity) async {
+    _activities.add(activity);
+  }
+}
+```
+
+```dart
+// ✅ DI 컨테이너에서 Repository 주입
+
+// lib/di/injection_container.dart
+void _registerMockRepositories() {
+  sl.registerLazySingleton<IActivityRepository>(
+    () => MockActivityRepository(),
+  );
+  sl.registerLazySingleton<IBabyRepository>(
+    () => MockBabyRepository(),
+  );
+  // ... 나머지 Repository
+}
 ```
 
 ### 6.3 데이터 모델 규칙
@@ -559,33 +682,39 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 final apiKey = dotenv.env['OPENAI_API_KEY'];
 ```
 
-### 7.2 Firebase Security Rules
+### 7.2 Supabase Row Level Security (v1.4)
 
-```javascript
-// ✅ Firestore 보안 규칙 예시
+```sql
+-- ✅ Supabase RLS 정책 예시
 
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // 사용자는 자신의 데이터만 접근 가능
-    match /users/{userId} {
-      allow read, write: if request.auth != null
-                         && request.auth.uid == userId;
+-- 사용자는 자신의 데이터만 접근 가능
+CREATE POLICY "Users can access own data"
+ON users FOR ALL
+USING (auth.uid() = id);
 
-      // 아기 데이터는 부모만 접근
-      match /babies/{babyId} {
-        allow read, write: if request.auth != null
-                           && request.auth.uid == userId;
-      }
+-- 아기 데이터는 부모만 접근
+CREATE POLICY "Parents can access own babies"
+ON babies FOR ALL
+USING (auth.uid() = parent_id);
 
-      // 활동 기록
-      match /activities/{activityId} {
-        allow read, write: if request.auth != null
-                           && request.auth.uid == userId;
-      }
-    }
-  }
-}
+-- 활동 기록 접근 제어
+CREATE POLICY "Users can access activities of own babies"
+ON activities FOR ALL
+USING (
+  baby_id IN (
+    SELECT id FROM babies WHERE parent_id = auth.uid()
+  )
+);
+```
+
+```dart
+// ✅ 로컬 개발 시 Mock Repository 사용
+
+// main.dart에서 BackendType 변경으로 전환
+await di.initDependencies(
+  backend: di.BackendType.mock,  // 로컬 개발
+  // backend: di.BackendType.supabase,  // 프로덕션
+);
 ```
 
 ### 7.3 민감 정보 처리
@@ -1012,16 +1141,16 @@ Code Structure:
      Widget _buildHeader() { ... }
      Widget _buildContent() { ... }
 
-# Firebase 최적화 (선택적)
-Firebase Optimization:
-  개발 환경: Mock Backend 사용 (DI)
-  스테이징: Firebase 활성화
-  프로덕션: Firebase 활성화
+# Backend 전환 (v1.4)
+Backend Configuration:
+  개발 환경: Mock Backend (DI)
+  스테이징: Supabase
+  프로덕션: Supabase
 
   환경변수로 전환:
     BackendType backend =
       EnvironmentValidator.isProduction
-        ? BackendType.firebase
+        ? BackendType.supabase
         : BackendType.mock;
 
 # iOS 빌드 설정
@@ -1336,7 +1465,7 @@ UX:
 
 Security:
   - [ ] API 키 노출 없음
-  - [ ] Firebase Security Rules 검증
+  - [ ] Supabase RLS 정책 검증
   - [ ] 개인정보처리방침 최신화
 
 Compliance:
@@ -1466,12 +1595,28 @@ onPressed: () async {
 ---
 
 **Last Updated**: 2026-01-26
-**Version**: 1.1
+**Version**: 1.4
 **Next Review**: 2026-02-26
 
 ---
 
 ## Changelog
+
+### v1.4 (2026-01-26)
+- **Added**: Multi-baby support with BabyProvider
+  - Baby management screen with switcher widget
+  - Onboarding Step 4 for multi-baby setup
+  - babyId field added to ActivityModel
+- **Added**: LuluTimePicker v2.0 integration in activity detail screen
+- **Added**: Repository pattern documentation in Section 6.2
+- **Updated**: Tech Stack section - Supabase as primary backend, GetIt for DI
+- **Updated**: Architecture section - Clean Architecture + Repository Pattern
+- **Updated**: Project Structure - Added domain/, di/, l10n/ layers
+- **Updated**: State Management - 7 providers now registered (added BabyProvider, HomeDataProvider, SmartCoachProvider)
+- **Updated**: Security section - Supabase RLS instead of Firebase Rules
+- **Fixed**: Version inconsistency (header vs footer)
+- **Fixed**: i18n missing keys - 7 keys added to records screens
+- **Fixed**: DI issues - missing imports, duplicate registrations
 
 ### v1.3 (2026-01-26)
 - **BREAKING**: Firebase → Supabase 마이그레이션 완료
