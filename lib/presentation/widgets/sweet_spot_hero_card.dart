@@ -68,6 +68,9 @@ class _SweetSpotHeroCardState extends State<SweetSpotHeroCard>
         final dailySummary = homeDataProvider.dailySummary;
         final notificationState = homeDataProvider.notificationState;
 
+        print('🎨 [SweetSpotHeroCard] build() called');
+        print('   dailySummary: ${dailySummary != null ? "sleep=${dailySummary.totalSleepMinutes}min, feeding=${dailySummary.feedingCount}, diaper=${dailySummary.diaperCount}" : "NULL"}');
+
         if (sweetSpot == null) {
           return _buildEmptyState(context);
         }

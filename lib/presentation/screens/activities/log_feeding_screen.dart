@@ -353,9 +353,12 @@ class _LogFeedingScreenState extends State<LogFeedingScreen> {
         final homeDataProvider = Provider.of<HomeDataProvider>(context, listen: false);
         final babyProvider = Provider.of<BabyProvider>(context, listen: false);
         final babyId = babyProvider.currentBaby?.id;
+        print('🍼 [LogFeedingScreen] Refreshing daily summary with babyId: $babyId');
         if (babyId != null) {
           await homeDataProvider.refreshDailySummary(babyId);
           print('✅ [LogFeedingScreen] HomeDataProvider daily summary refreshed');
+        } else {
+          print('⚠️ [LogFeedingScreen] babyId is null! Cannot refresh summary');
         }
       }
 

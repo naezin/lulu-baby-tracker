@@ -17,12 +17,19 @@ class DailySummaryService {
     final startOfDay = DateTime(now.year, now.month, now.day);
     final endOfDay = startOfDay.add(const Duration(days: 1));
 
+    print('📊 [DailySummaryService] getTodaysSummary called');
+    print('   babyId: $babyId');
+    print('   startOfDay: $startOfDay');
+    print('   endOfDay: $endOfDay');
+
     try {
       final activities = await _activityRepository.getActivities(
         babyId: babyId,
         startDate: startOfDay,
         endDate: endOfDay,
       );
+
+      print('   📦 Fetched ${activities.length} activities from repository');
 
       // Filter activities again in-memory to ensure timezone consistency
       final todayActivities = activities.where((activity) {
@@ -32,8 +39,14 @@ class DailySummaryService {
                activityLocal.isBefore(endOfDay);
       }).toList();
 
-      return _calculateSummary(todayActivities);
+      print('   ✅ Filtered to ${todayActivities.length} activities for today');
+
+      final summary = _calculateSummary(todayActivities);
+      print('   📈 Summary: sleep=${summary.totalSleepMinutes}min, feeding=${summary.feedingCount}, diaper=${summary.diaperCount}');
+
+      return summary;
     } catch (e) {
+      print('   ❌ Error: $e');
       // Return empty summary on error
       return DailySummary.empty();
     }

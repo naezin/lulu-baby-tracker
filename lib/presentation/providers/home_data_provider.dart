@@ -218,12 +218,15 @@ class HomeDataProvider extends ChangeNotifier {
 
   /// Daily Summary 새로고침
   Future<void> refreshDailySummary(String babyId) async {
+    print('🔄 [HomeDataProvider] refreshDailySummary called with babyId: $babyId');
     try {
       final summary = await _dailySummaryService.getTodaysSummary(babyId);
+      print('   ✅ Got summary: sleep=${summary.totalSleepMinutes}min, feeding=${summary.feedingCount}, diaper=${summary.diaperCount}');
       _data = _data.copyWith(
         dailySummary: summary,
         lastUpdated: DateTime.now(),
       );
+      print('   📢 Calling notifyListeners()');
       notifyListeners();
     } catch (e) {
       // 에러 무시, 기존 데이터 유지
