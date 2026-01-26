@@ -848,6 +848,13 @@ class AppLocalizations {
       // === Common ===
       'great_job': 'Great job! 👏',
       'keep_it_up': 'Keep tracking!',
+
+      // === Multi-Baby Onboarding (Step 4) ===
+      'have_another_baby': 'Do you have another baby?',
+      'multi_baby_description': 'You can manage twins or siblings together!',
+      'add_another_baby': 'Add Another Baby',
+      'skip_for_now': 'Skip for now →',
+      'add_baby_later_hint': 'You can also add babies later in settings',
     },
     'ko': {
       // App Name
@@ -1683,6 +1690,13 @@ class AppLocalizations {
       // === Common ===
       'great_job': '잘했어요! 👏',
       'keep_it_up': '계속 기록해요!',
+
+      // === Multi-Baby Onboarding (Step 4) ===
+      'have_another_baby': '혹시 다른 아기도 있으신가요?',
+      'multi_baby_description': '쌍둥이나 형제자매를 함께 관리할 수 있어요!',
+      'add_another_baby': '아기 추가하기',
+      'skip_for_now': '지금은 넘어갈게요 →',
+      'add_baby_later_hint': '나중에 설정에서도 추가할 수 있어요',
     },
   };
 

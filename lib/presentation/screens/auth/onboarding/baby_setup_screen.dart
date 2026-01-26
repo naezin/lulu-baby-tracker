@@ -29,6 +29,7 @@ class _BabySetupScreenState extends State<BabySetupScreen> {
   bool _isLowBirthWeight = false;
   bool _showSpecialCarePrompt = false;
   int _currentStep = 0;
+  bool _isAddingAnotherBaby = false;  // 🆕 다른 아기 추가 중인지 플래그
 
   @override
   void dispose() {
@@ -83,10 +84,10 @@ class _BabySetupScreenState extends State<BabySetupScreen> {
       padding: const EdgeInsets.all(20),
       child: Row(
         children: List.generate(
-          3,
+          4,  // 🆕 3 → 4 (Step 4 추가)
           (index) => Expanded(
             child: Container(
-              margin: EdgeInsets.only(right: index < 2 ? 8 : 0),
+              margin: EdgeInsets.only(right: index < 3 ? 8 : 0),  // 🆕 2 → 3
               height: 4,
               decoration: BoxDecoration(
                 color: index <= _currentStep
@@ -109,6 +110,8 @@ class _BabySetupScreenState extends State<BabySetupScreen> {
         return _buildBabyInfoStep(l10n);
       case 2:
         return _buildSpecialCareStep(l10n);
+      case 3:
+        return _buildAddAnotherBabyStep(l10n);  // 🆕 Step 4
       default:
         return Container();
     }
@@ -552,7 +555,7 @@ class _BabySetupScreenState extends State<BabySetupScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
               child: Text(
-                _currentStep == 2
+                _currentStep == 3  // 🆕 Step 4에서만 Finish
                     ? (l10n.translate('finish') ?? 'Finish')
                     : (l10n.translate('next') ?? 'Next'),
                 style: const TextStyle(
@@ -620,8 +623,12 @@ class _BabySetupScreenState extends State<BabySetupScreen> {
           _finishSetup();
         }
       }
-    } else {
+    } else if (_currentStep == 2) {
+      // Special care step 완료 → 첫 번째 아기 저장 후 Step 4로
       _finishSetup();
+    } else {
+      // Step 4 (다른 아기 추가 질문) - 사용자가 스킵하면 홈으로
+      _navigateToHome();
     }
   }
 
@@ -650,14 +657,14 @@ class _BabySetupScreenState extends State<BabySetupScreen> {
       // Create baby model
       final baby = BabyModel(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
-        babyId: babyId,
+        userId: userId,  // 🔧 babyId → userId
         name: _nameController.text.trim(),
         birthDate: _birthDate.toIso8601String(),
         dueDate: null, // Could be added in future
         isPremature: isPremature,
         gender: _gender,
         photoUrl: null, // Could be added in future
-        weightKg: weightKg,
+        birthWeightKg: weightKg,  // 🔧 weightKg → birthWeightKg
         weightUnit: 'kg',
         sleepGoals: _isLowBirthWeight
             ? SleepGoals(
@@ -685,9 +692,12 @@ class _BabySetupScreenState extends State<BabySetupScreen> {
         Navigator.of(context).pop();
       }
 
-      // Navigate to home screen
-      if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/home');
+      // 🆕 첫 번째 아기 저장 후 Step 4로 이동 (다른 아기 추가 질문)
+      if (mounted && !_isAddingAnotherBaby) {
+        setState(() => _currentStep = 3);
+      } else {
+        // 추가 아기 저장 완료 → 홈으로
+        _navigateToHome();
       }
     } catch (e) {
       // Dismiss loading dialog
@@ -705,5 +715,137 @@ class _BabySetupScreenState extends State<BabySetupScreen> {
         );
       }
     }
+  }
+
+  /// 🆕 Step 4: 다른 아기 추가 질문
+  Widget _buildAddAnotherBabyStep(AppLocalizations l10n) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // 아이콘
+        Container(
+          width: 120,
+          height: 120,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppTheme.lavenderMist.withOpacity(0.1),
+          ),
+          child: const Icon(
+            Icons.child_care,
+            size: 60,
+            color: AppTheme.lavenderMist,
+          ),
+        ),
+        const SizedBox(height: 32),
+
+        // 제목
+        Text(
+          l10n.translate('have_another_baby') ?? '혹시 다른 아기도 있으신가요?',
+          style: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 16),
+
+        // 설명
+        Text(
+          l10n.translate('multi_baby_description') ??
+              '쌍둥이나 형제자매를 함께 관리할 수 있어요!',
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.white.withOpacity(0.7),
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 48),
+
+        // 아기 추가 버튼
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: _addAnotherBaby,
+            icon: const Icon(Icons.add),
+            label: Text(
+              l10n.translate('add_another_baby') ?? '아기 추가하기',
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.lavenderMist,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // 스킵 버튼
+        TextButton(
+          onPressed: _navigateToHome,
+          child: Text(
+            l10n.translate('skip_for_now') ?? '지금은 넘어갈게요 →',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.7),
+              fontSize: 16,
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // 힌트
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.lightbulb_outline,
+                size: 20,
+                color: AppTheme.lavenderMist.withOpacity(0.8),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                l10n.translate('add_baby_later_hint') ??
+                    '나중에 설정에서도 추가할 수 있어요',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.white.withOpacity(0.6),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 🆕 다른 아기 추가 - Step 2로 돌아가기
+  void _addAnotherBaby() {
+    // 현재 입력 필드 초기화
+    _nameController.clear();
+    _weightController.clear();
+    _birthDate = DateTime.now().subtract(const Duration(days: 72));
+    _gender = 'female';
+    _isLowBirthWeight = false;
+    _showSpecialCarePrompt = false;
+
+    // Step 2로 돌아가서 새 아기 정보 입력
+    setState(() {
+      _currentStep = 1;
+      _isAddingAnotherBaby = true;  // 추가 아기 플래그 설정
+    });
+  }
+
+  /// 🆕 홈 화면으로 이동
+  void _navigateToHome() {
+    Navigator.of(context).pushReplacementNamed('/home');
   }
 }
