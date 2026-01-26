@@ -645,7 +645,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
         return await _showDeleteConfirmation(context, activity);
       },
       onDismissed: (direction) async {
-        await _deleteActivityWithUndo(activity);
+        await _deleteActivity(activity);
       },
       child: InkWell(
         onTap: () => _navigateToDetailScreen(activity),
@@ -815,7 +815,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
           style: TextStyle(color: AppTheme.textPrimary),
         ),
         content: Text(
-          '${_getLabel(activity.type)} 기록을 삭제하시겠습니까?\n삭제 후 3초 내에 취소할 수 있습니다.',
+          '${_getLabel(activity.type)} 기록을 삭제하시겠습니까?\n삭제된 기록은 복구할 수 없습니다.',
           style: const TextStyle(color: AppTheme.textSecondary),
         ),
         actions: [
@@ -841,53 +841,27 @@ class _RecordsScreenState extends State<RecordsScreen> {
     );
   }
 
-  /// 삭제 + Undo 기능
-  Future<void> _deleteActivityWithUndo(ActivityModel activity) async {
-    final l10n = AppLocalizations.of(context);
-    final deletedActivity = activity;
-    final deletedIndex = _todayActivities.indexOf(activity);
-
-    // 1. Optimistic Update - UI에서 즉시 제거
+  /// 활동 삭제 (다이얼로그 확인 후 호출됨)
+  Future<void> _deleteActivity(ActivityModel activity) async {
+    // 1. UI에서 즉시 제거
     setState(() {
       _todayActivities.remove(activity);
     });
 
-    if (!mounted) return;
+    // 2. 실제 삭제 실행
+    await _storage.deleteActivity(activity.id);
+    await WidgetService().updateAllWidgets();
 
-    // 2. Undo 가능한 스낵바 표시
-    final wasUndone = await LuluSnackBar.showDestructive(
-      context,
-      message: '${_getLabel(activity.type)} ${l10n.translate('activity_deleted')}',
-      undoLabel: l10n.translate('undo'),
-      duration: const Duration(seconds: 5),
-      onUndo: () async {
-        // 복원 로직
-        setState(() {
-          if (deletedIndex >= 0 && deletedIndex <= _todayActivities.length) {
-            _todayActivities.insert(deletedIndex, deletedActivity);
-          } else {
-            _todayActivities.add(deletedActivity);
-            _todayActivities.sort((a, b) =>
-              DateTime.parse(b.timestamp).compareTo(DateTime.parse(a.timestamp)));
-          }
-        });
-        HapticFeedback.lightImpact();
-      },
-    );
-
-    // 3. Undo하지 않은 경우에만 실제 삭제
-    if (!wasUndone) {
-      await _storage.deleteActivity(activity.id);
-      await WidgetService().updateAllWidgets();
-
-      // ✅ HomeDataProvider의 dailySummary 업데이트
-      final homeDataProvider = Provider.of<HomeDataProvider>(context, listen: false);
-      final babyProvider = Provider.of<BabyProvider>(context, listen: false);
-      final currentBaby = babyProvider.currentBaby;
-      if (currentBaby != null) {
-        await homeDataProvider.refreshDailySummary(currentBaby.id);
-      }
+    // 3. HomeDataProvider의 dailySummary 업데이트
+    final homeDataProvider = Provider.of<HomeDataProvider>(context, listen: false);
+    final babyProvider = Provider.of<BabyProvider>(context, listen: false);
+    final currentBaby = babyProvider.currentBaby;
+    if (currentBaby != null) {
+      await homeDataProvider.refreshDailySummary(currentBaby.id);
     }
+
+    // 4. Haptic 피드백
+    HapticFeedback.lightImpact();
   }
 
   Widget _buildTodaySummary(AppLocalizations l10n) {

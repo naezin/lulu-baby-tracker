@@ -1213,7 +1213,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
           style: TextStyle(color: AppTheme.textPrimary),
         ),
         content: const Text(
-          '이 활동을 삭제하시겠습니까?\n삭제 후 3초 내에 취소할 수 있습니다.',
+          '이 활동을 삭제하시겠습니까?\n삭제된 기록은 복구할 수 없습니다.',
           style: TextStyle(color: AppTheme.textSecondary),
         ),
         actions: [
