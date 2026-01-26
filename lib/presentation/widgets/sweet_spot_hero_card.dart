@@ -475,9 +475,9 @@ class _SweetSpotHeroCardState extends State<SweetSpotHeroCard>
         ? (summary.totalSleepMinutes / 60).toStringAsFixed(1)
         : '--';
 
-    // 수유 횟수
-    final feedingCount = summary != null && summary.feedingCount > 0
-        ? summary.feedingCount.toString()
+    // 수유량 (ml)
+    final feedingMl = summary != null && summary.totalFeedingMl > 0
+        ? summary.totalFeedingMl.toInt().toString()
         : '--';
 
     // 기저귀 횟수
@@ -509,8 +509,8 @@ class _SweetSpotHeroCardState extends State<SweetSpotHeroCard>
           _buildStatDivider(),
           _buildStatItem(
             emoji: '🍼',
-            value: '${feedingCount}${isKorean ? "회" : "x"}',
-            label: isKorean ? '수유' : 'Feeds',
+            value: '${feedingMl}ml',
+            label: isKorean ? '수유' : 'Feed',
           ),
           _buildStatDivider(),
           _buildStatItem(

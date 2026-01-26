@@ -24,6 +24,9 @@ import '../data/repositories/mock/mock_auth_repository.dart';
 import '../data/repositories/mock/mock_insight_repository.dart';
 import '../data/repositories/mock/mock_preference_repository.dart';
 
+// Local Storage Implementations
+import '../data/repositories/local/local_activity_repository.dart';
+
 // Services
 import '../data/services/openai_service.dart';
 import '../data/services/ai_coaching_service.dart';
@@ -146,8 +149,9 @@ void _registerSupabaseRepositories() {
 
 /// Mock Repository 등록 (로컬 개발용)
 void _registerMockRepositories() {
+  // LocalStorage 기반 ActivityRepository 사용 (기록 데이터와 연동)
   sl.registerLazySingleton<IActivityRepository>(
-    () => MockActivityRepository(),
+    () => LocalActivityRepository(sl<LocalStorageService>()),
   );
 
   sl.registerLazySingleton<IBabyRepository>(

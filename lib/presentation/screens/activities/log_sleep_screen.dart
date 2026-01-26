@@ -10,6 +10,7 @@ import '../../widgets/lulu_time_picker.dart';
 import '../../providers/home_data_provider.dart';
 import '../../providers/sweet_spot_provider.dart';
 import '../../providers/baby_provider.dart';
+import '../../providers/smart_coach_provider.dart';
 
 /// 수면 기록 화면
 class LogSleepScreen extends StatefulWidget {
@@ -433,6 +434,24 @@ class _LogSleepScreenState extends State<LogSleepScreen> {
         if (currentBaby != null) {
           await homeDataProvider.refreshDailySummary(currentBaby.id);
           print('✅ [LogSleepScreen] HomeDataProvider daily summary refreshed for baby ${currentBaby.id}');
+        }
+      }
+
+      // SmartCoachProvider 업데이트 - 오늘의 일정 새로고침
+      if (mounted) {
+        final babyProvider = Provider.of<BabyProvider>(context, listen: false);
+        final smartCoachProvider = Provider.of<SmartCoachProvider>(context, listen: false);
+        final currentBaby = babyProvider.currentBaby;
+        if (currentBaby != null) {
+          await smartCoachProvider.refresh(
+            userId: currentBaby.id,
+            babyName: currentBaby.name,
+            ageInMonths: currentBaby.ageInMonths,
+            lastWakeUpTime: _endTime,
+            lastFeedingTime: null,
+            isKorean: true,
+          );
+          print('✅ [LogSleepScreen] SmartCoachProvider timeline refreshed');
         }
       }
 
