@@ -18,6 +18,7 @@ import 'presentation/providers/smart_coach_provider.dart';
 import 'presentation/providers/locale_provider.dart';
 import 'presentation/providers/unit_preferences_provider.dart';
 import 'presentation/providers/baby_provider.dart';
+import 'presentation/providers/feed_sleep_provider.dart';
 import 'presentation/screens/activities/log_feeding_screen.dart';
 import 'presentation/screens/activities/log_sleep_screen.dart';
 import 'presentation/screens/activities/log_diaper_screen.dart';
@@ -208,6 +209,11 @@ class LuluApp extends StatelessWidget {
         // 🆕 Smart Coach Provider (스마트 코치 시스템)
         ChangeNotifierProvider(
           create: (_) => SmartCoachProvider(),
+        ),
+
+        // Feed-Sleep Correlation Provider
+        ChangeNotifierProvider(
+          create: (_) => FeedSleepProvider(),
         ),
       ],
       child: Consumer<LocaleProvider>(
