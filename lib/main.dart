@@ -9,6 +9,8 @@ import 'core/localization/app_localizations.dart';
 import 'core/utils/environment_validator.dart';
 import 'data/services/openai_service.dart';
 import 'data/services/widget_service.dart';
+import 'data/services/local_storage_service.dart';
+import 'domain/repositories/i_baby_repository.dart';
 import 'presentation/providers/chat_provider.dart';
 import 'presentation/providers/sweet_spot_provider.dart';
 import 'presentation/providers/home_data_provider.dart';
@@ -160,7 +162,11 @@ class LuluApp extends StatelessWidget {
       providers: [
         // Baby Provider (먼저 등록 - 다른 Provider가 의존)
         ChangeNotifierProvider(
-          create: (_) => BabyProvider(),
+          create: (_) => BabyProvider(
+            babyRepository: di.sl<IBabyRepository>(),
+            localStorage: di.sl<LocalStorageService>(),
+            widgetService: WidgetService(),
+          ),
         ),
 
         // Locale Provider

@@ -1,10 +1,12 @@
 import '../../../data/services/firestore_stub.dart';
 import '../../../data/services/widget_service.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../data/models/activity_model.dart';
 import '../../../data/models/baby_model.dart';
 import '../../../core/utils/medication_calculator.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../../providers/baby_provider.dart';
 import '../../widgets/log_screen_template.dart';
 import '../../widgets/lulu_time_picker.dart';
 
@@ -467,8 +469,12 @@ class _TemperatureTabState extends State<_TemperatureTab> {
           .collection('activities')
           .doc();
 
+      final babyProvider = Provider.of<BabyProvider>(context, listen: false);
+      final babyId = babyProvider.currentBaby?.id ?? 'unknown';
+
       final activity = ActivityModel.temperature(
         id: docRef.id,
+        babyId: babyId,
         time: _selectedTime,
         temperature: temp,
         unit: _selectedUnit,
@@ -775,8 +781,12 @@ class _MedicationTabState extends State<_MedicationTab> {
           .collection('activities')
           .doc();
 
+      final babyProvider = Provider.of<BabyProvider>(context, listen: false);
+      final babyId = babyProvider.currentBaby?.id ?? 'unknown';
+
       final activity = ActivityModel.medication(
         id: docRef.id,
+        babyId: babyId,
         time: _selectedTime,
         medicationType: _medicationType,
         medicationName: _selectedMedication,

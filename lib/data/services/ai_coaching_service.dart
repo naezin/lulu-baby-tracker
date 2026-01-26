@@ -117,7 +117,7 @@ class AICoachingService {
 
     // Entity → Model 변환
     final activities = activityEntities
-        .map((entity) => ActivityModel.fromEntity(entity))
+        .map((entity) => ActivityModel.fromEntity(entity, babyId: babyId))
         .toList();
 
     final feedings = activities

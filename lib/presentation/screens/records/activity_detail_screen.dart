@@ -6,6 +6,7 @@ import '../../../data/models/activity_model.dart';
 import '../../../data/services/local_storage_service.dart';
 import '../../../data/services/widget_service.dart';
 import '../../providers/sweet_spot_provider.dart';
+import '../../providers/baby_provider.dart';
 
 /// 활동 상세/수정/삭제 화면
 ///
@@ -1067,10 +1068,13 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
 
     // 현재 시각으로 종료 시간 설정
     final now = DateTime.now();
+    final babyProvider = Provider.of<BabyProvider>(context, listen: false);
+    final babyId = babyProvider.currentBaby?.id ?? _activity.babyId;
 
     // 수면 활동 업데이트
     final updatedActivity = ActivityModel.sleep(
       id: _activity.id,
+      babyId: babyId,
       startTime: _selectedTime,
       endTime: now,
       location: _sleepLocation,
@@ -1110,6 +1114,9 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
 
     HapticFeedback.mediumImpact();
 
+    final babyProvider = Provider.of<BabyProvider>(context, listen: false);
+    final babyId = babyProvider.currentBaby?.id ?? _activity.babyId;
+
     // Create updated activity based on type
     ActivityModel updatedActivity;
 
@@ -1117,6 +1124,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       case ActivityType.sleep:
         updatedActivity = ActivityModel.sleep(
           id: _activity.id,
+          babyId: babyId,
           startTime: _selectedTime,
           endTime: _selectedEndTime,
           location: _sleepLocation,
@@ -1128,6 +1136,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       case ActivityType.feeding:
         updatedActivity = ActivityModel.feeding(
           id: _activity.id,
+          babyId: babyId,
           time: _selectedTime,
           feedingType: _feedingType!,
           amountMl: _amountMl,
@@ -1139,6 +1148,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       case ActivityType.diaper:
         updatedActivity = ActivityModel.diaper(
           id: _activity.id,
+          babyId: babyId,
           time: _selectedTime,
           diaperType: _diaperType!,
           notes: _notesController.text.isEmpty ? null : _notesController.text,

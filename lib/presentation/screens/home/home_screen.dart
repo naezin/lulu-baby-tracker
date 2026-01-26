@@ -1428,9 +1428,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
     try {
       print('📝 [HomeScreen] Creating sleep activity...');
+      final babyProvider = Provider.of<BabyProvider>(context, listen: false);
+      final babyId = babyProvider.currentBaby?.id ?? 'unknown';
+
       // 현재 시각에 진행 중인 수면 기록 생성
       final activity = ActivityModel.sleep(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
+        babyId: babyId,
         startTime: DateTime.now(),
         endTime: null, // 진행 중
         location: null,

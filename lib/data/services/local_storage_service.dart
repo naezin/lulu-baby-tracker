@@ -7,6 +7,7 @@ import '../models/baby_model.dart';
 class LocalStorageService {
   static const String _activitiesKey = 'activities';
   static const String _currentBabyKey = 'current_baby';
+  static const String _currentBabyIdKey = 'current_baby_id';  // 🆕 다중 아기 지원
 
   /// 활동 저장
   Future<void> saveActivity(ActivityModel activity) async {
@@ -201,5 +202,19 @@ class LocalStorageService {
   Future<bool> hasBaby() async {
     final baby = await getBaby();
     return baby != null;
+  }
+
+  // ==================== Multi-Baby Support ====================
+
+  /// 현재 선택된 아기 ID 저장
+  Future<void> setCurrentBabyId(String babyId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_currentBabyIdKey, babyId);
+  }
+
+  /// 현재 선택된 아기 ID 가져오기
+  Future<String?> getCurrentBabyId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_currentBabyIdKey);
   }
 }

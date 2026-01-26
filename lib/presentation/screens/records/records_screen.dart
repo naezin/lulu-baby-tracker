@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/activity_model.dart';
 import '../../../data/services/local_storage_service.dart';
 import '../../../data/services/widget_service.dart';
+import '../../providers/baby_provider.dart';
 import '../../utils/snackbar_utils.dart';
 import '../activities/log_sleep_screen.dart';
 import '../activities/log_feeding_screen.dart';
@@ -69,6 +71,8 @@ class _RecordsScreenState extends State<RecordsScreen> {
     HapticFeedback.mediumImpact();
 
     final now = DateTime.now();
+    final babyProvider = Provider.of<BabyProvider>(context, listen: false);
+    final babyId = babyProvider.currentBaby?.id ?? 'unknown';
 
     // 수면인 경우: 진행 중이면 종료, 아니면 시작
     if (type == ActivityType.sleep) {
@@ -80,6 +84,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
 
     final activity = ActivityModel(
       id: now.millisecondsSinceEpoch.toString(),
+      babyId: babyId,
       type: type,
       timestamp: now.toIso8601String(),
       // 수면은 endTime 없이 시작 (진행 중)
@@ -105,9 +110,12 @@ class _RecordsScreenState extends State<RecordsScreen> {
     final now = DateTime.now();
     final startTime = DateTime.parse(_ongoingActivity!.timestamp);
     final duration = now.difference(startTime).inMinutes;
+    final babyProvider = Provider.of<BabyProvider>(context, listen: false);
+    final babyId = babyProvider.currentBaby?.id ?? 'unknown';
 
     final updated = ActivityModel(
       id: _ongoingActivity!.id,
+      babyId: babyId,
       type: ActivityType.sleep,
       timestamp: _ongoingActivity!.timestamp,
       endTime: now.toIso8601String(),
