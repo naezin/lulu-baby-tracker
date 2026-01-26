@@ -10,13 +10,52 @@ import '../../../data/services/widget_service.dart';
 import '../../providers/baby_provider.dart';
 import '../../providers/home_data_provider.dart';
 import '../../providers/sweet_spot_provider.dart';
-import '../../utils/snackbar_utils.dart';
 import '../activities/log_sleep_screen.dart';
 import '../activities/log_feeding_screen.dart';
 import '../activities/log_diaper_screen.dart';
 import '../activities/log_play_screen.dart';
 import '../activities/log_health_screen.dart';
 import 'activity_detail_screen.dart';
+
+/// 날짜 범위 필터
+enum DateRangeFilter {
+  today,
+  week,
+  month,
+  all,
+}
+
+extension DateRangeFilterExtension on DateRangeFilter {
+  String getLabel(bool isKorean) {
+    switch (this) {
+      case DateRangeFilter.today:
+        return isKorean ? '오늘' : 'Today';
+      case DateRangeFilter.week:
+        return isKorean ? '7일' : '7 Days';
+      case DateRangeFilter.month:
+        return isKorean ? '30일' : '30 Days';
+      case DateRangeFilter.all:
+        return isKorean ? '전체' : 'All';
+    }
+  }
+
+  /// 시작 날짜 계산 (null이면 전체)
+  DateTime? getStartDate() {
+    final DateTime now = DateTime.now();
+    final DateTime today = DateTime(now.year, now.month, now.day);
+
+    switch (this) {
+      case DateRangeFilter.today:
+        return today;
+      case DateRangeFilter.week:
+        return today.subtract(const Duration(days: 7));
+      case DateRangeFilter.month:
+        return today.subtract(const Duration(days: 30));
+      case DateRangeFilter.all:
+        return null;
+    }
+  }
+}
 
 /// 📝 Records V2 - 원탭 기록 화면
 /// 핵심 원칙: "1초 안에 기록 완료"
@@ -31,6 +70,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
   final _storage = LocalStorageService();
   List<ActivityModel> _todayActivities = [];
   bool _isLoading = true;
+  DateRangeFilter _selectedFilter = DateRangeFilter.week;  // 기본값 7일
 
   // 진행 중인 활동 (수면 타이머 등)
   ActivityModel? _ongoingActivity;
@@ -55,45 +95,44 @@ class _RecordsScreenState extends State<RecordsScreen> {
     setState(() => _isLoading = true);
 
     final activities = await _storage.getActivities();
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
 
     // 현재 아기 ID 가져오기
     final babyProvider = Provider.of<BabyProvider>(context, listen: false);
     final currentBabyId = babyProvider.currentBaby?.id;
 
-    // 🆕 디버깅 로그 추가
-    print('🔍 [RecordsScreen] === 로드 시점 디버깅 ===');
+    // 날짜 필터 적용
+    final DateTime? startDate = _selectedFilter.getStartDate();
+
+    // 🆕 디버깅 로그
+    print('🔍 [RecordsScreen] Filter: ${_selectedFilter.name}, startDate: $startDate');
     print('   currentBaby: ${babyProvider.currentBaby?.name}');
     print('   currentBabyId: $currentBabyId');
     print('   전체 activities 수: ${activities.length}');
 
-    // 각 activity의 babyId 출력 (최근 10개)
-    for (var a in activities.take(10)) {
-      print('   - ${a.type.name}: babyId=${a.babyId}, time=${a.timestamp}');
-    }
-
-    final todayActivities = activities.where((a) {
+    final filteredActivities = activities.where((a) {
       final actDate = DateTime.parse(a.timestamp);
-      final isToday = actDate.isAfter(today) || actDate.isAtSameMomentAs(today);
+
+      // 날짜 필터 적용
+      final isInDateRange = startDate == null || actDate.isAfter(startDate) || actDate.isAtSameMomentAs(startDate);
+
       // 현재 아기의 활동만 필터링
       final isCurrentBaby = currentBabyId == null || a.babyId == currentBabyId;
-      return isToday && isCurrentBaby;
+
+      return isInDateRange && isCurrentBaby;
     }).toList();
 
-    print('   필터 후 activities 수: ${todayActivities.length}');
-    print('🔍 [RecordsScreen] === 디버깅 끝 ===');
+    print('   필터 후 activities 수: ${filteredActivities.length}');
 
-    // 시간순 정렬 (최신이 아래로)
-    todayActivities.sort((a, b) =>
-        DateTime.parse(a.timestamp).compareTo(DateTime.parse(b.timestamp)));
+    // 시간 역순 정렬 (최신순)
+    filteredActivities.sort((a, b) =>
+        DateTime.parse(b.timestamp).compareTo(DateTime.parse(a.timestamp)));
 
     // 진행 중인 수면 찾기
-    final ongoing = todayActivities.where((a) =>
+    final ongoing = filteredActivities.where((a) =>
         a.type == ActivityType.sleep && a.endTime == null).firstOrNull;
 
     setState(() {
-      _todayActivities = todayActivities;
+      _todayActivities = filteredActivities;
       _ongoingActivity = ongoing;
       _isLoading = false;
     });
@@ -314,29 +353,79 @@ class _RecordsScreenState extends State<RecordsScreen> {
       body: RefreshIndicator(
         onRefresh: _loadTodayActivities,
         color: AppTheme.lavenderMist,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 🚀 원탭 기록 섹션
-              _buildQuickRecordSection(l10n),
+        child: Column(
+          children: [
+            // 날짜 필터
+            _buildDateFilterChips(l10n),
+            const SizedBox(height: 8),
 
-              const SizedBox(height: 24),
+            // 스크롤 가능한 컨텐츠
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 🚀 원탭 기록 섹션
+                    _buildQuickRecordSection(l10n),
 
-              // 📅 오늘의 타임라인
-              _buildTimelineSection(l10n),
+                    const SizedBox(height: 24),
 
-              const SizedBox(height: 24),
+                    // 📅 타임라인
+                    _buildTimelineSection(l10n),
 
-              // 💡 오늘 요약
-              _buildTodaySummary(l10n),
+                    const SizedBox(height: 24),
 
-              const SizedBox(height: 100), // 바텀 패딩
-            ],
-          ),
+                    // 💡 요약
+                    _buildTodaySummary(l10n),
+
+                    const SizedBox(height: 100), // 바텀 패딩
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildDateFilterChips(AppLocalizations l10n) {
+    final bool isKorean = l10n.locale.languageCode == 'ko';
+
+    return Container(
+      height: 48,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: DateRangeFilter.values.map((DateRangeFilter filter) {
+          final bool isSelected = _selectedFilter == filter;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: FilterChip(
+              label: Text(filter.getLabel(isKorean)),
+              selected: isSelected,
+              onSelected: (bool selected) {
+                if (selected) {
+                  setState(() => _selectedFilter = filter);
+                  _loadTodayActivities();
+                }
+              },
+              backgroundColor: AppTheme.surfaceCard,
+              selectedColor: AppTheme.lavenderMist.withOpacity(0.3),
+              labelStyle: TextStyle(
+                color: isSelected ? AppTheme.lavenderMist : Colors.white70,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+              side: BorderSide(
+                color: isSelected
+                    ? AppTheme.lavenderMist
+                    : Colors.white.withOpacity(0.2),
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }
@@ -458,6 +547,25 @@ class _RecordsScreenState extends State<RecordsScreen> {
   }
 
   Widget _buildTimelineSection(AppLocalizations l10n) {
+    final bool isKorean = l10n.locale.languageCode == 'ko';
+
+    // 필터에 따라 제목 변경
+    String timelineTitle;
+    switch (_selectedFilter) {
+      case DateRangeFilter.today:
+        timelineTitle = isKorean ? '오늘의 타임라인' : 'Today\'s Timeline';
+        break;
+      case DateRangeFilter.week:
+        timelineTitle = isKorean ? '최근 7일' : 'Last 7 Days';
+        break;
+      case DateRangeFilter.month:
+        timelineTitle = isKorean ? '최근 30일' : 'Last 30 Days';
+        break;
+      case DateRangeFilter.all:
+        timelineTitle = isKorean ? '전체 기록' : 'All Records';
+        break;
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -469,7 +577,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
                 const Text('📅', style: TextStyle(fontSize: 20)),
                 const SizedBox(width: 8),
                 Text(
-                  l10n.translate('todays_timeline') ?? '오늘의 타임라인',
+                  timelineTitle,
                   style: const TextStyle(
                     color: AppTheme.textPrimary,
                     fontSize: 18,
@@ -505,6 +613,25 @@ class _RecordsScreenState extends State<RecordsScreen> {
   }
 
   Widget _buildEmptyTimeline(AppLocalizations l10n) {
+    final bool isKorean = l10n.locale.languageCode == 'ko';
+
+    // 필터에 따라 메시지 변경
+    String emptyMessage;
+    switch (_selectedFilter) {
+      case DateRangeFilter.today:
+        emptyMessage = isKorean ? '오늘 기록이 없어요' : 'No records today';
+        break;
+      case DateRangeFilter.week:
+        emptyMessage = isKorean ? '최근 7일 기록이 없어요' : 'No records in the last 7 days';
+        break;
+      case DateRangeFilter.month:
+        emptyMessage = isKorean ? '최근 30일 기록이 없어요' : 'No records in the last 30 days';
+        break;
+      case DateRangeFilter.all:
+        emptyMessage = isKorean ? '기록이 없어요' : 'No records yet';
+        break;
+    }
+
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
@@ -517,7 +644,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
           const Text('🌙', style: TextStyle(fontSize: 48)),
           const SizedBox(height: 16),
           Text(
-            l10n.translate('no_records_today') ?? '오늘 기록이 없어요',
+            emptyMessage,
             style: const TextStyle(
               color: AppTheme.textPrimary,
               fontSize: 16,
