@@ -350,8 +350,12 @@ class _LogFeedingScreenState extends State<LogFeedingScreen> {
       // HomeDataProvider 업데이트 - Today's Snapshot 새로고침
       if (mounted) {
         final homeDataProvider = Provider.of<HomeDataProvider>(context, listen: false);
-        // await homeDataProvider.refreshDailySummary(); // TODO: Need babyId
-        print('✅ [LogFeedingScreen] HomeDataProvider daily summary refreshed');
+        final babyProvider = Provider.of<BabyProvider>(context, listen: false);
+        final babyId = babyProvider.currentBaby?.id;
+        if (babyId != null) {
+          await homeDataProvider.refreshDailySummary(babyId);
+          print('✅ [LogFeedingScreen] HomeDataProvider daily summary refreshed');
+        }
       }
 
       if (mounted) {

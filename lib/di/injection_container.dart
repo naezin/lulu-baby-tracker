@@ -99,11 +99,6 @@ Future<void> initDependencies({
     memoryService: sl(),
   ));
 
-  // Personalization Memory Service (✅ Repository 패턴 적용 완료)
-  sl.registerLazySingleton(() => PersonalizationMemoryService(
-    preferenceRepository: sl(),
-  ));
-
   // CSV Import Service (✅ Repository 패턴 적용 완료)
   sl.registerLazySingleton(() => CsvImportService(
     activityRepository: sl(),
