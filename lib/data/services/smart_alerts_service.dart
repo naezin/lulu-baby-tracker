@@ -2,8 +2,30 @@ import 'package:flutter/material.dart';
 import '../models/activity_model.dart';
 import '../../core/utils/wake_window_calculator.dart';
 import '../../core/utils/feeding_interval_calculator.dart';
-import '../../presentation/widgets/home/smart_alerts_card.dart';
 import 'local_storage_service.dart';
+
+// SmartAlert class definition
+class SmartAlert {
+  final String id;
+  final String type;
+  final String title;
+  final String message;
+  final IconData icon;
+  final Color color;
+  final DateTime timestamp;
+  final int? minutesFromNow;
+
+  SmartAlert({
+    required this.id,
+    required this.type,
+    required this.title,
+    required this.message,
+    required this.icon,
+    required this.color,
+    required this.timestamp,
+    this.minutesFromNow,
+  });
+}
 
 /// 🤖 Smart Alerts Service
 /// AI 기반 알림 생성 서비스

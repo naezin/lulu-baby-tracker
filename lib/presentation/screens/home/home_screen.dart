@@ -10,13 +10,10 @@ import '../../../data/models/activity_model.dart';
 import '../../../data/models/baby_model.dart';
 import '../../widgets/sweet_spot_hero_card.dart';
 import '../../widgets/quick_log_bar.dart';
-import '../../widgets/home/todays_snapshot_card.dart';
-import '../../widgets/home/smart_alerts_card.dart';
 import '../../providers/sweet_spot_provider.dart';
 import '../../providers/home_data_provider.dart';
 import '../../providers/smart_coach_provider.dart';
 import '../../providers/baby_provider.dart';
-import '../../../data/services/smart_alerts_service.dart';
 import '../../widgets/smart_coach/today_timeline_section.dart';
 import '../activities/log_sleep_screen.dart';
 import '../activities/log_feeding_screen.dart';
@@ -176,17 +173,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 8),
-
-
-                      // 📊 NEW: Today's Snapshot
-                      _buildTodaysSnapshot(context),
-
-                      const SizedBox(height: 16),
-
-                      // 🔔 NEW: Smart Alerts
-                      _buildSmartAlerts(context),
-
-                      const SizedBox(height: 16),
 
                       // Sweet Spot Hero Card v2.0 (Huckleberry-style)
                       FutureBuilder<BabyModel?>(
@@ -1433,152 +1419,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         ),
       ),
     );
-  }
-
-  /// 📊 Today's Snapshot 빌드
-  Widget _buildTodaysSnapshot(BuildContext context) {
-    final storage = LocalStorageService();
-
-    return FutureBuilder<TodaysSummary>(
-      future: _loadTodaysSummary(storage),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const SizedBox.shrink();
-        }
-
-        final summary = snapshot.data!;
-
-        // Show widget even if no data (will show 0 counts)
-        return TodaysSnapshotCard(
-          summary: summary,
-          onSleepTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const RecordsScreen()),
-            );
-          },
-          onFeedingTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const RecordsScreen()),
-            );
-          },
-          onDiaperTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const RecordsScreen()),
-            );
-          },
-          onPlayTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const RecordsScreen()),
-            );
-          },
-          onViewAllTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const RecordsScreen()),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  /// 🔔 Smart Alerts 빌드
-  Widget _buildSmartAlerts(BuildContext context) {
-    final alertsService = SmartAlertsService();
-    const babyAgeInDays = 72; // TODO: Get from baby model
-
-    return FutureBuilder<List<SmartAlert>>(
-      future: alertsService.getActiveAlerts(babyAgeInDays: babyAgeInDays),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const SizedBox.shrink();
-        }
-
-        return SmartAlertsCard(
-          alerts: snapshot.data!,
-          onViewAll: () {
-            // TODO: Navigate to alerts screen
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('알림 목록 화면 준비 중입니다')),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  /// 오늘의 통계 가져오기 (새로운 4-grid 버전)
-  Future<TodaysSummary> _loadTodaysSummary(LocalStorageService storage) async {
-    try {
-      final activities = await storage.getActivities();
-
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
-      final yesterday = today.subtract(const Duration(days: 1));
-
-      // 오늘 활동 필터링
-      final todayActivities = activities.where((a) {
-        final time = DateTime.parse(a.timestamp);
-        return time.isAfter(today);
-      }).toList();
-
-      // 어제 활동 필터링 (트렌드 계산용)
-      final yesterdayActivities = activities.where((a) {
-        final time = DateTime.parse(a.timestamp);
-        return time.isAfter(yesterday) && time.isBefore(today);
-      }).toList();
-
-      // 수면 통계
-      final todaySleeps = todayActivities.where((a) => a.type == ActivityType.sleep).toList();
-      final yesterdaySleeps = yesterdayActivities.where((a) => a.type == ActivityType.sleep).toList();
-      final todaySleepMinutes = todaySleeps.fold<int>(0, (sum, a) => sum + (a.durationMinutes ?? 0));
-      final yesterdaySleepMinutes = yesterdaySleeps.fold<int>(0, (sum, a) => sum + (a.durationMinutes ?? 0));
-
-      // 수유 통계
-      final todayFeedings = todayActivities.where((a) => a.type == ActivityType.feeding).toList();
-      final yesterdayFeedings = yesterdayActivities.where((a) => a.type == ActivityType.feeding).toList();
-      final todayFeedingMl = todayFeedings.fold<int>(0, (sum, a) => sum + (a.amountMl?.toInt() ?? 0));
-
-      // 기저귀 통계
-      final todayDiapers = todayActivities.where((a) => a.type == ActivityType.diaper).toList();
-      final yesterdayDiapers = yesterdayActivities.where((a) => a.type == ActivityType.diaper).toList();
-      final todayPoops = todayDiapers.where((a) =>
-        a.diaperType == 'dirty' || a.diaperType == 'both'
-      ).length;
-
-      // 놀이 통계
-      final todayPlays = todayActivities.where((a) => a.type == ActivityType.play).toList();
-      final yesterdayPlays = yesterdayActivities.where((a) => a.type == ActivityType.play).toList();
-      final todayPlayMinutes = todayPlays.fold<int>(0, (sum, a) => sum + (a.durationMinutes ?? 0));
-      final yesterdayPlayMinutes = yesterdayPlays.fold<int>(0, (sum, a) => sum + (a.durationMinutes ?? 0));
-
-      // 터미타임 (notes에 'tummy' 포함된 것)
-      final tummyTime = todayPlays
-        .where((a) => a.notes?.toLowerCase().contains('tummy') == true)
-        .fold<int>(0, (sum, a) => sum + (a.durationMinutes ?? 0));
-
-      return TodaysSummary(
-        sleepCount: todaySleeps.length,
-        totalSleepMinutes: todaySleepMinutes,
-        sleepDiffMinutes: todaySleepMinutes - yesterdaySleepMinutes,
-        feedingCount: todayFeedings.length,
-        totalFeedingMl: todayFeedingMl,
-        feedingDiff: todayFeedings.length - yesterdayFeedings.length,
-        diaperCount: todayDiapers.length,
-        poopCount: todayPoops,
-        diaperDiff: todayDiapers.length - yesterdayDiapers.length,
-        playTimeMinutes: todayPlayMinutes,
-        tummyTimeMinutes: tummyTime,
-        playGoalMinutes: 60, // 기본 목표 60분
-        playDiffMinutes: todayPlayMinutes - yesterdayPlayMinutes,
-      );
-    } catch (e) {
-      return TodaysSummary.empty();
-    }
   }
 
   /// 🌙 "지금 재우기" - 즉시 수면 시작
