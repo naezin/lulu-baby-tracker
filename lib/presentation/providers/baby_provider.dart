@@ -4,15 +4,13 @@ import '../../data/services/local_storage_service.dart';
 import '../../data/services/widget_service.dart';
 import '../../domain/repositories/i_baby_repository.dart';
 
-/// 현재 선택된 아기 정보를 관리하는 Provider
+/// 현재 선택된 아기 정보를 관리하는 Provider (단일 아기)
 class BabyProvider extends ChangeNotifier {
   final IBabyRepository _babyRepository;
   final LocalStorageService _localStorage;
   final WidgetService _widgetService;
 
   BabyModel? _currentBaby;
-  String? _currentBabyId;
-  List<BabyModel> _babies = [];
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -26,14 +24,11 @@ class BabyProvider extends ChangeNotifier {
 
   // Getters
   BabyModel? get currentBaby => _currentBaby;
-  String? get currentBabyId => _currentBabyId;
-  List<BabyModel> get babies => List.unmodifiable(_babies);
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get hasBaby => _currentBaby != null;
-  bool get hasMultipleBabies => _babies.length > 1;
 
-  /// 사용자의 모든 아기 로드
+  /// 첫 번째 아기 로드 (단일 아기)
   Future<void> loadBabies(String userId) async {
     _isLoading = true;
     _errorMessage = null;
@@ -42,17 +37,19 @@ class BabyProvider extends ChangeNotifier {
     try {
       // 1. Repository에서 아기 목록 로드
       final entities = await _babyRepository.getBabiesByUser(userId: userId);
-      _babies = entities.map((e) => BabyModel.fromEntity(e)).toList();
+      final babies = entities.map((e) => BabyModel.fromEntity(e)).toList();
 
-      // 2. 마지막 선택 아기 복원
-      final lastBabyId = await _localStorage.getCurrentBabyId();
-      if (lastBabyId != null && _babies.any((b) => b.id == lastBabyId)) {
-        _currentBabyId = lastBabyId;
-        _currentBaby = _babies.firstWhere((b) => b.id == lastBabyId);
-      } else if (_babies.isNotEmpty) {
-        _currentBabyId = _babies.first.id;
-        _currentBaby = _babies.first;
-        await _localStorage.setCurrentBabyId(_currentBabyId!);
+      // 2. Repository가 비어있으면 로컬 스토리지에서 직접 로드 (호환성)
+      if (babies.isEmpty) {
+        final localBabies = await _localStorage.getAllBabies();
+        if (localBabies.isNotEmpty) {
+          _currentBaby = localBabies.first;
+          print('✅ [BabyProvider] Loaded baby from local storage: ${_currentBaby?.name}');
+        }
+      } else {
+        // 첫 번째 아기만 사용
+        _currentBaby = babies.first;
+        print('✅ [BabyProvider] Single-baby mode: using ${_currentBaby?.name}');
       }
 
       _isLoading = false;
@@ -64,100 +61,10 @@ class BabyProvider extends ChangeNotifier {
     }
   }
 
-  /// 아기 전환
-  Future<void> switchBaby(String babyId) async {
-    if (!_babies.any((b) => b.id == babyId)) {
-      _errorMessage = '해당 아기를 찾을 수 없습니다';
-      notifyListeners();
-      return;
-    }
-
-    _currentBabyId = babyId;
-    _currentBaby = _babies.firstWhere((b) => b.id == babyId);
-    await _localStorage.setCurrentBabyId(babyId);
-    notifyListeners();
-
-    // 위젯 업데이트
-    await _widgetService.updateAllWidgets();
-  }
-
-  /// 현재 아기 설정
+  /// 현재 아기 설정 (온보딩용)
   void setCurrentBaby(BabyModel baby) {
     _currentBaby = baby;
-    _currentBabyId = baby.id;
     notifyListeners();
-  }
-
-  /// 아기 추가
-  Future<void> addBaby(BabyModel baby, String userId) async {
-    _isLoading = true;
-    notifyListeners();
-
-    try {
-      await _babyRepository.saveBaby(
-        userId: userId,
-        baby: baby.toEntity(),
-      );
-
-      _babies.add(baby);
-      _currentBaby = baby;
-      _currentBabyId = baby.id;
-      await _localStorage.setCurrentBabyId(baby.id);
-
-      _isLoading = false;
-      notifyListeners();
-    } catch (e) {
-      _errorMessage = e.toString();
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  /// 아기 정보 수정
-  Future<void> updateBaby(BabyModel baby) async {
-    try {
-      await _babyRepository.updateBaby(baby: baby.toEntity());
-
-      final index = _babies.indexWhere((b) => b.id == baby.id);
-      if (index != -1) {
-        _babies[index] = baby;
-      }
-
-      if (_currentBabyId == baby.id) {
-        _currentBaby = baby;
-      }
-
-      notifyListeners();
-    } catch (e) {
-      _errorMessage = e.toString();
-      notifyListeners();
-    }
-  }
-
-  /// 아기 삭제
-  Future<void> removeBaby(String babyId) async {
-    try {
-      await _babyRepository.deleteBaby(babyId: babyId);
-
-      _babies.removeWhere((b) => b.id == babyId);
-
-      // 삭제된 아기가 현재 아기면 다른 아기 선택
-      if (_currentBabyId == babyId) {
-        if (_babies.isNotEmpty) {
-          _currentBabyId = _babies.first.id;
-          _currentBaby = _babies.first;
-          await _localStorage.setCurrentBabyId(_currentBabyId!);
-        } else {
-          _currentBabyId = null;
-          _currentBaby = null;
-        }
-      }
-
-      notifyListeners();
-    } catch (e) {
-      _errorMessage = e.toString();
-      notifyListeners();
-    }
   }
 
   /// 현재 아기의 월령 (개월)

@@ -95,6 +95,26 @@ class BabyModel {
     return now.difference(birth).inDays;
   }
 
+  /// 교정 월령 (조산아용) - 조산아가 아니면 일반 월령 반환
+  int get correctedAgeInMonths {
+    if (!isPremature || dueDate == null) {
+      return ageInMonths;
+    }
+
+    final birth = DateTime.parse(birthDate);
+    final due = DateTime.parse(dueDate!);
+    final prematureWeeks = due.difference(birth).inDays ~/ 7;
+
+    final correctedBirthDate = birth.add(Duration(days: prematureWeeks * 7));
+    final now = DateTime.now();
+
+    int months = (now.year - correctedBirthDate.year) * 12 +
+                 now.month - correctedBirthDate.month;
+    if (now.day < correctedBirthDate.day) months--;
+
+    return months > 0 ? months : 0;
+  }
+
   BabyModel copyWith({
     String? id,
     String? userId,

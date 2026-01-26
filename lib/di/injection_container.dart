@@ -31,6 +31,7 @@ import '../data/services/personalization_memory_service.dart';
 import '../data/services/csv_import_service.dart';
 import '../data/services/csv_export_service.dart';
 import '../data/services/daily_summary_service.dart';
+import '../data/services/local_storage_service.dart';
 
 final GetIt sl = GetIt.instance;
 
@@ -80,6 +81,9 @@ Future<void> initDependencies({
   // ============================================================
   // Services
   // ============================================================
+
+  // Local Storage Service (SharedPreferences wrapper)
+  sl.registerLazySingleton(() => LocalStorageService());
 
   // OpenAI 서비스
   sl.registerLazySingleton(() => OpenAIService(

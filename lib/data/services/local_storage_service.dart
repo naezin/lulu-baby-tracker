@@ -8,6 +8,7 @@ class LocalStorageService {
   static const String _activitiesKey = 'activities';
   static const String _currentBabyKey = 'current_baby';
   static const String _currentBabyIdKey = 'current_baby_id';  // 🆕 다중 아기 지원
+  static const String _allBabiesKey = 'all_babies';  // 🆕 모든 아기 목록
 
   /// 활동 저장
   Future<void> saveActivity(ActivityModel activity) async {
@@ -216,5 +217,70 @@ class LocalStorageService {
   Future<String?> getCurrentBabyId() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_currentBabyIdKey);
+  }
+
+  /// 모든 아기 가져오기
+  Future<List<BabyModel>> getAllBabies() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString(_allBabiesKey);
+
+    if (jsonString == null || jsonString.isEmpty) {
+      // 마이그레이션: 기존 단일 아기를 리스트로 변환
+      final singleBaby = await getBaby();
+      if (singleBaby != null) {
+        final babies = [singleBaby];
+        await saveAllBabies(babies);
+        return babies;
+      }
+      return [];
+    }
+
+    try {
+      final jsonList = jsonDecode(jsonString) as List;
+      return jsonList
+          .map((json) => BabyModel.fromJson(json as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      print('⚠️ [LocalStorage] Error parsing babies: $e');
+      return [];
+    }
+  }
+
+  /// 모든 아기 저장
+  Future<void> saveAllBabies(List<BabyModel> babies) async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonList = babies.map((b) => b.toJson()).toList();
+    await prefs.setString(_allBabiesKey, jsonEncode(jsonList));
+  }
+
+  /// 아기 추가
+  Future<void> addBaby(BabyModel baby) async {
+    final babies = await getAllBabies();
+    babies.add(baby);
+    await saveAllBabies(babies);
+
+    // 현재 아기로 설정
+    await saveBaby(baby);
+    await setCurrentBabyId(baby.id);
+  }
+
+  /// 아기 삭제
+  Future<void> removeBaby(String babyId) async {
+    final babies = await getAllBabies();
+    babies.removeWhere((b) => b.id == babyId);
+    await saveAllBabies(babies);
+
+    // 현재 아기가 삭제된 경우 첫 번째 아기로 전환
+    final currentId = await getCurrentBabyId();
+    if (currentId == babyId) {
+      final prefs = await SharedPreferences.getInstance();
+      if (babies.isNotEmpty) {
+        await saveBaby(babies.first);
+        await setCurrentBabyId(babies.first.id);
+      } else {
+        await deleteBaby();
+        await prefs.remove(_currentBabyIdKey);
+      }
+    }
   }
 }

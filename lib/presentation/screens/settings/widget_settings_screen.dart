@@ -37,9 +37,9 @@ class _WidgetSettingsScreenState extends State<WidgetSettingsScreen> {
             _buildWidgetPreview(
               context,
               l10n,
-              'Small Widget (2×2)',
+              l10n.translate('widget_small_title') ?? 'Small Widget (2×2)',
               l10n.translate('widget_small_desc') ??
-                  'Shows next sweet spot countdown with circular progress',
+                  'Shows time until next Sweet Spot',
               _buildSmallWidgetMockup(context),
             ),
             const SizedBox(height: 24),
@@ -48,9 +48,9 @@ class _WidgetSettingsScreenState extends State<WidgetSettingsScreen> {
             _buildWidgetPreview(
               context,
               l10n,
-              'Medium Widget (4×2)',
+              l10n.translate('widget_medium_title') ?? 'Medium Widget (4×2)',
               l10n.translate('widget_medium_desc') ??
-                  'Today\'s summary with next action highlight',
+                  'Today\'s summary + Sweet Spot countdown',
               _buildMediumWidgetMockup(context),
             ),
             const SizedBox(height: 24),
@@ -59,9 +59,9 @@ class _WidgetSettingsScreenState extends State<WidgetSettingsScreen> {
             _buildWidgetPreview(
               context,
               l10n,
-              'Lock Screen Widget',
+              l10n.translate('widget_lockscreen_title') ?? 'Lock Screen Widget',
               l10n.translate('widget_lockscreen_desc') ??
-                  'Minimal text-based info for quick glance',
+                  'Quick glance without unlocking',
               _buildLockScreenWidgetMockup(context),
             ),
             const SizedBox(height: 32),
@@ -160,11 +160,23 @@ class _WidgetSettingsScreenState extends State<WidgetSettingsScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        // Glassmorphism background
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withOpacity(0.08),
+            Colors.white.withOpacity(0.04),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.1),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(0.2),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -175,16 +187,19 @@ class _WidgetSettingsScreenState extends State<WidgetSettingsScreen> {
         children: [
           Text(
             title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: const TextStyle(
+              color: Color(0xFFE8D5B7), // Champagne Gold
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             description,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppTheme.textSecondary,
-                ),
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.6),
+              fontSize: 14,
+            ),
           ),
           const SizedBox(height: 16),
           mockup,
@@ -426,7 +441,7 @@ class _WidgetSettingsScreenState extends State<WidgetSettingsScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                l10n.translate('how_to_add_widget') ?? 'How to add widgets',
+                l10n.translate('widget_how_to_add') ?? 'How to Add',
                 style: const TextStyle(
                   color: AppTheme.lavenderMist,
                   fontWeight: FontWeight.bold,

@@ -7,6 +7,7 @@ import '../../../data/services/local_storage_service.dart';
 import '../../../data/services/widget_service.dart';
 import '../../providers/sweet_spot_provider.dart';
 import '../../providers/baby_provider.dart';
+import '../../providers/home_data_provider.dart';
 
 /// 활동 상세/수정/삭제 화면
 ///
@@ -1086,6 +1087,16 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     await _storage.updateActivity(updatedActivity);
     await WidgetService().updateAllWidgets();
 
+    // ✅ HomeDataProvider의 dailySummary 업데이트
+    if (mounted) {
+      final babyProvider = Provider.of<BabyProvider>(context, listen: false);
+      final homeDataProvider = Provider.of<HomeDataProvider>(context, listen: false);
+      final currentBaby = babyProvider.currentBaby;
+      if (currentBaby != null) {
+        await homeDataProvider.refreshDailySummary(currentBaby.id);
+      }
+    }
+
     // SweetSpotProvider 업데이트 - 수면 종료 시각을 기상 시각으로 설정
     if (mounted) {
       final provider = Provider.of<SweetSpotProvider>(context, listen: false);
@@ -1164,6 +1175,16 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     await _storage.updateActivity(updatedActivity);
     await WidgetService().updateAllWidgets();
 
+    // ✅ HomeDataProvider의 dailySummary 업데이트
+    if (mounted) {
+      final babyProvider = Provider.of<BabyProvider>(context, listen: false);
+      final homeDataProvider = Provider.of<HomeDataProvider>(context, listen: false);
+      final currentBaby = babyProvider.currentBaby;
+      if (currentBaby != null) {
+        await homeDataProvider.refreshDailySummary(currentBaby.id);
+      }
+    }
+
     setState(() {
       _activity = updatedActivity;
       _isEditMode = false;
@@ -1223,35 +1244,47 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
 
   Future<void> _deleteActivity() async {
     final deletedActivity = _activity;
+    final babyProvider = Provider.of<BabyProvider>(context, listen: false);
+    final homeDataProvider = Provider.of<HomeDataProvider>(context, listen: false);
+    final sweetSpotProvider = Provider.of<SweetSpotProvider>(context, listen: false);
+
+    final currentBaby = babyProvider.currentBaby;
+    if (currentBaby == null) return;
 
     // Delete activity
     await _storage.deleteActivity(_activity.id);
     await WidgetService().updateAllWidgets();
 
+    // ✅ HomeDataProvider의 dailySummary 업데이트
+    await homeDataProvider.refreshDailySummary(currentBaby.id);
+
+    // ✅ SweetSpotProvider 업데이트 (수면 활동 삭제 시)
+    if (_activity.type == ActivityType.sleep) {
+      // 마지막 수면 활동 다시 로드
+      final activities = await _storage.getActivities();
+      final sleepActivities = activities
+          .where((a) => a.babyId == currentBaby.id && a.type == ActivityType.sleep && a.endTime != null)
+          .toList();
+
+      DateTime? lastWakeTime;
+      if (sleepActivities.isNotEmpty) {
+        sleepActivities.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+        final endTimeStr = sleepActivities.first.endTime;
+        lastWakeTime = endTimeStr != null ? DateTime.parse(endTimeStr) : DateTime.parse(sleepActivities.first.timestamp);
+      }
+
+      await sweetSpotProvider.initialize(
+        baby: currentBaby,
+        lastWakeUpTime: lastWakeTime,
+      );
+    }
+
     if (!mounted) return;
 
-    // Close screen
-    Navigator.pop(context);
-
-    // Show undo snackbar
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('활동이 삭제되었습니다'),
-        backgroundColor: AppTheme.errorSoft,
-        duration: const Duration(seconds: 3),
-        action: SnackBarAction(
-          label: '취소',
-          textColor: Colors.white,
-          onPressed: () async {
-            // Undo delete
-            await _storage.saveActivity(deletedActivity);
-            await WidgetService().updateAllWidgets();
-            HapticFeedback.lightImpact();
-          },
-        ),
-      ),
-    );
+    // Close screen and return the deleted activity for undo
+    Navigator.pop(context, deletedActivity);
   }
+
 
   String _getActivityTitle() {
     switch (_activity.type) {

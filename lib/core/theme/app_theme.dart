@@ -11,6 +11,7 @@ class AppTheme {
   static const Color lavenderMist = Color(0xFF9D8CD6); // Accent (soft lavender)
   static const Color lavenderGlow = Color(0xFFB4A5E6); // Lighter accent
   static const Color primaryPurple = Color(0xFF9D8CD6); // Alias for lavenderMist
+  static const Color champagneGold = Color(0xFFD4AF6A); // Champagne Gold accent
 
   // 🎨 Surface Colors
   static const Color surfaceDark = Color(0xFF0D1B2A);
@@ -48,6 +49,20 @@ class AppTheme {
   // 🎨 UI Element Colors
   static const Color glassBorder = Color(0xFF415A77); // Same as softBlue
   static const Color primaryDark = Color(0xFF0D1B2A); // Same as midnightNavy
+
+  // 🪟 Glassmorphism Colors
+  static const Color glassBackground = Color(0x1AFFFFFF);  // 10% white
+  static const Color glassBackgroundLight = Color(0x0DFFFFFF);  // 5% white
+  static const Color glassBorderLight = Color(0x33FFFFFF);  // 20% white
+
+  // 👶 Baby Avatar Colors (Pastel Palette)
+  static const List<Color> babyAvatarColors = [
+    Color(0xFF7EB8DA),  // Sky Blue
+    Color(0xFFB19CD9),  // Lavender
+    Color(0xFF98D8AA),  // Mint
+    Color(0xFFFFB366),  // Peach
+    Color(0xFFFFE066),  // Lemon
+  ];
 
   /// 🌙 Midnight Blue Theme (Default)
   static ThemeData get darkTheme {

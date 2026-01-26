@@ -15,8 +15,18 @@ class WidgetService {
 
   final LocalStorageService _storage = LocalStorageService();
 
+  // 🆕 Lock 패턴 - 동시 실행 방지
+  static bool _isUpdating = false;
+
   /// Update all widget variants with latest data
   Future<void> updateAllWidgets() async {
+    // 🆕 Lock 체크 - 중복 실행 방지
+    if (_isUpdating) {
+      print('⚠️ [WidgetService] Already updating - skipping duplicate call');
+      return;
+    }
+    _isUpdating = true;
+
     try {
       print('🔄 [WidgetService] Starting widget update...');
 
@@ -25,19 +35,24 @@ class WidgetService {
       await _saveWidgetState(widgetState);
       print('✅ [WidgetService] Widget state saved: ${widgetState.state.name}');
 
-      // ✅ 동적으로 아기 데이터 가져오기 (기존 로직 유지)
-      final baby = await _storage.getBaby();
-
-      if (baby == null) {
-        print('❌ [WidgetService] No baby data found - using empty state');
-        // Trigger widget update even with empty state
+      // ✅ 현재 선택된 아기 데이터 가져오기
+      final currentBabyId = await _storage.getCurrentBabyId();
+      if (currentBabyId == null) {
+        print('❌ [WidgetService] No current baby selected - using empty state');
         await HomeWidget.updateWidget(
           iOSName: 'LuluWidgetProvider',
           androidName: 'LuluWidgetProvider',
         );
         return;
       }
-      print('✅ [WidgetService] Baby data loaded: ${baby.name}');
+
+      final babies = await _storage.getAllBabies();
+      final baby = babies.firstWhere(
+        (b) => b.id == currentBabyId,
+        orElse: () => babies.isNotEmpty ? babies.first : throw Exception('No baby found'),
+      );
+
+      print('✅ [WidgetService] Baby data loaded: ${baby.name} (ID: ${baby.id})');
 
       // 🆕 Save baby name for widget display
       await HomeWidget.saveWidgetData('baby_name', baby.name);
@@ -69,6 +84,8 @@ class WidgetService {
     } catch (e, stackTrace) {
       print('❌ [WidgetService] Widget update error: $e');
       print('📍 [WidgetService] Stack trace: $stackTrace');
+    } finally {
+      _isUpdating = false;  // 🆕 Lock 해제
     }
   }
 
@@ -84,16 +101,19 @@ class WidgetService {
     // Get last wake time
     DateTime? lastWakeTime = await _storage.getLastWakeUpTime();
 
-    // 🔧 FIX: 끝난 수면이 없으면, 가장 최근 수면 활동을 확인
+    // 🔧 FIX: 끝난 수면이 없으면, 현재 아기의 가장 최근 수면 활동을 확인
     if (lastWakeTime == null) {
       final allSleepActivities = await _storage.getActivitiesByType(ActivityType.sleep);
-      if (allSleepActivities.isNotEmpty) {
+      // 🆕 현재 아기의 수면만 필터링
+      final babySleepActivities = allSleepActivities.where((a) => a.babyId == baby.id).toList();
+
+      if (babySleepActivities.isNotEmpty) {
         // 최근 수면 활동 정렬
-        allSleepActivities.sort((a, b) =>
+        babySleepActivities.sort((a, b) =>
           DateTime.parse(b.timestamp).compareTo(DateTime.parse(a.timestamp))
         );
 
-        final latestSleep = allSleepActivities.first;
+        final latestSleep = babySleepActivities.first;
 
         // 진행 중인 수면이면 시작 시간 사용, 끝난 수면이면 endTime 사용
         if (latestSleep.endTime != null) {
@@ -106,13 +126,15 @@ class WidgetService {
       }
     }
 
-    // Get last feeding
-    final feedingActivities = await _storage.getActivitiesByType(ActivityType.feeding);
+    // Get last feeding (현재 아기만)
+    final allFeedingActivities = await _storage.getActivitiesByType(ActivityType.feeding);
+    final feedingActivities = allFeedingActivities.where((a) => a.babyId == baby.id).toList();
     feedingActivities.sort((a, b) =>
       DateTime.parse(b.timestamp).compareTo(DateTime.parse(a.timestamp)));
 
-    // Get today's activities
-    final todayActivities = await _storage.getActivitiesByDate(now);
+    // Get today's activities (현재 아기만)
+    final allTodayActivities = await _storage.getActivitiesByDate(now);
+    final todayActivities = allTodayActivities.where((a) => a.babyId == baby.id).toList();
     final sleepActivities = todayActivities.where((a) => a.type == ActivityType.sleep).toList();
     final todayFeedings = todayActivities.where((a) => a.type == ActivityType.feeding).toList();
     final todayDiapers = todayActivities.where((a) => a.type == ActivityType.diaper).toList();
@@ -338,12 +360,14 @@ class WidgetService {
 
     if (lastWakeTime == null) {
       final allSleepActivities = await _storage.getActivitiesByType(ActivityType.sleep);
-      if (allSleepActivities.isNotEmpty) {
-        allSleepActivities.sort((a, b) =>
+      // ✅ 현재 아기의 수면만 필터링
+      final babySleepActivities = allSleepActivities.where((a) => a.babyId == baby.id).toList();
+      if (babySleepActivities.isNotEmpty) {
+        babySleepActivities.sort((a, b) =>
           DateTime.parse(b.timestamp).compareTo(DateTime.parse(a.timestamp))
         );
 
-        final latestSleep = allSleepActivities.first;
+        final latestSleep = babySleepActivities.first;
 
         if (latestSleep.endTime != null) {
           lastWakeTime = DateTime.parse(latestSleep.endTime!);

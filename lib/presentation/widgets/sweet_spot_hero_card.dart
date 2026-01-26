@@ -8,6 +8,8 @@ import '../providers/sweet_spot_provider.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import 'notification_toggle.dart';
+import 'empty_sweet_spot_card.dart';  // 🆕 Empty State
+import '../screens/activities/log_sleep_screen.dart';  // 🆕
 
 /// 🌟 Sweet Spot Hero Card v2.0
 /// - Today's Snapshot 통합
@@ -68,8 +70,37 @@ class _SweetSpotHeroCardState extends State<SweetSpotHeroCard>
         final dailySummary = homeDataProvider.dailySummary;
         final notificationState = homeDataProvider.notificationState;
 
+        // 🆕 현재 아기 이름 가져오기 (동적으로 업데이트됨)
+        final currentBabyName = sweetSpotProvider.currentBaby?.name ?? widget.babyName;
+
         print('🎨 [SweetSpotHeroCard] build() called');
+        print('   sweetSpot: ${sweetSpot != null ? "EXISTS" : "NULL"}');
         print('   dailySummary: ${dailySummary != null ? "sleep=${dailySummary.totalSleepMinutes}min, feeding=${dailySummary.feedingCount}, diaper=${dailySummary.diaperCount}" : "NULL"}');
+        print('   currentBabyName: $currentBabyName');
+
+        // 🔧 Empty State 조건 단순화: 수면 기록이 없으면 바로 Empty State 표시
+        final hasNoSleepData = dailySummary == null || dailySummary.totalSleepMinutes == 0;
+        print('   hasNoSleepData: $hasNoSleepData');
+
+        if (hasNoSleepData) {
+          print('📭 [SweetSpotHeroCard] No sleep data - showing Empty State');
+          return FadeTransition(
+            opacity: _fadeAnimation,
+            child: ScaleTransition(
+              scale: _scaleAnimation,
+              child: EmptySweetSpotCard(
+                babyName: currentBabyName,  // 🔧 동적 아기 이름 사용
+                onRecordSleepTap: () {
+                  // 수면 기록 화면으로 이동
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LogSleepScreen()),
+                  );
+                },
+              ),
+            ),
+          );
+        }
 
         if (sweetSpot == null) {
           return _buildEmptyState(context);
@@ -440,13 +471,19 @@ class _SweetSpotHeroCardState extends State<SweetSpotHeroCard>
     bool isKorean,
   ) {
     // 수면 시간 (시간 단위)
-    final sleepHours = summary != null ? (summary.totalSleepMinutes / 60).toStringAsFixed(1) : '--';
+    final sleepHours = summary != null && summary.totalSleepMinutes > 0
+        ? (summary.totalSleepMinutes / 60).toStringAsFixed(1)
+        : '--';
 
     // 수유 횟수
-    final feedingCount = summary?.feedingCount.toString() ?? '--';
+    final feedingCount = summary != null && summary.feedingCount > 0
+        ? summary.feedingCount.toString()
+        : '--';
 
     // 기저귀 횟수
-    final diaperCount = summary?.diaperCount.toString() ?? '--';
+    final diaperCount = summary != null && summary.diaperCount > 0
+        ? summary.diaperCount.toString()
+        : '--';
 
     // 패턴 안정성
     final patternStatus = _getPatternStatus(summary, isKorean);
@@ -493,7 +530,7 @@ class _SweetSpotHeroCardState extends State<SweetSpotHeroCard>
   }
 
   String _getPatternStatus(DailySummary? summary, bool isKorean) {
-    if (summary == null) return '--';
+    if (summary == null || summary.totalSleepMinutes == 0) return '--';
 
     // 간단한 패턴 안정성 판단
     if (summary.totalSleepMinutes >= 600) {

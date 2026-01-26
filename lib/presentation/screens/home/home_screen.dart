@@ -10,7 +10,7 @@ import '../../../data/models/activity_model.dart';
 import '../../../data/models/baby_model.dart';
 import '../../widgets/sweet_spot_hero_card.dart';
 import '../../widgets/quick_log_bar.dart';
-import '../../widgets/baby_switcher.dart';  // 🆕
+import '../../widgets/home_header.dart';
 import '../../providers/sweet_spot_provider.dart';
 import '../../providers/home_data_provider.dart';
 import '../../providers/smart_coach_provider.dart';
@@ -60,6 +60,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     // 🆕 Load Baby info and Sweet Spot data on init
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadSweetSpotData();
+
     });
   }
 
@@ -75,6 +76,18 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     // 1. Load baby info via BabyProvider
     if (!babyProvider.hasBaby) {
       await babyProvider.loadBabies('anonymous');  // 🔧 userId 추가 (임시)
+
+      // 아직도 아기 데이터가 없으면 로컬 스토리지에서 직접 로드
+      if (!babyProvider.hasBaby) {
+        final localBaby = await _storage.getBaby();
+        if (localBaby != null) {
+          babyProvider.setCurrentBaby(localBaby);
+          print('✅ [HomeScreen] Baby loaded from local storage: ${localBaby.name}');
+        } else {
+          print('⚠️ [HomeScreen] No baby data found');
+          return;
+        }
+      }
     }
 
     final baby = babyProvider.currentBaby;
@@ -84,10 +97,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     }
     print('✅ [HomeScreen] Baby loaded: ${baby.name}, ${baby.correctedAgeInMonths} months');
 
-    // 2. Load last sleep activity
+    // 2. Load last sleep activity (필터: 현재 아기만)
     final activities = await _storage.getActivities();
+    final currentBabyId = baby.id;
+
     final sleepActivities = activities
-        .where((a) => a.type == ActivityType.sleep && a.endTime != null)
+        .where((a) =>
+            a.babyId == currentBabyId &&  // 🚨 현재 아기만!
+            a.type == ActivityType.sleep &&
+            a.endTime != null)
         .toList();
 
     DateTime? lastWakeTime;
@@ -101,19 +119,21 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
       final endTimeStr = sleepActivities.first.endTime;
       lastWakeTime = endTimeStr != null ? DateTime.parse(endTimeStr) : DateTime.parse(sleepActivities.first.timestamp);
-      print('✅ [HomeScreen] Last wake time loaded: $lastWakeTime');
+      print('✅ [HomeScreen] Last wake time loaded: $lastWakeTime (baby: $currentBabyId)');
     } else {
-      print('⚠️ [HomeScreen] No sleep records found, using default wake time');
+      print('⚠️ [HomeScreen] No sleep records found for baby $currentBabyId, using default wake time');
     }
 
-    // Load last feeding activity
+    // Load last feeding activity (필터: 현재 아기만)
     final feedingActivities = activities
-        .where((a) => a.type == ActivityType.feeding)
+        .where((a) =>
+            a.babyId == currentBabyId &&  // 🚨 현재 아기만!
+            a.type == ActivityType.feeding)
         .toList();
     if (feedingActivities.isNotEmpty) {
       feedingActivities.sort((a, b) => b.timestamp.compareTo(a.timestamp));
       lastFeedingTime = DateTime.parse(feedingActivities.first.timestamp);
-      print('✅ [HomeScreen] Last feeding time loaded: $lastFeedingTime');
+      print('✅ [HomeScreen] Last feeding time loaded: $lastFeedingTime (baby: $currentBabyId)');
     }
 
     // 3. Initialize SweetSpotProvider with new initialize method
@@ -124,6 +144,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     print('✅ [HomeScreen] SweetSpotProvider initialized');
 
     // 4. Initialize HomeDataProvider
+    homeDataProvider.setupBabyListener(baby.id);  // 🆕 Setup listener with initial baby ID
     await homeDataProvider.loadAll(
       babyId: baby.id,
       babyName: baby.name,
@@ -226,80 +247,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light,
       ),
-      flexibleSpace: FlexibleSpaceBar(
-        titlePadding: const EdgeInsets.only(left: 20, bottom: 16, right: 20),
-        title: Row(
-          children: [
-            // Moon icon
-            const Text(
-              '🌙',
-              style: TextStyle(fontSize: 24),
-            ),
-            const SizedBox(width: 8),
-            // App name
-            Text(
-              l10n.appName,
-              style: const TextStyle(
-                color: AppTheme.textPrimary,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                letterSpacing: -0.5,
-              ),
-            ),
-            const SizedBox(width: 12),
-            // 🆕 Baby Switcher (다중 아기 시 표시)
-            const BabySwitcher(),
-          ],
-        ),
+      flexibleSpace: const FlexibleSpaceBar(
+        titlePadding: EdgeInsets.only(left: 16, bottom: 16, right: 16),
+        title: HomeHeader(),
       ),
-      actions: [
-        // Profile button
-        FutureBuilder<BabyModel?>(
-          future: LocalStorageService().getBaby(),
-          builder: (context, snapshot) {
-            return IconButton(
-              icon: const Icon(Icons.person_outline, color: AppTheme.lavenderMist),
-              onPressed: () async {
-                _triggerHaptic();
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => BabyProfileScreen(existingBaby: snapshot.data),
-                  ),
-                );
-
-                // 프로필이 변경되면 화면 새로고침
-                if (result == true && mounted) {
-                  setState(() {});
-                }
-              },
-              tooltip: '프로필 편집',
-            );
-          },
-        ),
-        // Notification button
-        IconButton(
-          icon: const Icon(Icons.notifications_outlined, color: AppTheme.lavenderMist),
-          onPressed: () {
-            _triggerHaptic();
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const NotificationSettingsScreen()),
-            );
-          },
-        ),
-        // Settings button
-        IconButton(
-          icon: const Icon(Icons.settings_outlined, color: AppTheme.lavenderMist),
-          onPressed: () {
-            _triggerHaptic();
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SettingsScreen()),
-            );
-          },
-        ),
-      ],
+      actions: const [],
     );
   }
 
@@ -1154,16 +1106,54 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   // Get predictive data from storage
   Future<Map<String, dynamic>> _getPredictiveData(LocalStorageService storage, int ageInDays) async {
     try {
-      // Get last wake up time
-      final lastWakeTime = await storage.getLastWakeUpTime();
+      // 현재 아기 ID 가져오기
+      final babyProvider = Provider.of<BabyProvider>(context, listen: false);
+      final currentBaby = babyProvider.currentBaby;
 
-      // Get last feeding
-      final feedingActivities = await storage.getActivitiesByType(ActivityType.feeding);
+      if (currentBaby == null) {
+        return {
+          'sleep': null,
+          'feeding': null,
+          'activity': 0.0,
+          'hasData': false,
+        };
+      }
+
+      final currentBabyId = currentBaby.id;
+
+      // Get last wake up time (filtered by babyId)
+      final allActivities = await storage.getActivities();
+      final sleepActivities = allActivities
+          .where((a) =>
+              a.babyId == currentBabyId &&  // 🚨 필터링!
+              a.type == ActivityType.sleep &&
+              a.endTime != null)
+          .toList();
+
+      DateTime? lastWakeTime;
+      if (sleepActivities.isNotEmpty) {
+        sleepActivities.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+        final endTimeStr = sleepActivities.first.endTime;
+        lastWakeTime = endTimeStr != null
+            ? DateTime.parse(endTimeStr)
+            : DateTime.parse(sleepActivities.first.timestamp);
+      }
+
+      // Get last feeding (filtered by babyId)
+      final feedingActivities = allActivities
+          .where((a) =>
+              a.babyId == currentBabyId &&  // 🚨 필터링!
+              a.type == ActivityType.feeding)
+          .toList();
       feedingActivities.sort((a, b) =>
           DateTime.parse(b.timestamp).compareTo(DateTime.parse(a.timestamp)));
 
-      // Get today's play activities
-      final playActivities = await storage.getActivitiesByType(ActivityType.play);
+      // Get today's play activities (filtered by babyId)
+      final playActivities = allActivities
+          .where((a) =>
+              a.babyId == currentBabyId &&  // 🚨 필터링!
+              a.type == ActivityType.play)
+          .toList();
       final todayPlay = playActivities.where((a) {
         final activityDate = DateTime.parse(a.timestamp);
         final today = DateTime.now();

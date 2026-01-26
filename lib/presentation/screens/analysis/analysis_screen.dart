@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/baby_model.dart';
 import '../../../data/services/local_storage_service.dart';
+import '../../providers/baby_provider.dart';
 import '../../../core/utils/premature_baby_calculator.dart';
 import '../../../data/models/activity_model.dart';
 import '../../../data/services/growth_percentile_service.dart';
@@ -48,22 +50,38 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   void initState() {
     super.initState();
     _loadAnalysis();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadAnalysis();
+    });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   Future<void> _loadAnalysis() async {
     setState(() => _isLoading = true);
 
     try {
-      // 아기 정보 로드
-      _baby = await _storage.getBaby();
+      // 현재 아기 정보 로드
+      final babyProvider = Provider.of<BabyProvider>(context, listen: false);
+      _baby = babyProvider.currentBaby;
+
       if (_baby != null) {
         final birthDate = DateTime.parse(_baby!.birthDate);
         _babyAgeInDays = DateTime.now().difference(birthDate).inDays;
         _birthWeight = _baby!.birthWeightKg;
       }
 
-      // 활동 데이터 로드
-      final activities = await _storage.getActivities();
+      // 활동 데이터 로드 (현재 아기만 필터링)
+      final allActivities = await _storage.getActivities();
+      final currentBabyId = _baby?.id;
+
+      final activities = allActivities.where((a) {
+        return currentBabyId == null || a.babyId == currentBabyId;
+      }).toList();
 
       // 최신 체중 가져오기 (건강 기록에서)
       final weightRecords = activities

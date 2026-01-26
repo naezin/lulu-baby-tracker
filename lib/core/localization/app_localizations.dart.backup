@@ -158,6 +158,7 @@ class AppLocalizations {
       'analytics_total_diapers': 'Diapers Changed',
 
       // Today's Summary - Predictive Cards
+      'today_summary': 'Today\'s Summary',
       'next_sweet_spot': 'Next Sweet Spot',
       'next_feeding_in': 'Next feeding in',
       'last_fed': 'Last fed',
@@ -276,6 +277,8 @@ class AppLocalizations {
       'time_today': 'Today',
       'time_yesterday': 'Yesterday',
       'time_tomorrow': 'Tomorrow',
+      'this_week': 'This Week',
+      'this_month': 'This Month',
       'minutes': 'minutes',
       'hours': 'hours',
       'ml': 'ml',
@@ -298,6 +301,7 @@ class AppLocalizations {
       'end_time': 'End Time',
       'end_time_wake_up': 'End Time (Wake Up)',
       'car_seat': 'Car Seat',
+      'sleep_quality': 'Sleep Quality',
       'notes_optional': 'Notes (Optional)',
       'observations_hint_sleep': 'Any observations? (e.g., woke up twice, slept soundly)',
       'start_sleep_timer': 'Start Sleep Timer',
@@ -311,6 +315,7 @@ class AppLocalizations {
       'record_feeding': 'Record Feeding',
       'track_feeding_types': 'Track bottle, breast, or solid food',
       'feeding_time': 'Feeding Time',
+      'feeding_type': 'Feeding Type',
       'bottle': 'Bottle',
       'breast': 'Breast',
       'solid_food': 'Solid Food',
@@ -328,6 +333,7 @@ class AppLocalizations {
       'record_diaper_change': 'Record Diaper Change',
       'track_diaper_types': 'Track wet, dirty, or both',
       'diaper_change_time': 'Diaper Change Time',
+      'diaper_type': 'Diaper Type',
       'urineOnly': 'Urine Only',
       'bowelMovement': 'Bowel Movement',
       'wet_and_dirty': 'Both',
@@ -339,6 +345,7 @@ class AppLocalizations {
       'diaper_recorded_success': '✅ Diaper change recorded successfully!',
 
       // Log Health Screen
+      'health_record': 'Health Record',
       'temperature': 'Temperature',
       'medication': 'Medication',
       'temperature_unit': 'Temperature Unit',
@@ -431,6 +438,7 @@ class AppLocalizations {
       'diaper_record': 'Diaper',
       'temperature_record': 'Temperature',
       'medication_record': 'Medication',
+      'health_record': 'Health',
       'activity': 'Activity',
       'delete_record': 'Delete Record',
       'confirm_delete_record': 'Are you sure you want to delete this record?',
@@ -463,6 +471,8 @@ class AppLocalizations {
       'developmental_stage': 'Developmental Stage: 2 months',
       'consistency_score': 'Consistency Score',
       'eat': 'Eat',
+      'play': 'Play',
+      'sleep': 'Sleep',
       'times_per_day': '{count} times/day',
       'avg_minutes': 'Avg {minutes} min',
       'hours_per_day': '{hours} hrs/day',
@@ -693,19 +703,6 @@ class AppLocalizations {
       'widget_description': 'Track your baby\'s next sweet spot and daily activities',
       'widget_settings': 'Widget Settings',
       'widget_settings_description': 'Configure your home screen widgets',
-      'widget_subtitle': 'Add widgets to your home screen',
-      'widget_small_title': 'Small Widget (2×2)',
-      'widget_small_desc': 'Shows time until next Sweet Spot',
-      'widget_medium_title': 'Medium Widget (4×2)',
-      'widget_medium_desc': 'Today\'s summary + Sweet Spot countdown',
-      'widget_large_title': 'Large Widget (4×4)',
-      'widget_large_desc': 'Full daily overview with timeline',
-      'widget_lockscreen_title': 'Lock Screen Widget',
-      'widget_lockscreen_desc': 'Quick glance without unlocking',
-      'widget_add_instruction': 'Long press on home screen → Widgets → Lulu',
-      'widget_ios_instruction': 'Long press on home screen → + button → Search "Lulu"',
-      'widget_how_to_add': 'How to Add',
-      'sweet_spot_in': 'in {minutes}m',
       'widget_preview': 'Widget Preview',
       'widget_small_preview': 'Small Widget (2×2)',
       'widget_medium_preview': 'Medium Widget (4×2)',
@@ -812,6 +809,8 @@ class AppLocalizations {
       'feeding_today_count': '🍼 Today\'s feedings: {count}',
       'feeding_bottle_amount': '📊 {ml}ml ({oz}oz)',
       'feeding_breast_both': '🤱 Both sides',
+      'feeding_breast_left': '🤱 Left side',
+      'feeding_breast_right': '🤱 Right side',
 
       // === Post Record Feedback - Diaper ===
       'diaper_record_complete': 'Diaper Record Complete! 🧷',
@@ -857,13 +856,18 @@ class AppLocalizations {
       'add_baby': 'Add Baby',
 
       // === Add Baby Screen ===
+      'baby_name': 'Baby Name',
       'baby_name_hint': 'Enter baby name',
       'baby_name_required': 'Please enter baby name',
+      'birth_date': 'Birth Date',
+      'birth_weight': 'Birth Weight (kg)',
+      'gender': 'Gender',
       'female': 'Girl',
       'male': 'Boy',
       'is_premature': 'Premature Baby',
       'is_premature_hint': 'Born before 37 weeks',
       'due_date': 'Due Date',
+      'save': 'Save',
 
       // ============================================
       // SLEEP RECORD SCREEN
@@ -871,6 +875,23 @@ class AppLocalizations {
       'track_sleep_patterns': 'Track your baby\'s sleep patterns',
       'sleep_last_sleep': 'Last sleep: {time} ago',
       'sleep_status': 'Sleep Status',
+      'record_past_sleep': 'Record Past Sleep',
+      'sleep_in_progress': 'Sleep In Progress',
+      'start_time': 'Start Time',
+      'end_time': 'End Time',
+      'end_time_wake_up': 'End Time (Wake Up)',
+      'sleep_crib': 'Crib',
+      'sleep_bed': 'Bed',
+      'sleep_stroller': 'Stroller',
+      'sleep_car': 'Car',
+      'sleep_arms': 'Arms',
+      'sleep_quality_good': 'Good',
+      'sleep_quality_fair': 'Fair',
+      'sleep_quality_poor': 'Poor',
+      'notes_optional': 'Notes (Optional)',
+      'observations_hint_sleep': 'Any observations?',
+      'save_sleep_record': 'Save Sleep Record',
+      'start_sleep_timer': 'Start Sleep Timer',
       'sleep_first_record': 'First sleep record!',
       'sleep_time_ago_minutes': '{minutes} min ago',
       'sleep_time_ago_hours': '{hours}h {minutes}m ago',
@@ -878,45 +899,98 @@ class AppLocalizations {
       // ============================================
       // SLEEP POST RECORD FEEDBACK
       // ============================================
+      'sleep_record_complete': 'Sleep Record Complete! 😴',
+      'sleep_today_total': '⏱️ Total sleep today: {hours}h {minutes}m',
+      'sleep_yesterday_diff_plus': '📈 +{diff} min from yesterday',
+      'sleep_yesterday_diff_minus': '📉 {diff} min from yesterday',
+      'sleep_this_record': '🎯 This record: {minutes} min',
 
       // ============================================
       // FEEDING RECORD SCREEN
       // ============================================
+      'track_feeding_types': 'Track bottle, breast, or solid food',
       'feeding_last_time': 'Last feeding: {time} ago',
+      'feeding_time': 'Feeding Time',
+      'bottle': 'Bottle',
+      'breast': 'Breast',
+      'solid_food': 'Solid Food',
+      'amount': 'Amount',
       'amount_ml': 'Amount (ml)',
+      'breast_side': 'Breast Side',
+      'left': 'Left',
+      'right': 'Right',
+      'both': 'Both',
       'duration_minutes': 'Duration (minutes)',
+      'observations_hint_feeding': 'Any observations?',
+      'save_feeding_record': 'Save Feeding Record',
       'feeding_first_record': 'First feeding record!',
 
       // ============================================
       // FEEDING POST RECORD FEEDBACK
       // ============================================
+      'feeding_record_complete': 'Feeding Record Complete! 🍼',
+      'feeding_today_count': '🍼 Today\'s feedings: {count}',
+      'feeding_bottle_amount': '📊 {ml}ml ({oz}oz)',
+      'feeding_breast_both': '🤱 Both sides',
+      'feeding_breast_left': '🤱 Left side',
+      'feeding_breast_right': '🤱 Right side',
 
       // ============================================
       // DIAPER RECORD SCREEN
       // ============================================
+      'track_diaper_types': 'Track wet, dirty, or both',
       'diaper_last_change': 'Last change: {time} ago',
+      'diaper_change_time': 'Change Time',
+      'diaper_type': 'Diaper Type',
+      'wet_desc': 'Wet',
+      'dirty_desc': 'Dirty',
+      'both_desc': 'Both',
+      'wet_and_dirty': 'Wet and dirty',
+      'diaper_clean': 'Clean/Dry',
+      'observations_hint_diaper': 'Any observations?',
+      'save_diaper_record': 'Save Diaper Record',
       'diaper_first_record': 'First diaper record!',
 
       // ============================================
       // DIAPER POST RECORD FEEDBACK
       // ============================================
+      'diaper_record_complete': 'Diaper Record Complete! 🧷',
+      'diaper_today_count': '🧷 Today\'s changes: {count}',
+      'diaper_wet_only': '💧 Wet only',
+      'diaper_dirty_only': '💩 Dirty only',
+      'diaper_both': '💧💩 Both',
 
       // ============================================
       // PLAY RECORD SCREEN
       // ============================================
+      'log_play_activity': 'Play Activity',
+      'play_track_developmental': 'Track developmental play activities',
       'play_context_hint': 'Select age-appropriate activities',
+      'select_activity': 'Select Activity',
+      'duration': 'Duration',
+      'activity_notes_hint': 'Add activity notes...',
+      'development_benefits': 'Development Benefits',
+      'play_select_time': 'Please select activity and duration',
+      'save_activity': 'Save Activity',
 
       // ============================================
       // PLAY POST RECORD FEEDBACK
       // ============================================
+      'play_record_complete': 'Play Record Complete! 🎮',
       'play_today_count': '🎮 Today\'s play: {count}',
       'play_duration_minutes': '⏱️ {minutes} min',
 
       // ============================================
       // HEALTH - TEMPERATURE SCREEN
       // ============================================
+      'health_record': 'Health Record',
+      'temperature': 'Temperature',
       'temperature_record_baby': 'Record baby\'s temperature',
       'temperature_normal_range': 'Normal: 36.5-37.5°C',
+      'temperature_unit': 'Temperature Unit',
+      'celsius': 'Celsius (°C)',
+      'fahrenheit': 'Fahrenheit (°F)',
+      'time': 'Time',
       'temperature_fever_status': '⚠️ Fever detected',
       'temperature_normal_status': '✅ Normal',
       'temperature_record_complete': 'Temperature Recorded! 🌡️',
@@ -924,20 +998,35 @@ class AppLocalizations {
       // ============================================
       // HEALTH - MEDICATION SCREEN
       // ============================================
+      'medication': 'Medication',
       'medication_record_info': 'Record medication given',
 
       // ============================================
       // HEALTH - GROWTH SCREEN
       // ============================================
+      'growth_record_title': 'Growth Record',
 
       // ============================================
       // COMMON
       // ============================================
+      'cancel': 'Cancel',
+      'delete': 'Delete',
+      'edit': 'Edit',
+      'done': 'Done',
+      'close': 'Close',
+      'ok': 'OK',
+      'yes': 'Yes',
+      'no': 'No',
+      'today': 'Today',
+      'yesterday': 'Yesterday',
       'now': 'Now',
       'select_time': 'Select Time',
       'select_date': 'Select Date',
 
       // Activity logging
+      'log_sleep': 'Log Sleep',
+      'log_feeding': 'Log Feeding',
+      'log_diaper': 'Log Diaper',
     },
     'ko': {
       // App Name
@@ -1083,6 +1172,7 @@ class AppLocalizations {
       'analytics_total_diapers': '기저귀 교체 횟수',
 
       // Today's Summary - Predictive Cards
+      'today_summary': '오늘의 요약',
       'next_sweet_spot': '다음 스위트 스팟',
       'next_feeding_in': '다음 수유까지',
       'last_fed': '마지막 수유',
@@ -1201,6 +1291,8 @@ class AppLocalizations {
       'time_today': '오늘',
       'time_yesterday': '어제',
       'time_tomorrow': '내일',
+      'this_week': '이번 주',
+      'this_month': '이번 달',
       'minutes': '분',
       'hours': '시간',
       'ml': 'ml',
@@ -1223,6 +1315,7 @@ class AppLocalizations {
       'end_time': '종료 시간',
       'end_time_wake_up': '종료 시간 (기상)',
       'car_seat': '카시트',
+      'sleep_quality': '수면 품질',
       'notes_optional': '메모 (선택사항)',
       'observations_hint_sleep': '관찰 사항이 있나요? (예: 두 번 깼음, 푹 잤음)',
       'start_sleep_timer': '수면 타이머 시작',
@@ -1236,6 +1329,7 @@ class AppLocalizations {
       'record_feeding': '수유 기록',
       'track_feeding_types': '분유, 모유 또는 이유식 추적',
       'feeding_time': '수유 시간',
+      'feeding_type': '수유 유형',
       'bottle': '분유',
       'breast': '모유',
       'solid_food': '이유식',
@@ -1253,6 +1347,7 @@ class AppLocalizations {
       'record_diaper_change': '기저귀 교체 기록',
       'track_diaper_types': '소변, 대변 또는 둘 다 추적',
       'diaper_change_time': '기저귀 교체 시간',
+      'diaper_type': '기저귀 유형',
       'urineOnly': '소변만',
       'bowelMovement': '대변',
       'wet_and_dirty': '둘 다',
@@ -1264,6 +1359,7 @@ class AppLocalizations {
       'diaper_recorded_success': '✅ 기저귀 교체가 성공적으로 기록되었습니다!',
 
       // Log Health Screen
+      'health_record': '건강 기록',
       'temperature': '체온',
       'medication': '투약',
       'temperature_unit': '체온 단위',
@@ -1278,6 +1374,7 @@ class AppLocalizations {
       'actions_now': '지금 취해야 할 조치:',
       'call_pediatrician': '소아과 전화',
       'go_to_er': '응급실 방문',
+      'time': '시간',
       'change': '변경',
       'notes_optional_short': '메모 (선택사항)',
       'additional_observations': '추가 관찰 사항...',
@@ -1325,8 +1422,11 @@ class AppLocalizations {
       'no_activities_yet': '아직 활동이 없습니다',
       'no_activities_type': '{type} 활동이 없습니다',
       'start_logging': '기록을 시작하여 히스토리를 확인하세요',
+      'today': '오늘',
+      'delete': '삭제',
       'delete_activity': '활동 삭제?',
       'confirm_delete_activity': '이 {type} 활동을 삭제하시겠습니까?',
+      'cancel': '취소',
       'activity_deleted': '활동이 삭제되었습니다',
 
       // Statistics Screen
@@ -1350,12 +1450,14 @@ class AppLocalizations {
 
       // Records Screen
       'add_record': '기록 추가',
+      'health': '건강',
       'error_loading_records': '기록 로딩 오류',
       'sleep_record': '수면',
       'feeding_record': '수유',
       'diaper_record': '기저귀',
       'temperature_record': '체온',
       'medication_record': '투약',
+      'health_record': '건강',
       'activity': '활동',
       'delete_record': '기록 삭제',
       'confirm_delete_record': '이 기록을 삭제하시겠습니까?',
@@ -1388,6 +1490,8 @@ class AppLocalizations {
       'developmental_stage': '발달 단계: 2개월',
       'consistency_score': '일관성 점수',
       'eat': '먹기',
+      'play': '놀기',
+      'sleep': '자기',
       'times_per_day': '하루 {count}회',
       'avg_minutes': '평균 {minutes}분',
       'hours_per_day': '하루 {hours}시간',
@@ -1618,19 +1722,6 @@ class AppLocalizations {
       'widget_description': '아기의 다음 스위트 스팟과 일일 활동을 추적하세요',
       'widget_settings': '위젯 설정',
       'widget_settings_description': '홈 화면 위젯 구성',
-      'widget_subtitle': '홈 화면에 위젯을 추가하세요',
-      'widget_small_title': '작은 위젯 (2×2)',
-      'widget_small_desc': 'Sweet Spot까지 남은 시간 표시',
-      'widget_medium_title': '중간 위젯 (4×2)',
-      'widget_medium_desc': '오늘 요약 + Sweet Spot 카운트다운',
-      'widget_large_title': '큰 위젯 (4×4)',
-      'widget_large_desc': '타임라인 포함 전체 일일 현황',
-      'widget_lockscreen_title': '잠금화면 위젯',
-      'widget_lockscreen_desc': '잠금 해제 없이 빠르게 확인',
-      'widget_add_instruction': '홈 화면 길게 누르기 → 위젯 → Lulu',
-      'widget_ios_instruction': '홈 화면 길게 누르기 → + 버튼 → "Lulu" 검색',
-      'widget_how_to_add': '추가 방법',
-      'sweet_spot_in': '{minutes}분 후',
       'widget_preview': '위젯 미리보기',
       'widget_small_preview': '작은 위젯 (2×2)',
       'widget_medium_preview': '중간 위젯 (4×2)',
@@ -1737,6 +1828,8 @@ class AppLocalizations {
       'feeding_today_count': '🍼 오늘 수유: {count}회',
       'feeding_bottle_amount': '📊 {ml}ml ({oz}oz)',
       'feeding_breast_both': '🤱 양쪽',
+      'feeding_breast_left': '🤱 왼쪽',
+      'feeding_breast_right': '🤱 오른쪽',
 
       // === Post Record Feedback - Diaper ===
       'diaper_record_complete': '기저귀 기록 완료! 🧷',
@@ -1782,13 +1875,18 @@ class AppLocalizations {
       'add_baby': '아기 추가',
 
       // === Add Baby Screen ===
+      'baby_name': '아기 이름',
       'baby_name_hint': '아기 이름을 입력하세요',
       'baby_name_required': '아기 이름을 입력해주세요',
+      'birth_date': '생년월일',
+      'birth_weight': '출생 시 체중 (kg)',
+      'gender': '성별',
       'female': '여아',
       'male': '남아',
       'is_premature': '조산아',
       'is_premature_hint': '37주 이전 출생',
       'due_date': '출산 예정일',
+      'save': '저장',
 
       // ============================================
       // SLEEP RECORD SCREEN
@@ -1796,6 +1894,23 @@ class AppLocalizations {
       'track_sleep_patterns': '수면 패턴을 추적하세요',
       'sleep_last_sleep': '마지막 수면: {time} 전',
       'sleep_status': '수면 상태',
+      'record_past_sleep': '과거 수면 기록',
+      'sleep_in_progress': '수면 진행 중',
+      'start_time': '시작 시간',
+      'end_time': '종료 시간',
+      'end_time_wake_up': '종료 시간 (깨어남)',
+      'sleep_crib': '아기침대',
+      'sleep_bed': '침대',
+      'sleep_stroller': '유모차',
+      'sleep_car': '차량',
+      'sleep_arms': '품',
+      'sleep_quality_good': '좋음',
+      'sleep_quality_fair': '보통',
+      'sleep_quality_poor': '나쁨',
+      'notes_optional': '메모 (선택사항)',
+      'observations_hint_sleep': '관찰 사항이 있나요?',
+      'save_sleep_record': '수면 기록 저장',
+      'start_sleep_timer': '수면 타이머 시작',
       'sleep_first_record': '첫 수면 기록!',
       'sleep_time_ago_minutes': '{minutes}분 전',
       'sleep_time_ago_hours': '{hours}시간 {minutes}분 전',
@@ -1803,45 +1918,98 @@ class AppLocalizations {
       // ============================================
       // SLEEP POST RECORD FEEDBACK
       // ============================================
+      'sleep_record_complete': '수면 기록 완료! 😴',
+      'sleep_today_total': '⏱️ 오늘 총 수면: {hours}시간 {minutes}분',
+      'sleep_yesterday_diff_plus': '📈 어제보다 +{diff}분',
+      'sleep_yesterday_diff_minus': '📉 어제보다 {diff}분',
+      'sleep_this_record': '🎯 이번 기록: {minutes}분',
 
       // ============================================
       // FEEDING RECORD SCREEN
       // ============================================
+      'track_feeding_types': '분유, 모유 또는 이유식 추적',
       'feeding_last_time': '마지막 수유: {time} 전',
+      'feeding_time': '수유 시간',
+      'bottle': '젖병',
+      'breast': '모유',
+      'solid_food': '이유식',
+      'amount': '양',
       'amount_ml': '양 (ml)',
+      'breast_side': '수유 방향',
+      'left': '왼쪽',
+      'right': '오른쪽',
+      'both': '양쪽',
       'duration_minutes': '시간 (분)',
+      'observations_hint_feeding': '관찰 사항이 있나요?',
+      'save_feeding_record': '수유 기록 저장',
       'feeding_first_record': '첫 수유 기록!',
 
       // ============================================
       // FEEDING POST RECORD FEEDBACK
       // ============================================
+      'feeding_record_complete': '수유 기록 완료! 🍼',
+      'feeding_today_count': '🍼 오늘 수유: {count}회',
+      'feeding_bottle_amount': '📊 {ml}ml ({oz}oz)',
+      'feeding_breast_both': '🤱 양쪽',
+      'feeding_breast_left': '🤱 왼쪽',
+      'feeding_breast_right': '🤱 오른쪽',
 
       // ============================================
       // DIAPER RECORD SCREEN
       // ============================================
+      'track_diaper_types': '소변, 대변 또는 둘 다 추적',
       'diaper_last_change': '마지막 교체: {time} 전',
+      'diaper_change_time': '기저귀 교체 시간',
+      'diaper_type': '기저귀 유형',
+      'wet_desc': '젖음',
+      'dirty_desc': '배변',
+      'both_desc': '둘 다',
+      'wet_and_dirty': '소변과 대변',
+      'diaper_clean': '깨끗함',
+      'observations_hint_diaper': '관찰 사항이 있나요?',
+      'save_diaper_record': '기저귀 기록 저장',
       'diaper_first_record': '첫 기저귀 기록!',
 
       // ============================================
       // DIAPER POST RECORD FEEDBACK
       // ============================================
+      'diaper_record_complete': '기저귀 기록 완료! 🧷',
+      'diaper_today_count': '🧷 오늘 교체: {count}회',
+      'diaper_wet_only': '💧 소변만',
+      'diaper_dirty_only': '💩 대변만',
+      'diaper_both': '💧💩 둘 다',
 
       // ============================================
       // PLAY RECORD SCREEN
       // ============================================
+      'log_play_activity': '놀이 활동',
+      'play_track_developmental': '발달에 도움이 되는 놀이를 기록하세요',
       'play_context_hint': '발달에 맞는 놀이 활동을 선택하세요',
+      'select_activity': '활동 선택',
+      'duration': '시간',
+      'activity_notes_hint': '활동 메모 추가...',
+      'development_benefits': '발달 효과',
+      'play_select_time': '활동과 시간을 선택해주세요',
+      'save_activity': '활동 저장',
 
       // ============================================
       // PLAY POST RECORD FEEDBACK
       // ============================================
+      'play_record_complete': '놀이 기록 완료! 🎮',
       'play_today_count': '🎮 오늘 놀이: {count}회',
       'play_duration_minutes': '⏱️ {minutes}분',
 
       // ============================================
       // HEALTH - TEMPERATURE SCREEN
       // ============================================
+      'health_record': '건강 기록',
+      'temperature': '체온',
       'temperature_record_baby': '아기의 체온을 기록하세요',
       'temperature_normal_range': '정상: 36.5-37.5°C',
+      'temperature_unit': '체온 단위',
+      'celsius': '섭씨 (°C)',
+      'fahrenheit': '화씨 (°F)',
+      'time': '시간',
       'temperature_fever_status': '⚠️ 발열 감지',
       'temperature_normal_status': '✅ 정상',
       'temperature_record_complete': '체온 기록 완료! 🌡️',
@@ -1849,20 +2017,35 @@ class AppLocalizations {
       // ============================================
       // HEALTH - MEDICATION SCREEN
       // ============================================
+      'medication': '투약',
       'medication_record_info': '복용한 약을 기록하세요',
 
       // ============================================
       // HEALTH - GROWTH SCREEN
       // ============================================
+      'growth_record_title': '성장 기록',
 
       // ============================================
       // COMMON
       // ============================================
+      'cancel': '취소',
+      'delete': '삭제',
+      'edit': '수정',
+      'done': '완료',
+      'close': '닫기',
+      'ok': '확인',
+      'yes': '예',
+      'no': '아니오',
+      'today': '오늘',
+      'yesterday': '어제',
       'now': '지금',
       'select_time': '시간 선택',
       'select_date': '날짜 선택',
 
       // Activity logging
+      'log_sleep': '수면 기록',
+      'log_feeding': '수유 기록',
+      'log_diaper': '기저귀 기록',
     },
   };
 

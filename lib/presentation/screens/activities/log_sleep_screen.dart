@@ -389,6 +389,11 @@ class _LogSleepScreenState extends State<LogSleepScreen> {
       final babyProvider = Provider.of<BabyProvider>(context, listen: false);
       final babyId = babyProvider.currentBaby?.id ?? 'unknown';
 
+      // 🆕 디버깅 로그 추가
+      print('🔍 [LogSleepScreen] === 저장 시점 디버깅 ===');
+      print('   currentBaby: ${babyProvider.currentBaby?.name}');
+      print('   currentBabyId: $babyId');
+
       final activity = ActivityModel.sleep(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         babyId: babyId,
@@ -401,7 +406,16 @@ class _LogSleepScreenState extends State<LogSleepScreen> {
             : _notesController.text.trim(),
       );
 
+      print('   저장할 activity.babyId: ${activity.babyId}');
+
       await _storage.saveActivity(activity);
+
+      // 🆕 저장 후 확인
+      final savedActivities = await _storage.getActivities();
+      final justSaved = savedActivities.where((a) => a.id == activity.id).firstOrNull;
+      print('   저장된 activity.babyId: ${justSaved?.babyId}');
+      print('🔍 [LogSleepScreen] === 디버깅 끝 ===');
+
       await _widgetService.updateAllWidgets();
 
       // SweetSpotProvider 업데이트 - 수면이 종료된 경우 기상 시각 업데이트
@@ -413,9 +427,13 @@ class _LogSleepScreenState extends State<LogSleepScreen> {
 
       // HomeDataProvider 업데이트 - Today's Snapshot 새로고침
       if (mounted) {
-//         final homeDataProvider = Provider.of<HomeDataProvider>(context, listen: false);
-//         await homeDataProvider.refreshDailySummary();
-        print('✅ [LogSleepScreen] HomeDataProvider daily summary refreshed');
+        final babyProvider = Provider.of<BabyProvider>(context, listen: false);
+        final homeDataProvider = Provider.of<HomeDataProvider>(context, listen: false);
+        final currentBaby = babyProvider.currentBaby;
+        if (currentBaby != null) {
+          await homeDataProvider.refreshDailySummary(currentBaby.id);
+          print('✅ [LogSleepScreen] HomeDataProvider daily summary refreshed for baby ${currentBaby.id}');
+        }
       }
 
       if (mounted) {

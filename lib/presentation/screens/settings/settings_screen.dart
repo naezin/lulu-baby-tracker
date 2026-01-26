@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../providers/locale_provider.dart';
 import '../../providers/unit_preferences_provider.dart';
 import '../../utils/snackbar_utils.dart';
@@ -8,6 +9,7 @@ import '../export/export_data_screen.dart';
 import '../import/import_data_screen.dart';
 import '../demo_setup_screen.dart';
 import '../../../data/services/notification_service.dart';
+import '../profile/baby_profile_screen.dart';
 import 'widget_settings_screen.dart';
 import 'privacy_policy_screen.dart';
 
@@ -354,6 +356,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  /// 🆕 아기 관리 섹션
   Widget _buildSectionHeader(BuildContext context, String title) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),

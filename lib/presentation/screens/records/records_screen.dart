@@ -8,6 +8,8 @@ import '../../../data/models/activity_model.dart';
 import '../../../data/services/local_storage_service.dart';
 import '../../../data/services/widget_service.dart';
 import '../../providers/baby_provider.dart';
+import '../../providers/home_data_provider.dart';
+import '../../providers/sweet_spot_provider.dart';
 import '../../utils/snackbar_utils.dart';
 import '../activities/log_sleep_screen.dart';
 import '../activities/log_feeding_screen.dart';
@@ -37,6 +39,16 @@ class _RecordsScreenState extends State<RecordsScreen> {
   void initState() {
     super.initState();
     _loadTodayActivities();
+
+    // BabyProvider 변경 리스너 추가
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadTodayActivities();
+    });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   Future<void> _loadTodayActivities() async {
@@ -46,10 +58,31 @@ class _RecordsScreenState extends State<RecordsScreen> {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
+    // 현재 아기 ID 가져오기
+    final babyProvider = Provider.of<BabyProvider>(context, listen: false);
+    final currentBabyId = babyProvider.currentBaby?.id;
+
+    // 🆕 디버깅 로그 추가
+    print('🔍 [RecordsScreen] === 로드 시점 디버깅 ===');
+    print('   currentBaby: ${babyProvider.currentBaby?.name}');
+    print('   currentBabyId: $currentBabyId');
+    print('   전체 activities 수: ${activities.length}');
+
+    // 각 activity의 babyId 출력 (최근 10개)
+    for (var a in activities.take(10)) {
+      print('   - ${a.type.name}: babyId=${a.babyId}, time=${a.timestamp}');
+    }
+
     final todayActivities = activities.where((a) {
       final actDate = DateTime.parse(a.timestamp);
-      return actDate.isAfter(today) || actDate.isAtSameMomentAs(today);
+      final isToday = actDate.isAfter(today) || actDate.isAtSameMomentAs(today);
+      // 현재 아기의 활동만 필터링
+      final isCurrentBaby = currentBabyId == null || a.babyId == currentBabyId;
+      return isToday && isCurrentBaby;
     }).toList();
+
+    print('   필터 후 activities 수: ${todayActivities.length}');
+    print('🔍 [RecordsScreen] === 디버깅 끝 ===');
 
     // 시간순 정렬 (최신이 아래로)
     todayActivities.sort((a, b) =>
@@ -99,6 +132,10 @@ class _RecordsScreenState extends State<RecordsScreen> {
     await _storage.saveActivity(activity);
     await WidgetService().updateAllWidgets();
 
+    // ✅ HomeDataProvider의 dailySummary 업데이트
+    final homeDataProvider = Provider.of<HomeDataProvider>(context, listen: false);
+    await homeDataProvider.refreshDailySummary(babyId);
+
     _showQuickFeedback(type);
     _loadTodayActivities();
   }
@@ -126,6 +163,10 @@ class _RecordsScreenState extends State<RecordsScreen> {
 
     await _storage.updateActivity(updated);
     await WidgetService().updateAllWidgets();
+
+    // ✅ HomeDataProvider의 dailySummary 업데이트
+    final homeDataProvider = Provider.of<HomeDataProvider>(context, listen: false);
+    await homeDataProvider.refreshDailySummary(babyId);
 
     HapticFeedback.heavyImpact();
 
@@ -692,7 +733,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
   Future<void> _navigateToDetailScreen(ActivityModel activity) async {
     HapticFeedback.lightImpact();
 
-    await Navigator.push(
+    final deletedActivity = await Navigator.push<ActivityModel>(
       context,
       MaterialPageRoute(
         builder: (context) => ActivityDetailScreen(activity: activity),
@@ -701,6 +742,65 @@ class _RecordsScreenState extends State<RecordsScreen> {
 
     // 돌아올 때 목록 새로고침
     _loadTodayActivities();
+
+    // 활동이 삭제된 경우 Snackbar 표시
+    if (deletedActivity != null && mounted) {
+      _showDeletedSnackbar(deletedActivity);
+    }
+  }
+
+  /// 활동 삭제 Snackbar 표시 (Undo 기능 포함)
+  void _showDeletedSnackbar(ActivityModel deletedActivity) {
+    final babyProvider = Provider.of<BabyProvider>(context, listen: false);
+    final homeDataProvider = Provider.of<HomeDataProvider>(context, listen: false);
+    final sweetSpotProvider = Provider.of<SweetSpotProvider>(context, listen: false);
+    final currentBaby = babyProvider.currentBaby;
+    if (currentBaby == null) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('활동이 삭제되었습니다'),
+        backgroundColor: AppTheme.errorSoft,
+        duration: const Duration(seconds: 3),
+        action: SnackBarAction(
+          label: '취소',
+          textColor: Colors.white,
+          onPressed: () async {
+            // Undo delete - restore the activity
+            await _storage.saveActivity(deletedActivity);
+            await WidgetService().updateAllWidgets();
+
+            // ✅ Update HomeDataProvider
+            await homeDataProvider.refreshDailySummary(currentBaby.id);
+
+            // ✅ Update SweetSpotProvider (if sleep activity)
+            if (deletedActivity.type == ActivityType.sleep) {
+              final activities = await _storage.getActivities();
+              final sleepActivities = activities
+                  .where((a) => a.babyId == currentBaby.id && a.type == ActivityType.sleep && a.endTime != null)
+                  .toList();
+
+              DateTime? lastWakeTime;
+              if (sleepActivities.isNotEmpty) {
+                sleepActivities.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+                final endTimeStr = sleepActivities.first.endTime;
+                lastWakeTime = endTimeStr != null ? DateTime.parse(endTimeStr) : DateTime.parse(sleepActivities.first.timestamp);
+              }
+
+              await sweetSpotProvider.initialize(
+                baby: currentBaby,
+                lastWakeUpTime: lastWakeTime,
+              );
+            }
+
+            // Refresh the list
+            _loadTodayActivities();
+
+            HapticFeedback.lightImpact();
+          },
+        ),
+      ),
+    );
   }
 
   /// 삭제 확인 다이얼로그
@@ -779,6 +879,14 @@ class _RecordsScreenState extends State<RecordsScreen> {
     if (!wasUndone) {
       await _storage.deleteActivity(activity.id);
       await WidgetService().updateAllWidgets();
+
+      // ✅ HomeDataProvider의 dailySummary 업데이트
+      final homeDataProvider = Provider.of<HomeDataProvider>(context, listen: false);
+      final babyProvider = Provider.of<BabyProvider>(context, listen: false);
+      final currentBaby = babyProvider.currentBaby;
+      if (currentBaby != null) {
+        await homeDataProvider.refreshDailySummary(currentBaby.id);
+      }
     }
   }
 

@@ -17,6 +17,8 @@ class HomeDataProvider extends ChangeNotifier {
   final NotificationService _notificationService = NotificationService();
   late final DailySummaryService _dailySummaryService;
 
+  String? _lastBabyId;  // 🆕 Track last baby ID for change detection
+
   HomeDataProvider() {
     // DI에서 ActivityRepository를 가져와서 DailySummaryService 초기화
     try {
@@ -26,6 +28,37 @@ class HomeDataProvider extends ChangeNotifier {
     } catch (e) {
       print('⚠️ [HomeDataProvider] Failed to initialize DailySummaryService: $e');
       rethrow;
+    }
+  }
+
+  /// 🆕 BabyProvider 리스너 등록 메서드 (HomeScreen에서 호출)
+  void setupBabyListener(String? currentBabyId) {
+    _lastBabyId = currentBabyId;
+  }
+
+  /// 🆕 아기 변경 감지 및 데이터 새로고침
+  Future<void> onBabyChanged({
+    required String? newBabyId,
+    required String babyName,
+    required DateTime? lastWakeUpTime,
+    required int ageInMonths,
+    required AppLocalizations l10n,
+  }) async {
+    if (_lastBabyId == newBabyId) {
+      return;  // Same baby, no need to refresh
+    }
+
+    print('🔄 [HomeDataProvider] Baby changed from $_lastBabyId to $newBabyId - reloading all data');
+    _lastBabyId = newBabyId;
+
+    if (newBabyId != null && lastWakeUpTime != null) {
+      await loadAll(
+        babyId: newBabyId,
+        babyName: babyName,
+        lastWakeUpTime: lastWakeUpTime,
+        ageInMonths: ageInMonths,
+        l10n: l10n,
+      );
     }
   }
 
@@ -48,7 +81,8 @@ class HomeDataProvider extends ChangeNotifier {
   }) async {
     _isLoading = true;
     _error = null;
-    notifyListeners();
+    // ⚠️ 로딩 시작 시 notifyListeners() 호출하지 않음
+    // UI가 로딩 상태를 확인하지 않고 이전 데이터만 표시하므로, 데이터 로드 완료까지 기다림
 
     try {
       // 1. Sweet Spot 계산
@@ -62,7 +96,15 @@ class HomeDataProvider extends ChangeNotifier {
       final summary = await _dailySummaryService.getTodaysSummary(babyId);
 
       // 3. 알림 상태 확인
-      final pendingNotifications = await _notificationService.getPendingNotifications();
+      print('🔔 [HomeDataProvider] Checking notification service...');
+      final pendingNotifications = await _notificationService.getPendingNotifications().timeout(
+        const Duration(seconds: 2),
+        onTimeout: () {
+          print('⚠️ [HomeDataProvider] Notification service timeout - continuing without notifications');
+          return [];
+        },
+      );
+      print('🔔 [HomeDataProvider] Got ${pendingNotifications.length} pending notifications');
       final hasScheduledNotification = pendingNotifications.isNotEmpty;
 
       DateTime? scheduledTime;
@@ -84,17 +126,25 @@ class HomeDataProvider extends ChangeNotifier {
 
       // 4. Sweet Spot 변경 시 알림 재스케줄
       if (_data.notificationState.isEnabled && sweetSpot != null) {
-        await _rescheduleNotification(
-          sweetSpot: sweetSpot,
-          babyName: babyName,
-          l10n: l10n,
-        );
+        print('🔔 [HomeDataProvider] Rescheduling notifications...');
+        try {
+          await _rescheduleNotification(
+            sweetSpot: sweetSpot,
+            babyName: babyName,
+            l10n: l10n,
+          ).timeout(const Duration(seconds: 2));
+          print('🔔 [HomeDataProvider] Notifications rescheduled');
+        } catch (e) {
+          print('⚠️ [HomeDataProvider] Failed to reschedule notifications: $e');
+        }
       }
     } catch (e) {
       _error = e.toString();
       print('⚠️ [HomeDataProvider] Error loading data: $e');
     } finally {
       _isLoading = false;
+      print('📢 [HomeDataProvider] loadAll() completed - calling notifyListeners()');
+      print('   dailySummary: ${_data.dailySummary != null ? "sleep=${_data.dailySummary!.totalSleepMinutes}min" : "NULL"}');
       notifyListeners();
     }
   }
