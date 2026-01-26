@@ -801,6 +801,53 @@ class AppLocalizations {
       'special_care_message': 'Babies born with lower birth weights need extra care and attention. Would you like us to enable specialized growth monitoring and personalized feeding recommendations?',
       'no_thanks': 'No, thanks',
       'enable_special_care': 'Yes, enable',
+
+      // === Post Record Feedback - Sleep ===
+      'sleep_record_complete': 'Sleep Record Complete! 😴',
+      'sleep_today_total': '⏱️ Total sleep today: {hours}h {minutes}m',
+      'sleep_yesterday_diff_plus': '📈 +{diff} min from yesterday',
+      'sleep_yesterday_diff_minus': '📉 {diff} min from yesterday',
+      'sleep_this_record': '🎯 This record: {minutes} min',
+
+      // === Post Record Feedback - Feeding ===
+      'feeding_record_complete': 'Feeding Record Complete! 🍼',
+      'feeding_today_count': '🍼 Today\'s feedings: {count}',
+      'feeding_bottle_amount': '📊 {ml}ml ({oz}oz)',
+      'feeding_breast_both': '🤱 Both sides',
+      'feeding_breast_left': '🤱 Left side',
+      'feeding_breast_right': '🤱 Right side',
+
+      // === Post Record Feedback - Diaper ===
+      'diaper_record_complete': 'Diaper Record Complete! 🧷',
+      'diaper_today_count': '🧷 Today\'s changes: {count}',
+      'diaper_wet_only': '💧 Wet only',
+      'diaper_dirty_only': '💩 Dirty only',
+      'diaper_both': '💧💩 Both',
+
+      // === Growth Record Screen ===
+      'growth_record': 'Growth',
+      'growth_record_title': 'Growth Record',
+      'growth_record_subtitle': 'Record baby\'s height, weight, and head circumference',
+      'growth_track_progress': 'Track regularly to monitor growth trends',
+      'growth_weight_kg': 'Weight (kg)',
+      'growth_height_cm': 'Height (cm)',
+      'growth_head_cm': 'Head Circumference (cm)',
+      'growth_save_record': 'Save Growth Record',
+      'growth_min_one_value': 'Please enter at least one measurement',
+      'growth_record_complete': 'Growth Record Complete! 📈',
+
+      // === Play Activity Screen ===
+      'play_select_time': 'Please select activity and duration',
+      'play_record_complete': 'Play Record Complete! 🎮',
+      'play_track_developmental': 'Track developmental play activities',
+
+      // === Health Record Screen ===
+      'health_record_complete': 'Health Record Complete! 🏥',
+      'health_fever_warning': '🔥 High fever detected! Please consult a doctor.',
+
+      // === Common ===
+      'great_job': 'Great job! 👏',
+      'keep_it_up': 'Keep tracking!',
     },
     'ko': {
       // App Name
@@ -1589,11 +1636,66 @@ class AppLocalizations {
       'special_care_message': '낮은 출생 체중으로 태어난 아기들은 조금 더 세심한 관심과 케어가 필요합니다. 특화된 성장 모니터링과 맞춤형 수유 추천을 활성화하시겠어요?',
       'no_thanks': '괜찮아요',
       'enable_special_care': '네, 활성화할게요',
+
+      // === Post Record Feedback - Sleep ===
+      'sleep_record_complete': '수면 기록 완료! 😴',
+      'sleep_today_total': '⏱️ 오늘 총 수면: {hours}시간 {minutes}분',
+      'sleep_yesterday_diff_plus': '📈 어제보다 +{diff}분',
+      'sleep_yesterday_diff_minus': '📉 어제보다 {diff}분',
+      'sleep_this_record': '🎯 이번 기록: {minutes}분',
+
+      // === Post Record Feedback - Feeding ===
+      'feeding_record_complete': '수유 기록 완료! 🍼',
+      'feeding_today_count': '🍼 오늘 수유: {count}회',
+      'feeding_bottle_amount': '📊 {ml}ml ({oz}oz)',
+      'feeding_breast_both': '🤱 양쪽',
+      'feeding_breast_left': '🤱 왼쪽',
+      'feeding_breast_right': '🤱 오른쪽',
+
+      // === Post Record Feedback - Diaper ===
+      'diaper_record_complete': '기저귀 기록 완료! 🧷',
+      'diaper_today_count': '🧷 오늘 교체: {count}회',
+      'diaper_wet_only': '💧 소변만',
+      'diaper_dirty_only': '💩 대변만',
+      'diaper_both': '💧💩 둘 다',
+
+      // === Growth Record Screen ===
+      'growth_record': '성장',
+      'growth_record_title': '성장 기록',
+      'growth_record_subtitle': '아기의 키, 몸무게, 머리둘레를 기록하세요',
+      'growth_track_progress': '정기적으로 기록하여 성장 추이를 확인하세요',
+      'growth_weight_kg': '체중 (kg)',
+      'growth_height_cm': '키 (cm)',
+      'growth_head_cm': '머리둘레 (cm)',
+      'growth_save_record': '성장 기록 저장',
+      'growth_min_one_value': '최소 하나의 측정값을 입력해주세요',
+      'growth_record_complete': '성장 기록 완료! 📈',
+
+      // === Play Activity Screen ===
+      'play_select_time': '활동과 시간을 선택해주세요',
+      'play_record_complete': '놀이 기록 완료! 🎮',
+      'play_track_developmental': '발달 놀이 활동을 기록하세요',
+
+      // === Health Record Screen ===
+      'health_record_complete': '건강 기록 완료! 🏥',
+      'health_fever_warning': '🔥 고열이 감지되었습니다! 의사와 상담하세요.',
+
+      // === Common ===
+      'great_job': '잘했어요! 👏',
+      'keep_it_up': '계속 기록해요!',
     },
   };
 
   String translate(String key) {
     return _localizedValues[locale.languageCode]?[key] ?? key;
+  }
+
+  String translateWithArgs(String key, Map<String, dynamic> args) {
+    String result = _localizedValues[locale.languageCode]?[key] ?? key;
+    args.forEach((argKey, value) {
+      result = result.replaceAll('{$argKey}', value.toString());
+    });
+    return result;
   }
 
   // Alias for translate method (used by some screens)
