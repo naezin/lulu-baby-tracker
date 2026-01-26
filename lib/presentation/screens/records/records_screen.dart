@@ -697,6 +697,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
 
   /// 삭제 확인 다이얼로그
   Future<bool?> _showDeleteConfirmation(BuildContext context, ActivityModel activity) {
+    final l10n = AppLocalizations.of(context);
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -712,16 +713,16 @@ class _RecordsScreenState extends State<RecordsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text(
-              '취소',
-              style: TextStyle(color: AppTheme.textTertiary),
+            child: Text(
+              l10n.translate('cancel') ?? 'Cancel',
+              style: const TextStyle(color: AppTheme.textTertiary),
             ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              '삭제',
-              style: TextStyle(
+            child: Text(
+              l10n.translate('delete') ?? 'Delete',
+              style: const TextStyle(
                 color: AppTheme.errorSoft,
                 fontWeight: FontWeight.bold,
               ),

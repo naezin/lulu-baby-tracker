@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/localization/app_localizations.dart';
 
 /// ✅ Post-Record Feedback Dialog
 /// 기록 저장 후 보여주는 피드백 다이얼로그
@@ -42,6 +43,7 @@ class PostRecordFeedback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -117,7 +119,7 @@ class PostRecordFeedback extends StatelessWidget {
                 // Close Button
                 TextButton(
                   onPressed: onClose,
-                  child: const Text('닫기'),
+                  child: Text(l10n.translate('close') ?? 'Close'),
                 ),
               ],
             ),
