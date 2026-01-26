@@ -1,14 +1,19 @@
 import '../../domain/repositories/i_activity_repository.dart';
 import '../../domain/entities/activity_entity.dart';
 import '../../core/localization/app_localizations.dart';
+import './local_storage_service.dart';
+import '../models/activity_model.dart' as model;
 
-/// Service to calculate daily summary statistics (✅ Repository 패턴 적용 완료)
+/// Service to calculate daily summary statistics
+/// 🔧 TEMPORARY: LocalStorageService 직접 사용 (Repository와 Storage 불일치 해결)
 class DailySummaryService {
-  final IActivityRepository _activityRepository;
+  final IActivityRepository? _activityRepository;
+  final LocalStorageService _storage;
 
   DailySummaryService({
-    required IActivityRepository activityRepository,
-  }) : _activityRepository = activityRepository;
+    IActivityRepository? activityRepository,
+  })  : _activityRepository = activityRepository,
+        _storage = LocalStorageService();
 
   /// Get today's summary for a specific baby
   Future<DailySummary> getTodaysSummary(String babyId) async {
@@ -23,33 +28,92 @@ class DailySummaryService {
     print('   endOfDay: $endOfDay');
 
     try {
-      final activities = await _activityRepository.getActivities(
-        babyId: babyId,
-        startDate: startOfDay,
-        endDate: endOfDay,
-      );
+      // 🔧 TEMPORARY: LocalStorage에서 직접 가져오기
+      final allActivities = await _storage.getActivities();
+      print('   📦 Fetched ${allActivities.length} total activities from LocalStorage');
 
-      print('   📦 Fetched ${activities.length} activities from repository');
-
-      // Filter activities again in-memory to ensure timezone consistency
-      final todayActivities = activities.where((activity) {
-        final activityDate = activity.timestamp;
+      // 오늘 날짜로 필터링 (babyId는 ActivityModel에 없으므로 생략)
+      final todayActivities = allActivities.where((model) {
+        final activityDate = DateTime.parse(model.timestamp);
         final activityLocal = activityDate.isUtc ? activityDate.toLocal() : activityDate;
         return activityLocal.isAfter(startOfDay.subtract(const Duration(seconds: 1))) &&
                activityLocal.isBefore(endOfDay);
       }).toList();
 
-      print('   ✅ Filtered to ${todayActivities.length} activities for today');
+      print('   ✅ Filtered to ${todayActivities.length} activities for today: $startOfDay');
 
-      final summary = _calculateSummary(todayActivities);
+      final summary = _calculateSummaryFromModels(todayActivities);
       print('   📈 Summary: sleep=${summary.totalSleepMinutes}min, feeding=${summary.feedingCount}, diaper=${summary.diaperCount}');
 
       return summary;
-    } catch (e) {
+    } catch (e, stackTrace) {
       print('   ❌ Error: $e');
+      print('   Stack trace: $stackTrace');
       // Return empty summary on error
       return DailySummary.empty();
     }
+  }
+
+  /// Calculate summary from ActivityModel (LocalStorage)
+  DailySummary _calculateSummaryFromModels(List<model.ActivityModel> activities) {
+    int totalSleepMinutes = 0;
+    double totalFeedingMl = 0;
+    int feedingCount = 0;
+    int diaperCount = 0;
+    double? lastTemperature;
+    DateTime? lastTempTime;
+
+    // Previous day stats for comparison (mock data for now)
+    const prevSleepMinutes = 600.0; // 10 hours average
+    const prevFeedingMl = 800.0;
+    const prevDiaperCount = 8.0;
+
+    for (final activity in activities) {
+      switch (activity.type) {
+        case model.ActivityType.sleep:
+          if (activity.durationMinutes != null) {
+            totalSleepMinutes += activity.durationMinutes!;
+          }
+          break;
+        case model.ActivityType.feeding:
+          feedingCount++;
+          if (activity.amountMl != null) {
+            totalFeedingMl += activity.amountMl!;
+          }
+          break;
+        case model.ActivityType.diaper:
+          diaperCount++;
+          break;
+        case model.ActivityType.health:
+          if (activity.temperatureCelsius != null) {
+            final activityTime = DateTime.parse(activity.timestamp);
+            if (lastTempTime == null || activityTime.isAfter(lastTempTime)) {
+              lastTemperature = activity.temperatureCelsius;
+              lastTempTime = activityTime;
+            }
+          }
+          break;
+        default:
+          break;
+      }
+    }
+
+    return DailySummary(
+      totalSleepMinutes: totalSleepMinutes,
+      totalFeedingMl: totalFeedingMl,
+      feedingCount: feedingCount,
+      diaperCount: diaperCount,
+      lastTemperature: lastTemperature,
+      sleepTrend: _calculateTrend(totalSleepMinutes.toDouble(), prevSleepMinutes),
+      feedingTrend: _calculateTrend(totalFeedingMl, prevFeedingMl),
+      diaperTrend: _calculateTrend(diaperCount.toDouble(), prevDiaperCount),
+      insightMessage: _generateInsight(
+        totalSleepMinutes,
+        totalFeedingMl,
+        diaperCount,
+        lastTemperature,
+      ),
+    );
   }
 
   DailySummary _calculateSummary(List<ActivityEntity> activities) {
