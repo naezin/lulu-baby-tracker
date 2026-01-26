@@ -855,6 +855,10 @@ class AppLocalizations {
       'add_another_baby': 'Add Another Baby',
       'skip_for_now': 'Skip for now →',
       'add_baby_later_hint': 'You can also add babies later in settings',
+
+      // === Baby Switcher ===
+      'select_baby': 'Select Baby',
+      'add_baby': 'Add Baby',
     },
     'ko': {
       // App Name
@@ -1697,6 +1701,10 @@ class AppLocalizations {
       'add_another_baby': '아기 추가하기',
       'skip_for_now': '지금은 넘어갈게요 →',
       'add_baby_later_hint': '나중에 설정에서도 추가할 수 있어요',
+
+      // === Baby Switcher ===
+      'select_baby': '아기 선택',
+      'add_baby': '아기 추가',
     },
   };
 

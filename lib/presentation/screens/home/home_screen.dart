@@ -10,6 +10,7 @@ import '../../../data/models/activity_model.dart';
 import '../../../data/models/baby_model.dart';
 import '../../widgets/sweet_spot_hero_card.dart';
 import '../../widgets/quick_log_bar.dart';
+import '../../widgets/baby_switcher.dart';  // 🆕
 import '../../providers/sweet_spot_provider.dart';
 import '../../providers/home_data_provider.dart';
 import '../../providers/smart_coach_provider.dart';
@@ -73,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
     // 1. Load baby info via BabyProvider
     if (!babyProvider.hasBaby) {
-      await babyProvider.loadBabies();
+      await babyProvider.loadBabies('anonymous');  // 🔧 userId 추가 (임시)
     }
 
     final baby = babyProvider.currentBaby;
@@ -245,6 +246,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 letterSpacing: -0.5,
               ),
             ),
+            const SizedBox(width: 12),
+            // 🆕 Baby Switcher (다중 아기 시 표시)
+            const BabySwitcher(),
           ],
         ),
       ),
