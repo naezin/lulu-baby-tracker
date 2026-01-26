@@ -22,6 +22,7 @@ import 'presentation/screens/activities/log_feeding_screen.dart';
 import 'presentation/screens/activities/log_sleep_screen.dart';
 import 'presentation/screens/activities/log_diaper_screen.dart';
 import 'presentation/screens/chat/chat_screen.dart';
+import 'presentation/screens/baby/add_baby_screen.dart';  // 🆕
 import 'presentation/widgets/auth_wrapper.dart';
 
 // 🆕 Dependency Injection
@@ -242,6 +243,7 @@ class LuluApp extends StatelessWidget {
             // Routes
             routes: {
               '/chat': (context) => const ChatScreen(),
+              '/add-baby': (context) => const AddBabyScreen(),  // 🆕
             },
 
             // Home - AuthWrapper handles routing based on auth state

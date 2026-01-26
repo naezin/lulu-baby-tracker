@@ -39,6 +39,10 @@ class WidgetService {
       }
       print('✅ [WidgetService] Baby data loaded: ${baby.name}');
 
+      // 🆕 Save baby name for widget display
+      await HomeWidget.saveWidgetData('baby_name', baby.name);
+      await HomeWidget.saveWidgetData('baby_id', baby.id);
+
       final widgetData = await _getWidgetData(baby: baby);
       print('✅ [WidgetService] Widget data calculated');
 

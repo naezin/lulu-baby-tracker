@@ -859,6 +859,20 @@ class AppLocalizations {
       // === Baby Switcher ===
       'select_baby': 'Select Baby',
       'add_baby': 'Add Baby',
+
+      // === Add Baby Screen ===
+      'baby_name': 'Baby Name',
+      'baby_name_hint': 'Enter baby name',
+      'baby_name_required': 'Please enter baby name',
+      'birth_date': 'Birth Date',
+      'birth_weight': 'Birth Weight (kg)',
+      'gender': 'Gender',
+      'female': 'Girl',
+      'male': 'Boy',
+      'is_premature': 'Premature Baby',
+      'is_premature_hint': 'Born before 37 weeks',
+      'due_date': 'Due Date',
+      'save': 'Save',
     },
     'ko': {
       // App Name
@@ -1705,6 +1719,20 @@ class AppLocalizations {
       // === Baby Switcher ===
       'select_baby': '아기 선택',
       'add_baby': '아기 추가',
+
+      // === Add Baby Screen ===
+      'baby_name': '아기 이름',
+      'baby_name_hint': '아기 이름을 입력하세요',
+      'baby_name_required': '아기 이름을 입력해주세요',
+      'birth_date': '생년월일',
+      'birth_weight': '출생 시 체중 (kg)',
+      'gender': '성별',
+      'female': '여아',
+      'male': '남아',
+      'is_premature': '조산아',
+      'is_premature_hint': '37주 이전 출생',
+      'due_date': '출산 예정일',
+      'save': '저장',
     },
   };
 
