@@ -8,6 +8,7 @@ import '../../../data/services/widget_service.dart';
 import '../../providers/sweet_spot_provider.dart';
 import '../../providers/baby_provider.dart';
 import '../../providers/home_data_provider.dart';
+import '../../widgets/lulu_time_picker.dart';
 
 /// 활동 상세/수정/삭제 화면
 ///
@@ -719,15 +720,29 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            _formatDateTime(_selectedTime),
-                            style: const TextStyle(
-                              color: AppTheme.textPrimary,
-                              fontSize: 14,
-                            ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _formatTime(_selectedTime),
+                                style: const TextStyle(
+                                  color: AppTheme.textPrimary,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                _getRelativeTimeHint(_selectedTime),
+                                style: const TextStyle(
+                                  color: AppTheme.textTertiary,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
                           ),
                           const Icon(
-                            Icons.calendar_today,
+                            Icons.edit_rounded,
                             color: AppTheme.lavenderMist,
                             size: 20,
                           ),
@@ -760,15 +775,29 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              _formatDateTime(_selectedEndTime!),
-                              style: const TextStyle(
-                                color: AppTheme.textPrimary,
-                                fontSize: 14,
-                              ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _formatTime(_selectedEndTime!),
+                                  style: const TextStyle(
+                                    color: AppTheme.textPrimary,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  _getRelativeTimeHint(_selectedEndTime!),
+                                  style: const TextStyle(
+                                    color: AppTheme.textTertiary,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
                             ),
                             const Icon(
-                              Icons.calendar_today,
+                              Icons.edit_rounded,
                               color: AppTheme.lavenderMist,
                               size: 20,
                             ),
@@ -1004,64 +1033,54 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
 
   // === Helper Methods ===
 
+  /// 시간 선택 (LuluTimePicker v2.0)
   Future<void> _pickDateTime({required bool isStartTime}) async {
-    final initialDate = isStartTime ? _selectedTime : (_selectedEndTime ?? _selectedTime);
+    final initialTime = isStartTime
+      ? _selectedTime
+      : (_selectedEndTime ?? _selectedTime);
 
-    final date = await showDatePicker(
+    final selectedTime = await LuluTimePicker.show(
       context: context,
-      initialDate: initialDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-      builder: (context, child) {
-        return Theme(
-          data: ThemeData.dark().copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: AppTheme.lavenderMist,
-              surface: AppTheme.surfaceDark,
-            ),
-          ),
-          child: child!,
-        );
-      },
+      initialTime: initialTime,
+      dateRangeDays: 7,
+      allowFutureTime: false,
     );
 
-    if (date == null) return;
-
-    if (!context.mounted) return;
-
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(initialDate),
-      builder: (context, child) {
-        return Theme(
-          data: ThemeData.dark().copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: AppTheme.lavenderMist,
-              surface: AppTheme.surfaceDark,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (time == null) return;
-
-    final newDateTime = DateTime(
-      date.year,
-      date.month,
-      date.day,
-      time.hour,
-      time.minute,
-    );
+    if (selectedTime == null) return;
 
     setState(() {
       if (isStartTime) {
-        _selectedTime = newDateTime;
+        _selectedTime = selectedTime;
       } else {
-        _selectedEndTime = newDateTime;
+        _selectedEndTime = selectedTime;
       }
     });
+  }
+
+  /// 상대 시간 힌트 텍스트 ("11분 전")
+  String _getRelativeTimeHint(DateTime time) {
+    final now = DateTime.now();
+    final diff = now.difference(time);
+
+    if (diff.inMinutes.abs() < 1) {
+      return '(방금)';
+    } else if (diff.inMinutes > 0 && diff.inMinutes < 60) {
+      return '(${diff.inMinutes}분 전)';
+    } else if (diff.inMinutes < 0 && diff.inMinutes > -60) {
+      return '(${diff.inMinutes.abs()}분 후)';
+    } else if (diff.inHours > 0 && diff.inHours < 24) {
+      return '(${diff.inHours}시간 전)';
+    } else if (diff.inHours < 0 && diff.inHours > -24) {
+      return '(${diff.inHours.abs()}시간 후)';
+    } else if (diff.inDays > 0) {
+      return '(${diff.inDays}일 전)';
+    }
+    return '';
+  }
+
+  /// 시간 포맷팅 ("07:30")
+  String _formatTime(DateTime time) {
+    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
   }
 
   Future<void> _endOngoingSleep() async {
