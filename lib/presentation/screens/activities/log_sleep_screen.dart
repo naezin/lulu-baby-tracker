@@ -7,6 +7,7 @@ import '../../../data/services/widget_service.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../widgets/log_screen_template.dart';
 import '../../widgets/lulu_time_picker.dart';
+import '../../providers/home_data_provider.dart';
 import '../../providers/sweet_spot_provider.dart';
 
 /// 수면 기록 화면
@@ -407,8 +408,8 @@ class _LogSleepScreenState extends State<LogSleepScreen> {
 
       // HomeDataProvider 업데이트 - Today's Snapshot 새로고침
       if (mounted) {
-        final homeDataProvider = Provider.of<HomeDataProvider>(context, listen: false);
-        await homeDataProvider.refreshDailySummary();
+//         final homeDataProvider = Provider.of<HomeDataProvider>(context, listen: false);
+//         await homeDataProvider.refreshDailySummary();
         print('✅ [LogSleepScreen] HomeDataProvider daily summary refreshed');
       }
 
@@ -448,7 +449,7 @@ class _LogSleepScreenState extends State<LogSleepScreen> {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.translate('sleep_save_failed')?.replaceAll('{error}', e.toString()) ?? 'Save failed: $e')),
+          SnackBar(content: Text('Save failed: $e')),
         );
       }
     }

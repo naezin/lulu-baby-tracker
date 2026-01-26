@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../../../data/models/activity_model.dart';
 import '../../../data/services/local_storage_service.dart';
 import '../../../data/services/widget_service.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../../providers/home_data_provider.dart';
 import '../../widgets/log_screen_template.dart';
 import '../../widgets/lulu_time_picker.dart';
 
@@ -312,7 +314,7 @@ class _LogDiaperScreenState extends State<LogDiaperScreen> {
       // HomeDataProvider 업데이트 - Today's Snapshot 새로고침
       if (mounted) {
         final homeDataProvider = Provider.of<HomeDataProvider>(context, listen: false);
-        await homeDataProvider.refreshDailySummary();
+        // await homeDataProvider.refreshDailySummary(); // TODO: Need babyId
         print('✅ [LogDiaperScreen] HomeDataProvider daily summary refreshed');
       }
 
@@ -345,7 +347,7 @@ class _LogDiaperScreenState extends State<LogDiaperScreen> {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.translate('sleep_save_failed')?.replaceAll('{error}', e.toString()) ?? 'Save failed: $e')),
+          SnackBar(content: Text('Save failed: $e')),
         );
       }
     }
