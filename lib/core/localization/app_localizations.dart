@@ -874,6 +874,10 @@ class AppLocalizations {
       'sleep_first_record': 'First sleep record!',
       'sleep_time_ago_minutes': '{minutes} min ago',
       'sleep_time_ago_hours': '{hours}h {minutes}m ago',
+      'sleep_recommended_wake_time': 'Recommended wake time: 1 hour 30 min',
+      'sleep_total_duration': 'Total sleep time: {hours} hr {minutes} min',
+      'sleep_in_progress_label': 'in progress',
+      'sleep_save_failed': 'Save failed: {error}',
 
       // ============================================
       // SLEEP POST RECORD FEEDBACK
@@ -886,6 +890,7 @@ class AppLocalizations {
       'amount_ml': 'Amount (ml)',
       'duration_minutes': 'Duration (minutes)',
       'feeding_first_record': 'First feeding record!',
+      'feeding_recommended_interval': 'Recommended interval: 2-3 hours',
 
       // ============================================
       // FEEDING POST RECORD FEEDBACK
@@ -896,6 +901,7 @@ class AppLocalizations {
       // ============================================
       'diaper_last_change': 'Last change: {time} ago',
       'diaper_first_record': 'First diaper record!',
+      'diaper_recommended_interval': 'Recommended change interval: 2-3 hours',
 
       // ============================================
       // DIAPER POST RECORD FEEDBACK
@@ -925,6 +931,7 @@ class AppLocalizations {
       // HEALTH - MEDICATION SCREEN
       // ============================================
       'medication_record_info': 'Record medication given',
+      'medication_record_complete': 'Medication Record Complete!',
 
       // ============================================
       // HEALTH - GROWTH SCREEN
@@ -1799,6 +1806,10 @@ class AppLocalizations {
       'sleep_first_record': '첫 수면 기록!',
       'sleep_time_ago_minutes': '{minutes}분 전',
       'sleep_time_ago_hours': '{hours}시간 {minutes}분 전',
+      'sleep_recommended_wake_time': '권장 기상 시간: 1시간 30분',
+      'sleep_total_duration': '총 수면 시간: {hours}시간 {minutes}분',
+      'sleep_in_progress_label': '진행 중',
+      'sleep_save_failed': '저장 실패: {error}',
 
       // ============================================
       // SLEEP POST RECORD FEEDBACK
@@ -1811,6 +1822,7 @@ class AppLocalizations {
       'amount_ml': '양 (ml)',
       'duration_minutes': '시간 (분)',
       'feeding_first_record': '첫 수유 기록!',
+      'feeding_recommended_interval': '권장 간격: 2-3시간',
 
       // ============================================
       // FEEDING POST RECORD FEEDBACK
@@ -1821,6 +1833,7 @@ class AppLocalizations {
       // ============================================
       'diaper_last_change': '마지막 교체: {time} 전',
       'diaper_first_record': '첫 기저귀 기록!',
+      'diaper_recommended_interval': '권장 교체 간격: 2-3시간',
 
       // ============================================
       // DIAPER POST RECORD FEEDBACK
@@ -1850,6 +1863,7 @@ class AppLocalizations {
       // HEALTH - MEDICATION SCREEN
       // ============================================
       'medication_record_info': '복용한 약을 기록하세요',
+      'medication_record_complete': '투약 기록 완료!',
 
       // ============================================
       // HEALTH - GROWTH SCREEN
