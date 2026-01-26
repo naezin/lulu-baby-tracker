@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../data/models/play_activity_model.dart';
@@ -7,6 +8,7 @@ import '../../../data/services/local_storage_service.dart';
 import '../../../data/services/widget_service.dart';
 import '../../widgets/log_screen_template.dart';
 import '../../widgets/lulu_time_picker.dart';
+import '../../providers/baby_provider.dart';
 
 /// 놀이 활동 기록 화면
 class LogPlayScreen extends StatefulWidget {
@@ -398,8 +400,12 @@ class _LogPlayScreenState extends State<LogPlayScreen> {
     setState(() => _isLoading = true);
 
     try {
+      final babyProvider = Provider.of<BabyProvider>(context, listen: false);
+      final babyId = babyProvider.currentBaby?.id ?? 'unknown';
+
       final activity = ActivityModel.play(
         id: const Uuid().v4(),
+        babyId: babyId,
         startTime: _startTime,
         endTime: _startTime.add(Duration(minutes: _durationMinutes!)),
         durationMinutes: _durationMinutes,

@@ -9,6 +9,7 @@ import '../../widgets/log_screen_template.dart';
 import '../../widgets/lulu_time_picker.dart';
 import '../../providers/home_data_provider.dart';
 import '../../providers/sweet_spot_provider.dart';
+import '../../providers/baby_provider.dart';
 
 /// 수면 기록 화면
 class LogSleepScreen extends StatefulWidget {
@@ -385,8 +386,12 @@ class _LogSleepScreenState extends State<LogSleepScreen> {
     setState(() => _isLoading = true);
 
     try {
+      final babyProvider = Provider.of<BabyProvider>(context, listen: false);
+      final babyId = babyProvider.currentBaby?.id ?? 'unknown';
+
       final activity = ActivityModel.sleep(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
+        babyId: babyId,
         startTime: _startTime,
         endTime: _endTime,
         location: _location,

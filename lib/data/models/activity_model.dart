@@ -12,6 +12,7 @@ enum ActivityType {
 /// 활동 기록 모델
 class ActivityModel {
   final String id;
+  final String babyId; // 🆕 다중 아기 지원을 위한 babyId
   final ActivityType type;
   final String timestamp; // ISO 8601 format
   final String? endTime; // 종료 시간 (수면, 놀이 등)
@@ -49,6 +50,7 @@ class ActivityModel {
 
   ActivityModel({
     required this.id,
+    required this.babyId, // 🆕
     required this.type,
     required this.timestamp,
     this.endTime,
@@ -78,6 +80,7 @@ class ActivityModel {
   factory ActivityModel.fromJson(Map<String, dynamic> json) {
     return ActivityModel(
       id: json['id'] as String,
+      babyId: json['babyId'] as String, // 🆕
       type: ActivityType.values.firstWhere(
         (e) => e.toString() == 'ActivityType.${json['type']}',
       ),
@@ -114,6 +117,7 @@ class ActivityModel {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'babyId': babyId, // 🆕
       'type': type.toString().split('.').last,
       'timestamp': timestamp,
       'endTime': endTime,
@@ -144,6 +148,7 @@ class ActivityModel {
   /// Sleep 활동 생성
   factory ActivityModel.sleep({
     required String id,
+    required String babyId, // 🆕
     required DateTime startTime,
     DateTime? endTime,
     String? location,
@@ -154,6 +159,7 @@ class ActivityModel {
 
     return ActivityModel(
       id: id,
+      babyId: babyId, // 🆕
       type: ActivityType.sleep,
       timestamp: startTime.toIso8601String(),
       endTime: endTime?.toIso8601String(),
@@ -167,6 +173,7 @@ class ActivityModel {
   /// Feeding 활동 생성
   factory ActivityModel.feeding({
     required String id,
+    required String babyId, // 🆕
     required DateTime time,
     required String feedingType,
     double? amountMl,
@@ -176,6 +183,7 @@ class ActivityModel {
   }) {
     return ActivityModel(
       id: id,
+      babyId: babyId, // 🆕
       type: ActivityType.feeding,
       timestamp: time.toIso8601String(),
       feedingType: feedingType,
@@ -189,12 +197,14 @@ class ActivityModel {
   /// Diaper 활동 생성
   factory ActivityModel.diaper({
     required String id,
+    required String babyId, // 🆕
     required DateTime time,
     required String diaperType,
     String? notes,
   }) {
     return ActivityModel(
       id: id,
+      babyId: babyId, // 🆕
       type: ActivityType.diaper,
       timestamp: time.toIso8601String(),
       diaperType: diaperType,
@@ -205,6 +215,7 @@ class ActivityModel {
   /// Play 활동 생성
   factory ActivityModel.play({
     required String id,
+    required String babyId, // 🆕
     required DateTime startTime,
     DateTime? endTime,
     int? durationMinutes,
@@ -214,6 +225,7 @@ class ActivityModel {
   }) {
     return ActivityModel(
       id: id,
+      babyId: babyId, // 🆕
       type: ActivityType.play,
       timestamp: startTime.toIso8601String(),
       endTime: endTime?.toIso8601String(),
@@ -227,6 +239,7 @@ class ActivityModel {
   /// Temperature 기록 생성
   factory ActivityModel.temperature({
     required String id,
+    required String babyId, // 🆕
     required DateTime time,
     required double temperature,
     required String unit, // 'celsius' or 'fahrenheit'
@@ -234,6 +247,7 @@ class ActivityModel {
   }) {
     return ActivityModel(
       id: id,
+      babyId: babyId, // 🆕
       type: ActivityType.health,
       timestamp: time.toIso8601String(),
       temperatureCelsius: unit == 'celsius'
@@ -247,6 +261,7 @@ class ActivityModel {
   /// Medication 기록 생성
   factory ActivityModel.medication({
     required String id,
+    required String babyId, // 🆕
     required DateTime time,
     required String medicationType,
     String? medicationName,
@@ -262,6 +277,7 @@ class ActivityModel {
 
     return ActivityModel(
       id: id,
+      babyId: babyId, // 🆕
       type: ActivityType.health,
       timestamp: time.toIso8601String(),
       medicationType: medicationType,
@@ -274,9 +290,13 @@ class ActivityModel {
   }
 
   /// Entity → Model 변환
-  factory ActivityModel.fromEntity(entity.ActivityEntity entityObj) {
+  factory ActivityModel.fromEntity(
+    entity.ActivityEntity entityObj, {
+    required String babyId, // 🆕 Entity에는 babyId가 없으므로 명시적으로 받음
+  }) {
     return ActivityModel(
       id: entityObj.id,
+      babyId: babyId, // 🆕
       type: _entityTypeToModel(entityObj.type),
       timestamp: entityObj.timestamp.toIso8601String(),
       endTime: entityObj.endTime?.toIso8601String(),

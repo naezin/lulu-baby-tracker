@@ -32,15 +32,19 @@ class DailySummaryService {
       final allActivities = await _storage.getActivities();
       print('   📦 Fetched ${allActivities.length} total activities from LocalStorage');
 
-      // 오늘 날짜로 필터링 (babyId는 ActivityModel에 없으므로 생략)
+      // ✅ babyId와 오늘 날짜로 필터링
       final todayActivities = allActivities.where((model) {
+        // babyId 확인
+        if (model.babyId != babyId) return false;
+
+        // 오늘 날짜 확인
         final activityDate = DateTime.parse(model.timestamp);
         final activityLocal = activityDate.isUtc ? activityDate.toLocal() : activityDate;
         return activityLocal.isAfter(startOfDay.subtract(const Duration(seconds: 1))) &&
                activityLocal.isBefore(endOfDay);
       }).toList();
 
-      print('   ✅ Filtered to ${todayActivities.length} activities for today: $startOfDay');
+      print('   ✅ Filtered to ${todayActivities.length} activities for babyId=$babyId, today: $startOfDay');
 
       final summary = _calculateSummaryFromModels(todayActivities);
       print('   📈 Summary: sleep=${summary.totalSleepMinutes}min, feeding=${summary.feedingCount}, diaper=${summary.diaperCount}');

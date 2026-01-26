@@ -333,8 +333,12 @@ class _LogFeedingScreenState extends State<LogFeedingScreen> {
     setState(() => _isLoading = true);
 
     try {
+      final babyProvider = Provider.of<BabyProvider>(context, listen: false);
+      final babyId = babyProvider.currentBaby?.id ?? 'unknown';
+
       final activity = ActivityModel.feeding(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
+        babyId: babyId,
         time: _feedingTime,
         feedingType: _feedingType,
         amountMl: _feedingType != 'breast' ? _amountMl : null,

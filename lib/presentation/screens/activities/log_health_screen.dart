@@ -1175,8 +1175,13 @@ class _GrowthTabState extends State<_GrowthTab> {
           .collection('activities')
           .doc();
 
+      // 🆕 현재 아기 ID 가져오기
+      final babyProvider = Provider.of<BabyProvider>(context, listen: false);
+      final babyId = babyProvider.currentBaby?.id ?? 'unknown';
+
       final activity = ActivityModel(
         id: docRef.id,
+        babyId: babyId, // 🆕
         type: ActivityType.health,
         timestamp: _selectedTime.toIso8601String(),
         weightKg: _weightController.text.isNotEmpty

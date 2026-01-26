@@ -300,8 +300,12 @@ class _LogDiaperScreenState extends State<LogDiaperScreen> {
     setState(() => _isLoading = true);
 
     try {
+      final babyProvider = Provider.of<BabyProvider>(context, listen: false);
+      final babyId = babyProvider.currentBaby?.id ?? 'unknown';
+
       final activity = ActivityModel.diaper(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
+        babyId: babyId,
         time: _diaperTime,
         diaperType: _diaperType,
         notes: _notesController.text.trim().isEmpty

@@ -31,7 +31,33 @@ class LocalStorageService {
     if (jsonString == null) return [];
 
     final List<dynamic> jsonList = jsonDecode(jsonString);
-    return jsonList.map((json) => ActivityModel.fromJson(json)).toList();
+
+    // 🔧 기존 데이터 마이그레이션: babyId가 없는 활동에 현재 아기 ID 추가
+    final baby = await getBaby();
+    final defaultBabyId = baby?.id ?? 'unknown';
+
+    final activities = jsonList.map((json) {
+      // babyId가 없으면 기본값 추가
+      if (json['babyId'] == null) {
+        json['babyId'] = defaultBabyId;
+      }
+      return ActivityModel.fromJson(json);
+    }).toList();
+
+    // 마이그레이션된 데이터 저장
+    if (jsonList.any((json) => json['babyId'] == null)) {
+      await _saveAllActivities(activities);
+      print('✅ [LocalStorage] Migrated ${activities.length} activities with babyId');
+    }
+
+    return activities;
+  }
+
+  /// 모든 활동을 한번에 저장 (내부 헬퍼)
+  Future<void> _saveAllActivities(List<ActivityModel> activities) async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonList = activities.map((a) => a.toJson()).toList();
+    await prefs.setString(_activitiesKey, jsonEncode(jsonList));
   }
 
   /// 특정 날짜의 활동 가져오기
