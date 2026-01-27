@@ -33,6 +33,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
 
   bool _isLoading = true;
   String _selectedPeriod = 'week'; // week, month
+  String? _errorMessage; // ✅ 에러 메시지 상태 추가
 
   // 분석 데이터
   WeeklySleepInsight? _sleepInsight;
@@ -42,7 +43,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   String? _highlightMessage;
 
   BabyModel? _baby;
-  int _babyAgeInDays = 72; // 기본값
+  int? _babyAgeInDays; // ✅ nullable로 변경, 기본값 제거
   double? _birthWeight; // 출생 체중 (저체중아 판단용)
   double? _currentWeight; // 최신 체중 (건강 기록에서)
 
@@ -69,11 +70,19 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       final babyProvider = Provider.of<BabyProvider>(context, listen: false);
       _baby = babyProvider.currentBaby;
 
-      if (_baby != null) {
-        final birthDate = DateTime.parse(_baby!.birthDate);
-        _babyAgeInDays = DateTime.now().difference(birthDate).inDays;
-        _birthWeight = _baby!.birthWeightKg;
+      // ✅ 아기가 없으면 분석 불가 상태로 처리
+      if (_baby == null) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'no_baby_registered'; // i18n key
+        });
+        return;
       }
+
+      // ✅ 실제 아기 나이 계산
+      final birthDate = DateTime.parse(_baby!.birthDate);
+      _babyAgeInDays = DateTime.now().difference(birthDate).inDays;
+      _birthWeight = _baby!.birthWeightKg;
 
       // 활동 데이터 로드 (현재 아기만 필터링)
       final allActivities = await _storage.getActivities();
@@ -111,7 +120,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       _sleepInsight = _insightGenerator.generateSleepInsight(
         activities: filteredActivities,
         prevActivities: prevActivities,
-        babyAgeInDays: _babyAgeInDays,
+        babyAgeInDays: _babyAgeInDays ?? 0, // ✅ null이면 0 (Empty State가 이미 처리됨)
       );
 
       _feedingInsight = _insightGenerator.generateFeedingInsight(
@@ -123,7 +132,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       _wakeUpInsight = _insightGenerator.generateWakeUpInsight(
         activities: filteredActivities,
         prevActivities: prevActivities,
-        babyAgeInDays: _babyAgeInDays,
+        babyAgeInDays: _babyAgeInDays ?? 0, // ✅ null이면 0 (Empty State가 이미 처리됨)
       );
 
       _patternInsight = _insightGenerator.generatePatternInsight(
@@ -411,7 +420,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
           current: _sleepInsight!.avgMinutes.toDouble(),
           min: _sleepInsight!.recommendedMinMinutes.toDouble(),
           max: _sleepInsight!.recommendedMaxMinutes.toDouble(),
-          label: '${_babyAgeInDays ~/ 30}개월 아기 권장',
+          label: '${(_babyAgeInDays ?? 0) ~/ 30}개월 아기 권장',
         ),
         const SizedBox(height: 12),
         _buildActionButton(
@@ -451,7 +460,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
         ),
         const SizedBox(height: 4),
         Text(
-          '또래 ${_babyAgeInDays ~/ 30}개월 아기들은 평균 ${_wakeUpInsight!.peerAvgCount.toStringAsFixed(1)}번 깨요',
+          '또래 ${(_babyAgeInDays ?? 0) ~/ 30}개월 아기들은 평균 ${_wakeUpInsight!.peerAvgCount.toStringAsFixed(1)}번 깨요',
           style: const TextStyle(
             color: AppTheme.textTertiary,
             fontSize: 13,

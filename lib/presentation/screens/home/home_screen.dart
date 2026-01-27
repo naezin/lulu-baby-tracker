@@ -410,7 +410,19 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   Widget _buildTodaySummarySection(BuildContext context, AppLocalizations l10n) {
     final storage = LocalStorageService();
-    const ageInDays = 72; // Baby's age
+
+    // ✅ BabyProvider에서 현재 아기 정보 가져오기
+    final babyProvider = Provider.of<BabyProvider>(context, listen: false);
+    final baby = babyProvider.currentBaby;
+
+    // ✅ 아기가 없으면 기본값 대신 Empty State 표시
+    if (baby == null) {
+      return _buildEmptyState(context, l10n);
+    }
+
+    // ✅ 실제 아기 나이 계산
+    final birthDate = DateTime.parse(baby.birthDate);
+    final ageInDays = DateTime.now().difference(birthDate).inDays;
 
     return FutureBuilder<Map<String, dynamic>>(
       future: _getPredictiveData(storage, ageInDays),
@@ -1191,7 +1203,20 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       if (feedingActivities.isNotEmpty) {
         final lastFeeding = feedingActivities.first;
         final lastFeedTime = DateTime.parse(lastFeeding.timestamp);
-        final amountMl = lastFeeding.amountMl ?? 135.0; // Default for 72 days
+
+        // ✅ Option B: calculateNextFeedingTime()을 통해 나이별 권장량 가져오기
+        double amountMl;
+        if (lastFeeding.amountMl != null) {
+          amountMl = lastFeeding.amountMl!;
+        } else {
+          // amountMl이 null일 때만 예측값 사용 (나이별 권장량)
+          final tempPrediction = FeedingIntervalCalculator.calculateNextFeedingTime(
+            lastFeedingTime: lastFeedTime,
+            lastFeedingAmountMl: 0, // null이면 0으로 전달
+            ageInDays: ageInDays,
+          );
+          amountMl = tempPrediction.recommendedAmountMl; // ← 나이별 권장량!
+        }
 
         feedingPrediction = FeedingIntervalCalculator.calculateNextFeedingTime(
           lastFeedingTime: lastFeedTime,

@@ -24,7 +24,7 @@ class _BabySetupScreenState extends State<BabySetupScreen> {
   final _nameController = TextEditingController();
   final _weightController = TextEditingController();
 
-  DateTime _birthDate = DateTime.now().subtract(const Duration(days: 72));
+  DateTime _birthDate = DateTime.now(); // ✅ 오늘 날짜로 초기화 (사용자가 의도적으로 선택하도록 유도)
   String _gender = 'female';
   bool _isLowBirthWeight = false;
   bool _showSpecialCarePrompt = false;
@@ -832,7 +832,7 @@ class _BabySetupScreenState extends State<BabySetupScreen> {
     // 현재 입력 필드 초기화
     _nameController.clear();
     _weightController.clear();
-    _birthDate = DateTime.now().subtract(const Duration(days: 72));
+    _birthDate = DateTime.now(); // ✅ 오늘 날짜로 리셋
     _gender = 'female';
     _isLowBirthWeight = false;
     _showSpecialCarePrompt = false;

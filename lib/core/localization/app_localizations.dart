@@ -459,7 +459,7 @@ class AppLocalizations {
       'pattern_analysis': 'Pattern Analysis',
       'ai_sleep_insight': 'AI Sleep Insight',
       'sleep_longer_this_week': 'This week, your baby slept 30 minutes longer on average! 🎉',
-      'nap_deepest_time': 'Your baby tends to nap deepest between 2-4 PM. At 72 days old (about 2 months), babies are learning to distinguish day from night. Try dimming lights after 7 PM to support this development.',
+      'nap_deepest_time': 'Your baby tends to nap deepest between 2-4 PM. In the early months, babies are learning to distinguish day from night. Try dimming lights after 7 PM to support this development.',
       'developmental_stage': 'Developmental Stage: 2 months',
       'consistency_score': 'Consistency Score',
       'eat': 'Eat',
@@ -577,6 +577,14 @@ class AppLocalizations {
       // Insights Screen (insights_screen_old.dart)
       'empty_state_no_data_yet': 'No Data Yet',
       'empty_state_start_tracking_insights': 'Start tracking activities to see insights',
+
+      // ✅ Analysis Screen Empty State (v1.2 추가)
+      'analysis_no_baby_title': 'No Baby Registered',
+      'analysis_no_baby_subtitle': 'Please complete onboarding to see your baby\'s analysis',
+      'start_onboarding': 'Get Started',
+      'no_baby_data': 'No baby data available',
+      'no_baby_registered': 'No baby registered',
+
       'insights_card_title_avg_sleep': 'Avg Sleep',
       'insights_card_title_feedings': 'Feedings',
       'insights_card_title_diapers': 'Diapers',
@@ -1509,6 +1517,14 @@ class AppLocalizations {
       // Insights Screen (insights_screen_old.dart)
       'empty_state_no_data_yet': '아직 데이터 없음',
       'empty_state_start_tracking_insights': '활동을 기록하여 인사이트를 확인하세요',
+
+      // ✅ Analysis Screen Empty State (v1.2 추가)
+      'analysis_no_baby_title': '등록된 아기가 없어요',
+      'analysis_no_baby_subtitle': '온보딩을 완료하면 아기의 분석 결과를 볼 수 있어요',
+      'start_onboarding': '시작하기',
+      'no_baby_data': '아기 정보가 없습니다',
+      'no_baby_registered': '등록된 아기가 없습니다',
+
       'insights_card_title_avg_sleep': '평균 수면',
       'insights_card_title_feedings': '수유',
       'insights_card_title_diapers': '기저귀',

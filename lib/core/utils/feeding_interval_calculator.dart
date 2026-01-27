@@ -4,10 +4,11 @@
 class FeedingIntervalCalculator {
   /// Calculate next feeding time based on last feeding details
   ///
-  /// For 72-day-old babies:
+  /// For 2-3 month babies (e.g., 60-90 days):
   /// - Small feeding (< 100ml): 3 hours interval
   /// - Medium feeding (100-150ml): 3.5 hours interval
   /// - Large feeding (> 150ml): 4 hours interval
+  /// Note: Actual amount varies based on baby's age and weight
   static FeedingPrediction calculateNextFeedingTime({
     required DateTime lastFeedingTime,
     required double lastFeedingAmountMl,

@@ -4,7 +4,11 @@
 class WakeWindowCalculator {
   /// Calculate next sweet spot time based on last wake time and baby's age
   ///
-  /// For 72-day-old babies (2-3 months), standard wake window is 80-90 minutes
+  /// Wake window varies by age:
+  /// - 0-1 month: 45-60 min
+  /// - 2-3 months: 75-105 min
+  /// - 4-6 months: 105-150 min
+  /// - 6-9 months: 120-210 min
   static WakeWindowPrediction calculateNextSleepTime({
     required DateTime lastWakeTime,
     required int ageInDays,
