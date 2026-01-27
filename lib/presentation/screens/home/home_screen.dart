@@ -15,6 +15,7 @@ import '../../providers/sweet_spot_provider.dart';
 import '../../providers/home_data_provider.dart';
 import '../../providers/smart_coach_provider.dart';
 import '../../providers/baby_provider.dart';
+import '../../providers/feed_sleep_provider.dart';
 import '../../widgets/smart_coach/today_timeline_section.dart';
 import '../activities/log_sleep_screen.dart';
 import '../activities/log_feeding_screen.dart';
@@ -70,6 +71,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     final sweetSpotProvider = Provider.of<SweetSpotProvider>(context, listen: false);
     final homeDataProvider = Provider.of<HomeDataProvider>(context, listen: false);
     final smartCoachProvider = Provider.of<SmartCoachProvider>(context, listen: false);
+    final feedSleepProvider = Provider.of<FeedSleepProvider>(context, listen: false);
     final l10n = AppLocalizations.of(context);
     final isKorean = l10n.locale.languageCode == 'ko';
 
@@ -164,6 +166,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       isKorean: isKorean,
     );
     print('✅ [HomeScreen] SmartCoachProvider initialized');
+
+    // 6. 🌙 Initialize FeedSleepProvider (막수-밤잠 상관관계 분석)
+    if (!feedSleepProvider.hasData) {
+      await feedSleepProvider.analyze(babyId: baby.id);
+      print('✅ [HomeScreen] FeedSleepProvider initialized - hasData: ${feedSleepProvider.hasData}');
+    }
   }
 
   @override

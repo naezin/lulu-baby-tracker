@@ -10,13 +10,123 @@ import '../../../data/services/widget_service.dart';
 import '../../providers/baby_provider.dart';
 import '../../providers/home_data_provider.dart';
 import '../../providers/sweet_spot_provider.dart';
-import '../../utils/snackbar_utils.dart';
+import '../../providers/feed_sleep_provider.dart';
+import '../../widgets/records/feed_sleep_correlation_card.dart';
 import '../activities/log_sleep_screen.dart';
 import '../activities/log_feeding_screen.dart';
 import '../activities/log_diaper_screen.dart';
 import '../activities/log_play_screen.dart';
 import '../activities/log_health_screen.dart';
 import 'activity_detail_screen.dart';
+
+/// 날짜 범위 필터
+enum DateRangeFilter {
+  today,
+  week,
+  month,
+  all,
+}
+
+/// 정렬 순서
+enum SortOrder {
+  newest,  // 최신순 (기본)
+  oldest,  // 오래된순
+}
+
+/// 활동 타입 필터
+enum ActivityTypeFilter {
+  all,      // 전체
+  sleep,    // 수면
+  feeding,  // 수유
+  diaper,   // 기저귀
+  play,     // 놀이
+  health,   // 건강
+}
+
+extension ActivityTypeFilterExtension on ActivityTypeFilter {
+  String getLabel(bool isKorean) {
+    switch (this) {
+      case ActivityTypeFilter.all:
+        return isKorean ? '전체' : 'All';
+      case ActivityTypeFilter.sleep:
+        return isKorean ? '수면' : 'Sleep';
+      case ActivityTypeFilter.feeding:
+        return isKorean ? '수유' : 'Feeding';
+      case ActivityTypeFilter.diaper:
+        return isKorean ? '기저귀' : 'Diaper';
+      case ActivityTypeFilter.play:
+        return isKorean ? '놀이' : 'Play';
+      case ActivityTypeFilter.health:
+        return isKorean ? '건강' : 'Health';
+    }
+  }
+
+  String getEmoji() {
+    switch (this) {
+      case ActivityTypeFilter.all:
+        return '📋';
+      case ActivityTypeFilter.sleep:
+        return '😴';
+      case ActivityTypeFilter.feeding:
+        return '🍼';
+      case ActivityTypeFilter.diaper:
+        return '🧷';
+      case ActivityTypeFilter.play:
+        return '🎮';
+      case ActivityTypeFilter.health:
+        return '🏥';
+    }
+  }
+
+  ActivityType? toActivityType() {
+    switch (this) {
+      case ActivityTypeFilter.all:
+        return null;
+      case ActivityTypeFilter.sleep:
+        return ActivityType.sleep;
+      case ActivityTypeFilter.feeding:
+        return ActivityType.feeding;
+      case ActivityTypeFilter.diaper:
+        return ActivityType.diaper;
+      case ActivityTypeFilter.play:
+        return ActivityType.play;
+      case ActivityTypeFilter.health:
+        return ActivityType.health;
+    }
+  }
+}
+
+extension DateRangeFilterExtension on DateRangeFilter {
+  String getLabel(bool isKorean) {
+    switch (this) {
+      case DateRangeFilter.today:
+        return isKorean ? '오늘' : 'Today';
+      case DateRangeFilter.week:
+        return isKorean ? '7일' : '7 Days';
+      case DateRangeFilter.month:
+        return isKorean ? '30일' : '30 Days';
+      case DateRangeFilter.all:
+        return isKorean ? '전체' : 'All';
+    }
+  }
+
+  /// 시작 날짜 계산 (null이면 전체)
+  DateTime? getStartDate() {
+    final DateTime now = DateTime.now();
+    final DateTime today = DateTime(now.year, now.month, now.day);
+
+    switch (this) {
+      case DateRangeFilter.today:
+        return today;
+      case DateRangeFilter.week:
+        return today.subtract(const Duration(days: 7));
+      case DateRangeFilter.month:
+        return today.subtract(const Duration(days: 30));
+      case DateRangeFilter.all:
+        return null;
+    }
+  }
+}
 
 /// 📝 Records V2 - 원탭 기록 화면
 /// 핵심 원칙: "1초 안에 기록 완료"
@@ -31,6 +141,9 @@ class _RecordsScreenState extends State<RecordsScreen> {
   final _storage = LocalStorageService();
   List<ActivityModel> _todayActivities = [];
   bool _isLoading = true;
+  DateRangeFilter _selectedFilter = DateRangeFilter.week;  // 기본값 7일
+  SortOrder _sortOrder = SortOrder.newest;  // 기본값 최신순
+  ActivityTypeFilter _typeFilter = ActivityTypeFilter.all;  // 기본값 전체
 
   // 진행 중인 활동 (수면 타이머 등)
   ActivityModel? _ongoingActivity;
@@ -55,45 +168,48 @@ class _RecordsScreenState extends State<RecordsScreen> {
     setState(() => _isLoading = true);
 
     final activities = await _storage.getActivities();
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
 
     // 현재 아기 ID 가져오기
     final babyProvider = Provider.of<BabyProvider>(context, listen: false);
     final currentBabyId = babyProvider.currentBaby?.id;
 
-    // 🆕 디버깅 로그 추가
-    print('🔍 [RecordsScreen] === 로드 시점 디버깅 ===');
+    // 날짜 필터 적용
+    final DateTime? startDate = _selectedFilter.getStartDate();
+
+    // 🆕 디버깅 로그
+    print('🔍 [RecordsScreen] Filter: ${_selectedFilter.name}, startDate: $startDate');
     print('   currentBaby: ${babyProvider.currentBaby?.name}');
     print('   currentBabyId: $currentBabyId');
     print('   전체 activities 수: ${activities.length}');
 
-    // 각 activity의 babyId 출력 (최근 10개)
-    for (var a in activities.take(10)) {
-      print('   - ${a.type.name}: babyId=${a.babyId}, time=${a.timestamp}');
-    }
-
-    final todayActivities = activities.where((a) {
+    final filteredActivities = activities.where((a) {
       final actDate = DateTime.parse(a.timestamp);
-      final isToday = actDate.isAfter(today) || actDate.isAtSameMomentAs(today);
+
+      // 날짜 필터 적용
+      final isInDateRange = startDate == null || actDate.isAfter(startDate) || actDate.isAtSameMomentAs(startDate);
+
       // 현재 아기의 활동만 필터링
       final isCurrentBaby = currentBabyId == null || a.babyId == currentBabyId;
-      return isToday && isCurrentBaby;
+
+      // 타입 필터 적용
+      final ActivityType? filterType = _typeFilter.toActivityType();
+      final isMatchingType = filterType == null || a.type == filterType;
+
+      return isInDateRange && isCurrentBaby && isMatchingType;
     }).toList();
 
-    print('   필터 후 activities 수: ${todayActivities.length}');
-    print('🔍 [RecordsScreen] === 디버깅 끝 ===');
+    print('   필터 후 activities 수: ${filteredActivities.length}');
 
-    // 시간순 정렬 (최신이 아래로)
-    todayActivities.sort((a, b) =>
-        DateTime.parse(a.timestamp).compareTo(DateTime.parse(b.timestamp)));
+    // 시간 역순 정렬 (최신순)
+    filteredActivities.sort((a, b) =>
+        DateTime.parse(b.timestamp).compareTo(DateTime.parse(a.timestamp)));
 
     // 진행 중인 수면 찾기
-    final ongoing = todayActivities.where((a) =>
+    final ongoing = filteredActivities.where((a) =>
         a.type == ActivityType.sleep && a.endTime == null).firstOrNull;
 
     setState(() {
-      _todayActivities = todayActivities;
+      _todayActivities = filteredActivities;
       _ongoingActivity = ongoing;
       _isLoading = false;
     });
@@ -277,13 +393,36 @@ class _RecordsScreenState extends State<RecordsScreen> {
     }
   }
 
-  String _formatDuration(int minutes) {
+  /// 수면 시간 포맷팅 (이상값 체크 포함)
+  String _formatDuration(int? minutes, {bool isKorean = true}) {
+    // null 체크
+    if (minutes == null) {
+      return isKorean ? '진행 중' : 'In progress';
+    }
+
+    // 음수 체크
+    if (minutes < 0) {
+      print('⚠️ [RecordsScreen] Negative duration: $minutes minutes');
+      return isKorean ? '⚠️ 데이터 오류' : '⚠️ Data error';
+    }
+
+    // 이상값 체크 (24시간 = 1440분 초과)
+    if (minutes > 1440) {
+      print('⚠️ [RecordsScreen] Abnormal duration: $minutes minutes (>${minutes ~/ 60}h)');
+      return isKorean ? '⚠️ 확인 필요' : '⚠️ Check needed';
+    }
+
+    // 정상 포맷팅
     final hours = minutes ~/ 60;
     final mins = minutes % 60;
-    if (hours > 0) {
-      return '$hours시간 $mins분';
+
+    if (hours > 0 && mins > 0) {
+      return isKorean ? '$hours시간 $mins분' : '${hours}h ${mins}m';
+    } else if (hours > 0) {
+      return isKorean ? '$hours시간' : '${hours}h';
+    } else {
+      return isKorean ? '$mins분' : '${mins}m';
     }
-    return '$mins분';
   }
 
   @override
@@ -314,29 +453,82 @@ class _RecordsScreenState extends State<RecordsScreen> {
       body: RefreshIndicator(
         onRefresh: _loadTodayActivities,
         color: AppTheme.lavenderMist,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 🚀 원탭 기록 섹션
-              _buildQuickRecordSection(l10n),
+        child: Column(
+          children: [
+            // 날짜 필터
+            _buildDateFilterChips(l10n),
+            const SizedBox(height: 8),
 
-              const SizedBox(height: 24),
+            // 스크롤 가능한 컨텐츠
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 🚀 원탭 기록 섹션
+                    _buildQuickRecordSection(l10n),
 
-              // 📅 오늘의 타임라인
-              _buildTimelineSection(l10n),
+                    const SizedBox(height: 24),
 
-              const SizedBox(height: 24),
+                    // 🍼😴 막수-밤잠 상관관계 카드
+                    const FeedSleepCorrelationCard(),
 
-              // 💡 오늘 요약
-              _buildTodaySummary(l10n),
+                    // 📅 타임라인
+                    _buildTimelineSection(l10n),
 
-              const SizedBox(height: 100), // 바텀 패딩
-            ],
-          ),
+                    const SizedBox(height: 24),
+
+                    // 💡 요약
+                    _buildTodaySummary(l10n),
+
+                    const SizedBox(height: 100), // 바텀 패딩
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildDateFilterChips(AppLocalizations l10n) {
+    final bool isKorean = l10n.locale.languageCode == 'ko';
+
+    return Container(
+      height: 48,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: DateRangeFilter.values.map((DateRangeFilter filter) {
+          final bool isSelected = _selectedFilter == filter;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: FilterChip(
+              label: Text(filter.getLabel(isKorean)),
+              selected: isSelected,
+              onSelected: (bool selected) {
+                if (selected) {
+                  setState(() => _selectedFilter = filter);
+                  _loadTodayActivities();
+                }
+              },
+              backgroundColor: AppTheme.surfaceCard,
+              selectedColor: AppTheme.lavenderMist.withOpacity(0.3),
+              labelStyle: TextStyle(
+                color: isSelected ? AppTheme.lavenderMist : Colors.white70,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+              side: BorderSide(
+                color: isSelected
+                    ? AppTheme.lavenderMist
+                    : Colors.white.withOpacity(0.2),
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }
@@ -458,38 +650,52 @@ class _RecordsScreenState extends State<RecordsScreen> {
   }
 
   Widget _buildTimelineSection(AppLocalizations l10n) {
+    final bool isKorean = l10n.locale.languageCode == 'ko';
+
+    // 필터에 따라 제목 변경
+    String timelineTitle;
+    switch (_selectedFilter) {
+      case DateRangeFilter.today:
+        timelineTitle = isKorean ? '오늘의 타임라인' : 'Today\'s Timeline';
+        break;
+      case DateRangeFilter.week:
+        timelineTitle = isKorean ? '최근 7일' : 'Last 7 Days';
+        break;
+      case DateRangeFilter.month:
+        timelineTitle = isKorean ? '최근 30일' : 'Last 30 Days';
+        break;
+      case DateRangeFilter.all:
+        timelineTitle = isKorean ? '전체 기록' : 'All Records';
+        break;
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Row 1: 타임라인 제목
+        Row(
+          children: [
+            const Text('📅', style: TextStyle(fontSize: 20)),
+            const SizedBox(width: 8),
+            Text(
+              timelineTitle,
+              style: const TextStyle(
+                color: AppTheme.textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // Row 2: 타입 필터 + 정렬 (간소화)
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                const Text('📅', style: TextStyle(fontSize: 20)),
-                const SizedBox(width: 8),
-                Text(
-                  l10n.translate('todays_timeline') ?? '오늘의 타임라인',
-                  style: const TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            TextButton(
-              onPressed: () {
-                // TODO: 전체 히스토리 화면
-              },
-              child: Text(
-                l10n.translate('view_all') ?? '전체보기',
-                style: const TextStyle(
-                  color: AppTheme.lavenderMist,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
+            Flexible(child: _buildTypeFilterButton(isKorean)),
+            const SizedBox(width: 8),
+            _buildSortButton(isKorean),
           ],
         ),
         const SizedBox(height: 16),
@@ -504,7 +710,151 @@ class _RecordsScreenState extends State<RecordsScreen> {
     );
   }
 
+  /// 타입 필터 버튼 (드롭다운)
+  Widget _buildTypeFilterButton(bool isKorean) {
+    return PopupMenuButton<ActivityTypeFilter>(
+      onSelected: (ActivityTypeFilter filter) {
+        setState(() {
+          _typeFilter = filter;
+        });
+        _loadTodayActivities();
+      },
+      color: AppTheme.surfaceDark,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: AppTheme.lavenderMist.withOpacity(0.3)),
+      ),
+      itemBuilder: (context) {
+        return ActivityTypeFilter.values.map((ActivityTypeFilter filter) {
+          final bool isSelected = _typeFilter == filter;
+          return PopupMenuItem<ActivityTypeFilter>(
+            value: filter,
+            child: Row(
+              children: [
+                Text(filter.getEmoji(), style: const TextStyle(fontSize: 16)),
+                const SizedBox(width: 8),
+                Text(
+                  filter.getLabel(isKorean),
+                  style: TextStyle(
+                    color: isSelected ? AppTheme.lavenderMist : AppTheme.textPrimary,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+                if (isSelected) ...[
+                  const Spacer(),
+                  const Icon(Icons.check, size: 16, color: AppTheme.lavenderMist),
+                ],
+              ],
+            ),
+          );
+        }).toList();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceCard,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: _typeFilter == ActivityTypeFilter.all
+                ? AppTheme.lavenderMist.withOpacity(0.3)
+                : AppTheme.lavenderMist,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(_typeFilter.getEmoji(), style: const TextStyle(fontSize: 14)),
+            const SizedBox(width: 4),
+            Text(
+              _typeFilter.getLabel(isKorean),
+              style: TextStyle(
+                color: _typeFilter == ActivityTypeFilter.all
+                    ? AppTheme.lavenderMist.withOpacity(0.7)
+                    : AppTheme.lavenderMist,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(width: 2),
+            Icon(
+              Icons.arrow_drop_down,
+              size: 16,
+              color: AppTheme.lavenderMist.withOpacity(0.7),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 정렬 버튼 (최신순 ↔ 오래된순)
+  Widget _buildSortButton(bool isKorean) {
+    final String label = _sortOrder == SortOrder.newest
+        ? (isKorean ? '최신순' : 'Newest')
+        : (isKorean ? '오래된순' : 'Oldest');
+    final IconData icon = _sortOrder == SortOrder.newest
+        ? Icons.arrow_downward
+        : Icons.arrow_upward;
+
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _sortOrder = _sortOrder == SortOrder.newest
+              ? SortOrder.oldest
+              : SortOrder.newest;
+        });
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceCard,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: AppTheme.lavenderMist.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: AppTheme.lavenderMist),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: const TextStyle(
+                color: AppTheme.lavenderMist,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildEmptyTimeline(AppLocalizations l10n) {
+    final bool isKorean = l10n.locale.languageCode == 'ko';
+
+    // 필터에 따라 메시지 변경
+    String emptyMessage;
+    switch (_selectedFilter) {
+      case DateRangeFilter.today:
+        emptyMessage = isKorean ? '오늘 기록이 없어요' : 'No records today';
+        break;
+      case DateRangeFilter.week:
+        emptyMessage = isKorean ? '최근 7일 기록이 없어요' : 'No records in the last 7 days';
+        break;
+      case DateRangeFilter.month:
+        emptyMessage = isKorean ? '최근 30일 기록이 없어요' : 'No records in the last 30 days';
+        break;
+      case DateRangeFilter.all:
+        emptyMessage = isKorean ? '기록이 없어요' : 'No records yet';
+        break;
+    }
+
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
@@ -517,7 +867,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
           const Text('🌙', style: TextStyle(fontSize: 48)),
           const SizedBox(height: 16),
           Text(
-            l10n.translate('no_records_today') ?? '오늘 기록이 없어요',
+            emptyMessage,
             style: const TextStyle(
               color: AppTheme.textPrimary,
               fontSize: 16,
@@ -537,56 +887,189 @@ class _RecordsScreenState extends State<RecordsScreen> {
     );
   }
 
+  /// 활동을 날짜별로 그룹핑
+  Map<String, List<ActivityModel>> _groupActivitiesByDate(List<ActivityModel> activities) {
+    final Map<String, List<ActivityModel>> grouped = {};
+
+    for (final ActivityModel activity in activities) {
+      final DateTime date = DateTime.parse(activity.timestamp);
+      final String dateKey = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
+      grouped.putIfAbsent(dateKey, () => []);
+      grouped[dateKey]!.add(activity);
+    }
+
+    // 각 그룹 내에서 시간순 정렬 (정렬 순서에 따라)
+    for (final List<ActivityModel> group in grouped.values) {
+      if (_sortOrder == SortOrder.newest) {
+        group.sort((ActivityModel a, ActivityModel b) =>
+            DateTime.parse(b.timestamp).compareTo(DateTime.parse(a.timestamp)));
+      } else {
+        group.sort((ActivityModel a, ActivityModel b) =>
+            DateTime.parse(a.timestamp).compareTo(DateTime.parse(b.timestamp)));
+      }
+    }
+
+    return grouped;
+  }
+
+  /// 날짜 키를 사람이 읽기 쉬운 형식으로 변환
+  String _formatDateHeader(String dateKey, bool isKorean) {
+    final DateTime date = DateTime.parse(dateKey);
+    final DateTime now = DateTime.now();
+    final DateTime today = DateTime(now.year, now.month, now.day);
+    final DateTime yesterday = today.subtract(const Duration(days: 1));
+    final DateTime dateOnly = DateTime(date.year, date.month, date.day);
+
+    if (dateOnly == today) {
+      return isKorean ? '오늘' : 'Today';
+    } else if (dateOnly == yesterday) {
+      return isKorean ? '어제' : 'Yesterday';
+    } else {
+      // 이번 주인지 확인
+      final int daysAgo = today.difference(dateOnly).inDays;
+      if (daysAgo < 7) {
+        final List<String> weekdaysKo = ['월', '화', '수', '목', '금', '토', '일'];
+        final List<String> weekdaysEn = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        final int weekday = date.weekday - 1; // 0-6
+
+        if (isKorean) {
+          return '${weekdaysKo[weekday]}요일 (${date.month}/${date.day})';
+        } else {
+          return '${weekdaysEn[weekday]}, ${date.month}/${date.day}';
+        }
+      }
+
+      // 그 외
+      if (isKorean) {
+        return '${date.year}년 ${date.month}월 ${date.day}일';
+      } else {
+        final List<String> months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                                      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return '${months[date.month - 1]} ${date.day}, ${date.year}';
+      }
+    }
+  }
+
   Widget _buildTimeline() {
-    // 오전/오후로 그룹핑
-    final morningActivities = _todayActivities.where((a) {
-      final hour = DateTime.parse(a.timestamp).hour;
-      return hour < 12;
-    }).toList();
+    final AppLocalizations l10n = AppLocalizations.of(context);
+    final bool isKorean = l10n.locale.languageCode == 'ko';
 
-    final afternoonActivities = _todayActivities.where((a) {
-      final hour = DateTime.parse(a.timestamp).hour;
-      return hour >= 12;
-    }).toList();
+    // 날짜별 그룹핑
+    final Map<String, List<ActivityModel>> groupedActivities =
+        _groupActivitiesByDate(_todayActivities);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.glassBorder),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (morningActivities.isNotEmpty) ...[
-            _buildTimelineGroup('🌅 오전', morningActivities),
-          ],
-          if (afternoonActivities.isNotEmpty) ...[
-            if (morningActivities.isNotEmpty)
-              const Divider(height: 1, color: AppTheme.glassBorder),
-            _buildTimelineGroup('🌞 오후', afternoonActivities),
-          ],
-        ],
-      ),
+    // 날짜 키를 정렬 순서에 따라 정렬
+    final List<String> sortedDateKeys = groupedActivities.keys.toList();
+    if (_sortOrder == SortOrder.newest) {
+      sortedDateKeys.sort((String a, String b) => b.compareTo(a)); // 최신순
+    } else {
+      sortedDateKeys.sort((String a, String b) => a.compareTo(b)); // 오래된순
+    }
+
+    if (sortedDateKeys.isEmpty) {
+      return Container();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: sortedDateKeys.map((String dateKey) {
+        final List<ActivityModel> dayActivities = groupedActivities[dateKey]!;
+        return _buildDateSection(dateKey, dayActivities, isKorean);
+      }).toList(),
     );
   }
 
-  Widget _buildTimelineGroup(String title, List<ActivityModel> activities) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildDateSection(String dateKey, List<ActivityModel> activities, bool isKorean) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 날짜 섹션 헤더
+        _buildDateHeader(dateKey, activities.length, isKorean),
+
+        // 해당 날짜의 활동들
+        Container(
+          decoration: BoxDecoration(
+            color: AppTheme.surfaceCard,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppTheme.glassBorder),
+          ),
+          child: Column(
+            children: activities.map((activity) => _buildTimelineItem(activity)).toList(),
+          ),
+        ),
+
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  Widget _buildDateHeader(String dateKey, int count, bool isKorean) {
+    final String formattedDate = _formatDateHeader(dateKey, isKorean);
+
+    return Container(
+      margin: const EdgeInsets.only(top: 16, bottom: 8, left: 16, right: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        // Glassmorphism 그라데이션
+        gradient: LinearGradient(
+          colors: [
+            AppTheme.lavenderMist.withOpacity(0.12),
+            AppTheme.lavenderMist.withOpacity(0.04),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppTheme.lavenderMist.withOpacity(0.2),
+        ),
+      ),
+      child: Row(
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              color: AppTheme.textSecondary,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
+          // 날짜 아이콘 (박스)
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppTheme.lavenderMist.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.calendar_today_rounded,
+              size: 16,
+              color: AppTheme.lavenderMist,
             ),
           ),
-          const SizedBox(height: 12),
-          ...activities.map((activity) => _buildTimelineItem(activity)),
+          const SizedBox(width: 12),
+
+          // 날짜 텍스트
+          Expanded(
+            child: Text(
+              formattedDate,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+          ),
+
+          // 기록 수 (배지 스타일)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              '$count',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.lavenderMist,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -603,27 +1086,40 @@ class _RecordsScreenState extends State<RecordsScreen> {
     bool isOngoing = false;
 
     // 상세 정보 구성
+    final List<String> subtitleParts = [];
+
     switch (activity.type) {
       case ActivityType.sleep:
         if (activity.endTime == null) {
           isOngoing = true;
           final duration = DateTime.now().difference(time);
-          subtitle = '⏱️ 진행 중 (${duration.inHours}h ${duration.inMinutes % 60}m)';
+          subtitleParts.add('⏱️ 진행 중 (${duration.inHours}h ${duration.inMinutes % 60}m)');
         } else if (activity.durationMinutes != null) {
-          subtitle = _formatDuration(activity.durationMinutes!);
+          subtitleParts.add(_formatDuration(activity.durationMinutes));
         }
         break;
       case ActivityType.feeding:
         if (activity.amountMl != null) {
-          subtitle = '${activity.amountMl}ml';
+          // 소수점 제거
+          subtitleParts.add('${activity.amountMl!.toInt()}ml');
         }
         break;
       case ActivityType.diaper:
-        subtitle = activity.diaperType == 'dirty' ? '대변' : '소변';
+        subtitleParts.add(activity.diaperType == 'dirty' ? '대변' : '소변');
         break;
       default:
         break;
     }
+
+    // 메모 미리보기 추가 (15자 제한)
+    if (activity.notes != null && activity.notes!.isNotEmpty) {
+      final String truncated = activity.notes!.length > 15
+          ? '${activity.notes!.substring(0, 15)}...'
+          : activity.notes!;
+      subtitleParts.add('📝 $truncated');
+    }
+
+    subtitle = subtitleParts.join(' • ');
 
     return Dismissible(
       key: Key(activity.id),
@@ -647,83 +1143,126 @@ class _RecordsScreenState extends State<RecordsScreen> {
       onDismissed: (direction) async {
         await _deleteActivity(activity);
       },
-      child: InkWell(
-        onTap: () => _navigateToDetailScreen(activity),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 12),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8, left: 16, right: 16),
+        child: IntrinsicHeight(
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-          // 시간
-          SizedBox(
-            width: 50,
-            child: Text(
-              timeStr,
-              style: const TextStyle(
-                color: AppTheme.textSecondary,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-
-          // 타임라인 라인
-          Column(
-            children: [
+              // 🆕 좌측 컬러바
               Container(
-                width: 32,
-                height: 32,
+                width: 4,
                 decoration: BoxDecoration(
-                  color: isOngoing ? color : color.withOpacity(0.2),
-                  shape: BoxShape.circle,
-                  border: isOngoing
-                      ? Border.all(color: color, width: 2)
-                      : null,
+                  color: color,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(8),
+                    bottomLeft: Radius.circular(8),
+                  ),
                 ),
-                child: Center(
-                  child: Text(emoji, style: const TextStyle(fontSize: 14)),
+              ),
+
+              // 메인 카드 컨텐츠
+              Expanded(
+                child: InkWell(
+                  onTap: () => _navigateToDetailScreen(activity),
+                  borderRadius: const BorderRadius.only(
+                    topRight: Radius.circular(8),
+                    bottomRight: Radius.circular(8),
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.surfaceCard.withOpacity(0.5),
+                      borderRadius: const BorderRadius.only(
+                        topRight: Radius.circular(8),
+                        bottomRight: Radius.circular(8),
+                      ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 시간 - ConstrainedBox로 overflow 방지
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(minWidth: 40, maxWidth: 50),
+                          child: Text(
+                            timeStr,
+                            style: const TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(width: 8),
+
+                        // 타임라인 아이콘 - 고정 크기
+                        SizedBox(
+                          width: 32,
+                          child: Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: isOngoing ? color : color.withOpacity(0.2),
+                              shape: BoxShape.circle,
+                              border: isOngoing
+                                  ? Border.all(color: color, width: 2)
+                                  : null,
+                            ),
+                            child: Center(
+                              child: Text(emoji, style: const TextStyle(fontSize: 14)),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(width: 8),
+
+                        // 내용 - Expanded로 남은 공간 채우기
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: isOngoing ? color : AppTheme.textPrimary,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              if (subtitle != null)
+                                Text(
+                                  subtitle,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: isOngoing ? color : AppTheme.textSecondary,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+
+                        // 편집 버튼 - 고정 크기
+                        SizedBox(
+                          width: 32,
+                          child: IconButton(
+                            icon: const Icon(Icons.more_horiz, color: AppTheme.textTertiary, size: 20),
+                            onPressed: () => _navigateToDetailScreen(activity),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
-
-          const SizedBox(width: 12),
-
-          // 내용
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: isOngoing ? color : AppTheme.textPrimary,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                if (subtitle != null)
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      color: isOngoing ? color : AppTheme.textSecondary,
-                      fontSize: 13,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-
-          // 편집 버튼
-          IconButton(
-            icon: const Icon(Icons.more_horiz, color: AppTheme.textTertiary, size: 20),
-            onPressed: () => _navigateToDetailScreen(activity),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-          ),
-        ],
-      ),
         ),
       ),
     );
