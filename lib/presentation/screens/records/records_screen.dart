@@ -10,6 +10,8 @@ import '../../../data/services/widget_service.dart';
 import '../../providers/baby_provider.dart';
 import '../../providers/home_data_provider.dart';
 import '../../providers/sweet_spot_provider.dart';
+import '../../providers/feed_sleep_provider.dart';
+import '../../widgets/records/feed_sleep_correlation_card.dart';
 import '../activities/log_sleep_screen.dart';
 import '../activities/log_feeding_screen.dart';
 import '../activities/log_diaper_screen.dart';
@@ -372,6 +374,9 @@ class _RecordsScreenState extends State<RecordsScreen> {
 
                     const SizedBox(height: 24),
 
+                    // 🍼😴 막수-밤잠 상관관계 카드
+                    const FeedSleepCorrelationCard(),
+
                     // 📅 타임라인
                     _buildTimelineSection(l10n),
 
@@ -664,56 +669,158 @@ class _RecordsScreenState extends State<RecordsScreen> {
     );
   }
 
+  /// 활동을 날짜별로 그룹핑
+  Map<String, List<ActivityModel>> _groupActivitiesByDate(List<ActivityModel> activities) {
+    final Map<String, List<ActivityModel>> grouped = {};
+
+    for (final ActivityModel activity in activities) {
+      final DateTime date = DateTime.parse(activity.timestamp);
+      final String dateKey = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
+      grouped.putIfAbsent(dateKey, () => []);
+      grouped[dateKey]!.add(activity);
+    }
+
+    // 각 그룹 내에서 시간순 정렬 (최신순)
+    for (final List<ActivityModel> group in grouped.values) {
+      group.sort((ActivityModel a, ActivityModel b) =>
+          DateTime.parse(b.timestamp).compareTo(DateTime.parse(a.timestamp)));
+    }
+
+    return grouped;
+  }
+
+  /// 날짜 키를 사람이 읽기 쉬운 형식으로 변환
+  String _formatDateHeader(String dateKey, bool isKorean) {
+    final DateTime date = DateTime.parse(dateKey);
+    final DateTime now = DateTime.now();
+    final DateTime today = DateTime(now.year, now.month, now.day);
+    final DateTime yesterday = today.subtract(const Duration(days: 1));
+    final DateTime dateOnly = DateTime(date.year, date.month, date.day);
+
+    if (dateOnly == today) {
+      return isKorean ? '오늘' : 'Today';
+    } else if (dateOnly == yesterday) {
+      return isKorean ? '어제' : 'Yesterday';
+    } else {
+      // 이번 주인지 확인
+      final int daysAgo = today.difference(dateOnly).inDays;
+      if (daysAgo < 7) {
+        final List<String> weekdaysKo = ['월', '화', '수', '목', '금', '토', '일'];
+        final List<String> weekdaysEn = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        final int weekday = date.weekday - 1; // 0-6
+
+        if (isKorean) {
+          return '${weekdaysKo[weekday]}요일 (${date.month}/${date.day})';
+        } else {
+          return '${weekdaysEn[weekday]}, ${date.month}/${date.day}';
+        }
+      }
+
+      // 그 외
+      if (isKorean) {
+        return '${date.year}년 ${date.month}월 ${date.day}일';
+      } else {
+        final List<String> months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                                      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return '${months[date.month - 1]} ${date.day}, ${date.year}';
+      }
+    }
+  }
+
   Widget _buildTimeline() {
-    // 오전/오후로 그룹핑
-    final morningActivities = _todayActivities.where((a) {
-      final hour = DateTime.parse(a.timestamp).hour;
-      return hour < 12;
-    }).toList();
+    final AppLocalizations l10n = AppLocalizations.of(context);
+    final bool isKorean = l10n.locale.languageCode == 'ko';
 
-    final afternoonActivities = _todayActivities.where((a) {
-      final hour = DateTime.parse(a.timestamp).hour;
-      return hour >= 12;
-    }).toList();
+    // 날짜별 그룹핑
+    final Map<String, List<ActivityModel>> groupedActivities =
+        _groupActivitiesByDate(_todayActivities);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.glassBorder),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (morningActivities.isNotEmpty) ...[
-            _buildTimelineGroup('🌅 오전', morningActivities),
-          ],
-          if (afternoonActivities.isNotEmpty) ...[
-            if (morningActivities.isNotEmpty)
-              const Divider(height: 1, color: AppTheme.glassBorder),
-            _buildTimelineGroup('🌞 오후', afternoonActivities),
-          ],
-        ],
-      ),
+    // 날짜 키를 최신순으로 정렬
+    final List<String> sortedDateKeys = groupedActivities.keys.toList()
+      ..sort((String a, String b) => b.compareTo(a));
+
+    if (sortedDateKeys.isEmpty) {
+      return Container();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: sortedDateKeys.map((String dateKey) {
+        final List<ActivityModel> dayActivities = groupedActivities[dateKey]!;
+        return _buildDateSection(dateKey, dayActivities, isKorean);
+      }).toList(),
     );
   }
 
-  Widget _buildTimelineGroup(String title, List<ActivityModel> activities) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildDateSection(String dateKey, List<ActivityModel> activities, bool isKorean) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 날짜 섹션 헤더
+        _buildDateHeader(dateKey, activities.length, isKorean),
+
+        // 해당 날짜의 활동들
+        Container(
+          decoration: BoxDecoration(
+            color: AppTheme.surfaceCard,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppTheme.glassBorder),
+          ),
+          child: Column(
+            children: activities.map((activity) => _buildTimelineItem(activity)).toList(),
+          ),
+        ),
+
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  Widget _buildDateHeader(String dateKey, int count, bool isKorean) {
+    final String formattedDate = _formatDateHeader(dateKey, isKorean);
+    final String countText = isKorean ? '$count개 기록' : '$count records';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceDark,
+        border: Border(
+          bottom: BorderSide(
+            color: AppTheme.lavenderMist.withOpacity(0.2),
+            width: 1,
+          ),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          Row(
+            children: [
+              Icon(
+                Icons.calendar_today,
+                size: 16,
+                color: AppTheme.lavenderMist.withOpacity(0.7),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                formattedDate,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
           Text(
-            title,
-            style: const TextStyle(
-              color: AppTheme.textSecondary,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
+            countText,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.white.withOpacity(0.5),
             ),
           ),
-          const SizedBox(height: 12),
-          ...activities.map((activity) => _buildTimelineItem(activity)),
         ],
       ),
     );
