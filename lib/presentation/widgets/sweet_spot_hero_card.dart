@@ -32,6 +32,7 @@ class _SweetSpotHeroCardState extends State<SweetSpotHeroCard>
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
   late Animation<double> _fadeAnimation;
+  bool _timerInitialized = false;  // 🔧 v2.1 타이머 중복 호출 방지
 
   @override
   void initState() {
@@ -57,141 +58,76 @@ class _SweetSpotHeroCardState extends State<SweetSpotHeroCard>
   @override
   void dispose() {
     _controller.dispose();
+    // 🔧 v2.1 타이머 정리
+    final provider = context.read<SweetSpotProvider>();
+    provider.stopCountdownTimer();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer3<SweetSpotProvider, HomeDataProvider, FeedSleepProvider>(
-      builder: (context, sweetSpotProvider, homeDataProvider, feedSleepProvider, child) {
-        // 🌙 야간 모드 체크 (17시 이후)
-        final now = DateTime.now();
-        final isNightMode = now.hour >= 17;
+    return Consumer<SweetSpotProvider>(
+      builder: (context, provider, child) {
+        final l10n = AppLocalizations.of(context);
+        final isKorean = l10n.locale.languageCode == 'ko';
 
-        // SweetSpotProvider에서 Sweet Spot 데이터 가져오기 (우선순위)
-        final sweetSpotFromProvider = sweetSpotProvider.currentSweetSpot;
-        final sweetSpotFromHome = homeDataProvider.sweetSpot;
-        final sweetSpot = sweetSpotFromProvider ?? sweetSpotFromHome;
-        final dailySummary = homeDataProvider.dailySummary;
-        final notificationState = homeDataProvider.notificationState;
-
-        // 🆕 현재 아기 이름 가져오기 (동적으로 업데이트됨)
-        final currentBabyName = sweetSpotProvider.currentBaby?.name ?? widget.babyName;
-
-        print('🎨 [SweetSpotHeroCard] build() called');
-        print('   isNightMode: $isNightMode (${now.hour}시)');
-        print('   sweetSpot: ${sweetSpot != null ? "EXISTS" : "NULL"}');
-        print('   dailySummary: ${dailySummary != null ? "sleep=${dailySummary.totalSleepMinutes}min, feeding=${dailySummary.feedingCount}, diaper=${dailySummary.diaperCount}" : "NULL"}');
-        print('   currentBabyName: $currentBabyName');
-        print('   feedSleepCorrelation: ${feedSleepProvider.hasData ? "EXISTS" : "NULL"}');
-
-        // 🔧 Empty State 조건 단순화: 수면 기록이 없으면 바로 Empty State 표시
-        final hasNoSleepData = dailySummary == null || dailySummary.totalSleepMinutes == 0;
-        print('   hasNoSleepData: $hasNoSleepData');
-
-        if (hasNoSleepData) {
-          print('📭 [SweetSpotHeroCard] No sleep data - showing Empty State');
-          return FadeTransition(
-            opacity: _fadeAnimation,
-            child: ScaleTransition(
-              scale: _scaleAnimation,
-              child: EmptySweetSpotCard(
-                babyName: currentBabyName,  // 🔧 동적 아기 이름 사용
-                onRecordSleepTap: () {
-                  // 수면 기록 화면으로 이동
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const LogSleepScreen()),
-                  );
-                },
-              ),
-            ),
-          );
+        // Empty State 처리
+        if (provider.currentSweetSpot == null) {
+          return _buildEmptyState(context, isKorean);
         }
 
-        // 🌙 야간 모드: 막수 가이드 표시
-        if (isNightMode && feedSleepProvider.hasData) {
-          print('🌙 [SweetSpotHeroCard] Night mode - showing last feeding guide');
-          return _buildNightModeCard(
-            context,
-            feedSleepProvider,
-            dailySummary,
-            notificationState,
-            homeDataProvider,
-          );
+        // 🔧 v2.1 타이머 시작 (최초 1회만!)
+        if (!_timerInitialized) {
+          _timerInitialized = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            provider.startCountdownTimer();
+          });
         }
 
-        if (sweetSpot == null) {
-          return _buildEmptyState(context);
-        }
-
-        return _buildHeroCard(
-          context,
-          sweetSpot,
-          dailySummary,
-          notificationState,
-          homeDataProvider,
-        );
+        return _buildFilledState(context, provider, isKorean);
       },
     );
   }
 
-  Widget _buildEmptyState(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final isKorean = l10n.locale.languageCode == 'ko';
-
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: ScaleTransition(
-        scale: _scaleAnimation,
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          padding: const EdgeInsets.all(32),
-          decoration: BoxDecoration(
-            color: AppTheme.surfaceCard,
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(
-              color: AppTheme.softBlue.withOpacity(0.3),
-              width: 1,
-            ),
-          ),
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppTheme.lavenderMist.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.bedtime_outlined,
-                  size: 48,
-                  color: AppTheme.lavenderMist,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                isKorean ? '🌙 아기의 골든타임을 찾아요' : '🌙 Find Your Baby\'s Golden Time',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: AppTheme.textPrimary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                isKorean
-                    ? '기상 시간을 알려주시면,\n아기가 가장 쉽게 잠들 시간을 예측해드릴게요'
-                    : 'Tell us when your baby woke up,\nand we\'ll predict the best sleep time',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.textTertiary,
-                      height: 1.5,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
+  /// 🆕 v2.1 - Empty State 카드
+  Widget _buildEmptyState(BuildContext context, bool isKorean) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceCard,
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(
+          color: AppTheme.lavenderMist.withOpacity(0.3),
+          width: 1,
         ),
+      ),
+      child: Column(
+        children: [
+          const Text('🌙', style: TextStyle(fontSize: 48)),
+          const SizedBox(height: 16),
+          Text(
+            isKorean
+              ? '아기의 골든타임을 찾아요'
+              : "Find Your Baby's Golden Time",
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              color: AppTheme.textPrimary,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            isKorean
+              ? '기상 시간을 알려주시면,\n아기가 가장 쉽게 잠들 시간을 예측해드릴게요'
+              : 'Tell us when your baby woke up,\nand we\'ll predict the best sleep time',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppTheme.textTertiary,
+              height: 1.5,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
@@ -1021,6 +957,374 @@ extension _NightModeCard on _SweetSpotHeroCardState {
           ),
         ),
       ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // 🆕 v2.1 NEW METHODS
+  // ═══════════════════════════════════════════════════════════════
+
+  /// 🆕 v2.1 - 데이터 있을 때 카드
+  Widget _buildFilledState(
+    BuildContext context,
+    SweetSpotProvider provider,
+    bool isKorean,
+  ) {
+    final stateColor = provider.getStateColor(isNightMode: provider.isNightMode);
+
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                stateColor,
+                Color.lerp(stateColor, Colors.black, 0.15) ?? stateColor,
+              ],
+            ),
+            borderRadius: BorderRadius.circular(32),
+            boxShadow: [
+              BoxShadow(
+                color: stateColor.withOpacity(0.35),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(32),
+            child: Stack(
+              children: [
+                // Dot pattern overlay
+                Positioned.fill(
+                  child: Opacity(
+                    opacity: 0.03,
+                    child: CustomPaint(painter: _DotPatternPainter()),
+                  ),
+                ),
+                // Main content
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      // Level 1: 상태 칩
+                      _buildStateChip(provider, isKorean),
+
+                      const SizedBox(height: 12),
+
+                      // Level 2: 카운트다운 (가장 크게!)
+                      _buildCountdownDisplay(provider, isKorean),
+
+                      const SizedBox(height: 8),
+
+                      // Level 3: 목표 시간 (12시간제 + X분 후)
+                      _buildTargetTime(provider, isKorean),
+
+                      const SizedBox(height: 16),
+
+                      // Level 4: 컨텍스트 메시지
+                      _buildContextMessage(provider, isKorean),
+
+                      const SizedBox(height: 16),
+
+                      // Level 5: Progress Bar (친근한 라벨)
+                      _buildProgressBar(provider, isKorean),
+
+                      const SizedBox(height: 20),
+
+                      // Level 6: Action Buttons (높이 56px)
+                      _buildActionButtons(context, provider, isKorean),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 🆕 상태 칩
+  Widget _buildStateChip(SweetSpotProvider provider, bool isKorean) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.25),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Text(
+        provider.getStateLabel(isKorean: isKorean),
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  /// 🆕 카운트다운 표시 (핵심! 72px)
+  Widget _buildCountdownDisplay(SweetSpotProvider provider, bool isKorean) {
+    final isOvertired = provider.urgencyState == SweetSpotUrgencyState.overtired;
+
+    return Column(
+      children: [
+        Text(
+          provider.getFormattedCountdown(isKorean: isKorean),
+          style: TextStyle(
+            fontSize: 72,
+            fontWeight: FontWeight.w800,
+            color: Colors.white,
+            height: 1.0,
+            shadows: [
+              Shadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+        ),
+        if (isOvertired)
+          Text(
+            isKorean ? '(초과됨)' : '(overdue)',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.white.withOpacity(0.7),
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// 🆕 목표 시간 (12시간제 + "X분 후")
+  Widget _buildTargetTime(SweetSpotProvider provider, bool isKorean) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          Icons.flag_outlined,
+          color: Colors.white.withOpacity(0.7),
+          size: 18,
+        ),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text(
+            provider.getTargetTimeFormatted(isKorean: isKorean),
+            style: TextStyle(
+              fontSize: 15,
+              color: Colors.white.withOpacity(0.85),
+              fontWeight: FontWeight.w500,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 🆕 컨텍스트 메시지
+  Widget _buildContextMessage(SweetSpotProvider provider, bool isKorean) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          const Text('💡', style: TextStyle(fontSize: 20)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              provider.getContextMessage(isKorean: isKorean),
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.white,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 🆕 Progress Bar (친근한 라벨)
+  Widget _buildProgressBar(SweetSpotProvider provider, bool isKorean) {
+    final awakeMinutes = provider.awakeMinutes;
+    final wakeWindow = provider.wakeWindowMinutes;
+    final progressRaw = (awakeMinutes / wakeWindow).clamp(0.0, 1.2);
+    final progressClamped = progressRaw.clamp(0.0, 1.0);
+
+    return Column(
+      children: [
+        // 친근한 라벨
+        Text(
+          provider.getAwakeMessage(isKorean: isKorean),
+          style: TextStyle(
+            fontSize: 13,
+            color: Colors.white.withOpacity(0.8),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 10),
+        // Progress Bar
+        Stack(
+          children: [
+            // Background
+            Container(
+              height: 8,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            // Progress
+            FractionallySizedBox(
+              widthFactor: progressClamped,
+              child: Container(
+                height: 8,
+                decoration: BoxDecoration(
+                  color: progressRaw > 1.0
+                    ? Colors.red.shade300
+                    : Colors.white.withOpacity(0.85),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        // 양쪽 라벨
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              isKorean ? '기상' : 'Wake',
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.white.withOpacity(0.5),
+              ),
+            ),
+            Text(
+              isKorean ? '$wakeWindow분 권장' : '$wakeWindow min recommended',
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.white.withOpacity(0.5),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// 🆕 Action Buttons (높이 56px + 접근성)
+  Widget _buildActionButtons(
+    BuildContext context,
+    SweetSpotProvider provider,
+    bool isKorean,
+  ) {
+    final showSleepButton = provider.shouldShowSleepButton;
+
+    return Row(
+      children: [
+        if (showSleepButton)
+          Expanded(
+            flex: 2,
+            child: Semantics(
+              label: isKorean ? '지금 재우기 버튼' : 'Sleep now button',
+              button: true,
+              child: SizedBox(
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: () {
+                    HapticFeedback.mediumImpact();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LogSleepScreen()),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black87,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    elevation: 4,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text('😴', style: TextStyle(fontSize: 18)),
+                      const SizedBox(width: 8),
+                      Text(
+                        isKorean ? '지금 재우기' : 'Sleep Now',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        if (showSleepButton) const SizedBox(width: 12),
+        Expanded(
+          flex: showSleepButton ? 1 : 2,
+          child: Semantics(
+            label: isKorean ? '알림 설정 버튼' : 'Set alarm button',
+            button: true,
+            child: SizedBox(
+              height: 56,
+              child: OutlinedButton(
+                onPressed: () {
+                  final homeDataProvider = context.read<HomeDataProvider>();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        isKorean ? '알림이 설정되었습니다' : 'Alarm has been set',
+                      ),
+                      backgroundColor: AppTheme.successSoft,
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  side: BorderSide(color: Colors.white.withOpacity(0.4), width: 1.5),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.alarm, size: 18),
+                    const SizedBox(width: 6),
+                    Text(
+                      isKorean ? '알림' : 'Alarm',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

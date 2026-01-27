@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../core/utils/sweet_spot_calculator.dart';
 import '../../data/models/baby_model.dart';
+import '../../core/theme/app_theme.dart';
 
 /// SweetSpot 상태 관리 Provider
 class SweetSpotProvider extends ChangeNotifier {
@@ -9,6 +11,10 @@ class SweetSpotProvider extends ChangeNotifier {
   List<SweetSpotResult>? _dailySchedule;
   BabyModel? _currentBaby;
   DateTime? _lastSleepActivity;
+
+  // 🆕 v2.1 - Timer & Night Mode
+  Timer? _countdownTimer;
+  bool _disposed = false;
 
   SweetSpotResult? get currentSweetSpot => _currentSweetSpot;
   List<SweetSpotResult>? get dailySchedule => _dailySchedule;
@@ -157,6 +163,186 @@ class SweetSpotProvider extends ChangeNotifier {
     _lastSleepActivity = null;
     notifyListeners();
   }
+
+  // ═══════════════════════════════════════════════════════════════
+  // 🆕 v2.1 COMPUTED PROPERTIES FOR UI
+  // ═══════════════════════════════════════════════════════════════
+
+  /// 남은 시간 (분 단위, 음수 가능)
+  int get minutesRemaining {
+    if (_currentSweetSpot == null) return 0;
+    final now = DateTime.now();
+    return _currentSweetSpot!.sweetSpotStart.difference(now).inMinutes;
+  }
+
+  /// 포맷팅된 카운트다운 (한국어: "52분", 영어: "52 min")
+  String getFormattedCountdown({required bool isKorean}) {
+    final minutes = minutesRemaining;
+    if (isKorean) {
+      return '$minutes분';
+    } else {
+      return '$minutes min';
+    }
+  }
+
+  /// 목표 시간 포맷팅 (12시간제 + "X분 후")
+  /// 예: "오후 2:30에 재우세요 (18분 후)"
+  String getTargetTimeFormatted({required bool isKorean}) {
+    if (_currentSweetSpot == null) return '--:--';
+
+    final target = _currentSweetSpot!.sweetSpotStart;
+    final hour = target.hour;
+    final minute = target.minute.toString().padLeft(2, '0');
+    final remaining = minutesRemaining;
+    final displayHour = _convertTo12Hour(hour);
+
+    if (isKorean) {
+      final period = hour < 12 ? '오전' : '오후';
+      return '$period $displayHour:$minute에 재우세요 (${remaining}분 후)';
+    } else {
+      final period = hour < 12 ? 'AM' : 'PM';
+      return 'Put to sleep at $displayHour:$minute $period ($remaining min)';
+    }
+  }
+
+  /// 🆕 4가지 긴급도 상태
+  SweetSpotUrgencyState get urgencyState {
+    final minutes = minutesRemaining;
+    if (minutes > 30) return SweetSpotUrgencyState.tooEarly;
+    if (minutes > 10) return SweetSpotUrgencyState.approaching;
+    if (minutes >= -5) return SweetSpotUrgencyState.optimal;
+    return SweetSpotUrgencyState.overtired;
+  }
+
+  /// 🆕 상태별 색상 (야간 모드 지원)
+  Color getStateColor({required bool isNightMode}) {
+    final baseColor = _getBaseStateColor();
+    if (isNightMode) {
+      // 야간 모드: 30% 어둡게
+      return Color.lerp(baseColor, Colors.black, 0.3) ?? baseColor;
+    }
+    return baseColor;
+  }
+
+  Color _getBaseStateColor() {
+    switch (urgencyState) {
+      case SweetSpotUrgencyState.tooEarly:
+        return const Color(0xFF4A90E2); // 파란색
+      case SweetSpotUrgencyState.approaching:
+        return const Color(0xFFF5A623); // 주황색
+      case SweetSpotUrgencyState.optimal:
+        return const Color(0xFF7ED321); // 녹색
+      case SweetSpotUrgencyState.overtired:
+        return const Color(0xFFE87878); // 빨간색
+    }
+  }
+
+  /// 🆕 깨어있는 시간 (분)
+  int get awakeMinutes {
+    if (_lastSleepActivity == null) return 0;
+    return DateTime.now().difference(_lastSleepActivity!).inMinutes;
+  }
+
+  /// 🆕 Wake Window (분) - 기본값 80분 (3개월 기준)
+  int get wakeWindowMinutes {
+    return _currentSweetSpot?.wakeWindowData.maxMinutes ?? 80;
+  }
+
+  /// 🆕 야간 모드 여부 (17:00 ~ 06:00)
+  bool get isNightMode {
+    final hour = DateTime.now().hour;
+    return hour >= AppTheme.nightModeStartHour || hour < AppTheme.nightModeEndHour;
+  }
+
+  /// 🆕 12시간제 변환 헬퍼 (자정/정오 버그 수정)
+  int _convertTo12Hour(int hour24) {
+    if (hour24 == 0) return 12;  // 자정 → 12
+    if (hour24 <= 12) return hour24;
+    return hour24 - 12;
+  }
+
+  /// 🆕 친근한 깨어있는 시간 메시지
+  String getAwakeMessage({required bool isKorean}) {
+    final minutes = awakeMinutes;
+    if (isKorean) {
+      return '😊 ${minutes}분째 깨어있어요';
+    } else {
+      return '😊 Awake for $minutes min';
+    }
+  }
+
+  /// 🆕 상태별 컨텍스트 메시지
+  String getContextMessage({required bool isKorean}) {
+    switch (urgencyState) {
+      case SweetSpotUrgencyState.tooEarly:
+        return isKorean
+          ? '아직 놀 시간이에요! 자연스럽게 활동하세요.'
+          : 'Still play time! Keep activities natural.';
+      case SweetSpotUrgencyState.approaching:
+        return isKorean
+          ? '곧 졸려할 거예요. 수면 루틴을 시작하세요!'
+          : 'Getting sleepy soon. Start the sleep routine!';
+      case SweetSpotUrgencyState.optimal:
+        return isKorean
+          ? '지금 재우면 가장 쉽게 잠들어요!'
+          : 'Perfect time to put baby to sleep!';
+      case SweetSpotUrgencyState.overtired:
+        return isKorean
+          ? '괜찮아요! 지금이라도 재워보세요. 🌙'
+          : "It's okay! Try putting baby to sleep now. 🌙";
+    }
+  }
+
+  /// 🆕 상태 라벨 (칩에 표시)
+  String getStateLabel({required bool isKorean}) {
+    switch (urgencyState) {
+      case SweetSpotUrgencyState.tooEarly:
+        return isKorean ? '💙 놀이 시간' : '💙 Play Time';
+      case SweetSpotUrgencyState.approaching:
+        return isKorean ? '🧡 수면 준비' : '🧡 Get Ready';
+      case SweetSpotUrgencyState.optimal:
+        return isKorean ? '💚 지금이에요!' : '💚 Perfect Time!';
+      case SweetSpotUrgencyState.overtired:
+        return isKorean ? '❤️ 지금 재워주세요' : '❤️ Sleep Now';
+    }
+  }
+
+  /// 🆕 "지금 재우기" 버튼 표시 여부
+  bool get shouldShowSleepButton {
+    return urgencyState == SweetSpotUrgencyState.optimal ||
+           urgencyState == SweetSpotUrgencyState.overtired;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // 🆕 v2.1 COUNTDOWN TIMER
+  // ═══════════════════════════════════════════════════════════════
+
+  /// 1분마다 UI 갱신을 위한 타이머 시작
+  void startCountdownTimer() {
+    _countdownTimer?.cancel();
+    _countdownTimer = Timer.periodic(
+      const Duration(minutes: 1),
+      (_) {
+        if (!_disposed) {
+          notifyListeners();
+        }
+      },
+    );
+  }
+
+  /// 타이머 중지
+  void stopCountdownTimer() {
+    _countdownTimer?.cancel();
+    _countdownTimer = null;
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    _countdownTimer?.cancel();
+    _countdownTimer = null;
+    super.dispose();
+  }
 }
 
 /// BabyModel 확장 (교정 월령 계산)
@@ -181,4 +367,16 @@ extension BabyModelExtension on BabyModel {
     if (end.day < start.day) months--;
     return months;
   }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 🆕 v2.1 URGENCY STATE ENUM
+// ═══════════════════════════════════════════════════════════════
+
+/// Sweet Spot 긴급도 상태
+enum SweetSpotUrgencyState {
+  tooEarly,    // 30분+ 남음 (파란색)
+  approaching, // 10-30분 남음 (주황색)
+  optimal,     // 0-10분 (녹색)
+  overtired,   // Sweet Spot 지남 (빨간색)
 }

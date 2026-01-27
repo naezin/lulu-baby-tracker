@@ -65,6 +65,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     });
   }
 
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    // 🆕 v2.1 - Stop countdown timer
+    final sweetSpotProvider = context.read<SweetSpotProvider>();
+    sweetSpotProvider.stopCountdownTimer();
+    super.dispose();
+  }
+
   /// Load Baby info and last sleep activity for Sweet Spot calculation
   Future<void> _loadSweetSpotData() async {
     final babyProvider = Provider.of<BabyProvider>(context, listen: false);
@@ -145,6 +154,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
     print('✅ [HomeScreen] SweetSpotProvider initialized');
 
+    // 🆕 v2.1 - Start countdown timer
+    sweetSpotProvider.startCountdownTimer();
+    print('✅ [HomeScreen] Countdown timer started');
+
     // 4. Initialize HomeDataProvider
     homeDataProvider.setupBabyListener(baby.id);  // 🆕 Setup listener with initial baby ID
     await homeDataProvider.loadAll(
@@ -172,12 +185,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       await feedSleepProvider.analyze(babyId: baby.id);
       print('✅ [HomeScreen] FeedSleepProvider initialized - hasData: ${feedSleepProvider.hasData}');
     }
-  }
-
-  @override
-  void dispose() {
-    _fadeController.dispose();
-    super.dispose();
   }
 
   @override

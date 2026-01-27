@@ -50,6 +50,32 @@ class AppTheme {
   static const Color glassBorder = Color(0xFF415A77); // Same as softBlue
   static const Color primaryDark = Color(0xFF0D1B2A); // Same as midnightNavy
 
+  // ═══════════════════════════════════════════════════════════════
+  // 🆕 v2.1 SWEET SPOT CONSTANTS
+  // ═══════════════════════════════════════════════════════════════
+
+  /// 야간 모드 시작 시간 (17시, 기존 로직과 일치)
+  static const int nightModeStartHour = 17;
+
+  /// 야간 모드 종료 시간 (6시)
+  static const int nightModeEndHour = 6;
+
+  // ═══════════════════════════════════════════════════════════════
+  // 🆕 v2.1 SWEET SPOT STATE COLORS
+  // ═══════════════════════════════════════════════════════════════
+
+  // Day Mode Colors
+  static const Color sweetSpotTooEarly = Color(0xFF4A90E2);
+  static const Color sweetSpotApproaching = Color(0xFFF5A623);
+  static const Color sweetSpotOptimal = Color(0xFF7ED321);
+  static const Color sweetSpotOvertired = Color(0xFFE87878);
+
+  // Night Mode Colors (30% darker)
+  static const Color sweetSpotTooEarlyNight = Color(0xFF35679E);
+  static const Color sweetSpotApproachingNight = Color(0xFFAB7418);
+  static const Color sweetSpotOptimalNight = Color(0xFF4A7D21);
+  static const Color sweetSpotOvertiredNight = Color(0xFFA35454);
+
   // 🪟 Glassmorphism Colors
   static const Color glassBackground = Color(0x1AFFFFFF);  // 10% white
   static const Color glassBackgroundLight = Color(0x0DFFFFFF);  // 5% white
