@@ -393,13 +393,36 @@ class _RecordsScreenState extends State<RecordsScreen> {
     }
   }
 
-  String _formatDuration(int minutes) {
+  /// 수면 시간 포맷팅 (이상값 체크 포함)
+  String _formatDuration(int? minutes, {bool isKorean = true}) {
+    // null 체크
+    if (minutes == null) {
+      return isKorean ? '진행 중' : 'In progress';
+    }
+
+    // 음수 체크
+    if (minutes < 0) {
+      print('⚠️ [RecordsScreen] Negative duration: $minutes minutes');
+      return isKorean ? '⚠️ 데이터 오류' : '⚠️ Data error';
+    }
+
+    // 이상값 체크 (24시간 = 1440분 초과)
+    if (minutes > 1440) {
+      print('⚠️ [RecordsScreen] Abnormal duration: $minutes minutes (>${minutes ~/ 60}h)');
+      return isKorean ? '⚠️ 확인 필요' : '⚠️ Check needed';
+    }
+
+    // 정상 포맷팅
     final hours = minutes ~/ 60;
     final mins = minutes % 60;
-    if (hours > 0) {
-      return '$hours시간 $mins분';
+
+    if (hours > 0 && mins > 0) {
+      return isKorean ? '$hours시간 $mins분' : '${hours}h ${mins}m';
+    } else if (hours > 0) {
+      return isKorean ? '$hours시간' : '${hours}h';
+    } else {
+      return isKorean ? '$mins분' : '${mins}m';
     }
-    return '$mins분';
   }
 
   @override
@@ -649,42 +672,30 @@ class _RecordsScreenState extends State<RecordsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Row 1: 타임라인 제목
+        Row(
+          children: [
+            const Text('📅', style: TextStyle(fontSize: 20)),
+            const SizedBox(width: 8),
+            Text(
+              timelineTitle,
+              style: const TextStyle(
+                color: AppTheme.textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // Row 2: 타입 필터 + 정렬 (간소화)
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                const Text('📅', style: TextStyle(fontSize: 20)),
-                const SizedBox(width: 8),
-                Text(
-                  timelineTitle,
-                  style: const TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            Row(
-              children: [
-                _buildTypeFilterButton(isKorean),
-                const SizedBox(width: 8),
-                _buildSortButton(isKorean),
-                TextButton(
-                  onPressed: () {
-                    // TODO: 전체 히스토리 화면
-                  },
-                  child: Text(
-                    l10n.translate('view_all') ?? '전체보기',
-                    style: const TextStyle(
-                      color: AppTheme.lavenderMist,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            Flexible(child: _buildTypeFilterButton(isKorean)),
+            const SizedBox(width: 8),
+            _buildSortButton(isKorean),
           ],
         ),
         const SizedBox(height: 16),
@@ -995,46 +1006,68 @@ class _RecordsScreenState extends State<RecordsScreen> {
 
   Widget _buildDateHeader(String dateKey, int count, bool isKorean) {
     final String formattedDate = _formatDateHeader(dateKey, isKorean);
-    final String countText = isKorean ? '$count개 기록' : '$count records';
 
     return Container(
+      margin: const EdgeInsets.only(top: 16, bottom: 8, left: 16, right: 16),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceDark,
-        border: Border(
-          bottom: BorderSide(
-            color: AppTheme.lavenderMist.withOpacity(0.2),
-            width: 1,
-          ),
+        // Glassmorphism 그라데이션
+        gradient: LinearGradient(
+          colors: [
+            AppTheme.lavenderMist.withOpacity(0.12),
+            AppTheme.lavenderMist.withOpacity(0.04),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppTheme.lavenderMist.withOpacity(0.2),
         ),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              Icon(
-                Icons.calendar_today,
-                size: 16,
-                color: AppTheme.lavenderMist.withOpacity(0.7),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                formattedDate,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ],
+          // 날짜 아이콘 (박스)
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppTheme.lavenderMist.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.calendar_today_rounded,
+              size: 16,
+              color: AppTheme.lavenderMist,
+            ),
           ),
-          Text(
-            countText,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.white.withOpacity(0.5),
+          const SizedBox(width: 12),
+
+          // 날짜 텍스트
+          Expanded(
+            child: Text(
+              formattedDate,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+          ),
+
+          // 기록 수 (배지 스타일)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              '$count',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.lavenderMist,
+              ),
             ),
           ),
         ],
@@ -1053,27 +1086,40 @@ class _RecordsScreenState extends State<RecordsScreen> {
     bool isOngoing = false;
 
     // 상세 정보 구성
+    final List<String> subtitleParts = [];
+
     switch (activity.type) {
       case ActivityType.sleep:
         if (activity.endTime == null) {
           isOngoing = true;
           final duration = DateTime.now().difference(time);
-          subtitle = '⏱️ 진행 중 (${duration.inHours}h ${duration.inMinutes % 60}m)';
+          subtitleParts.add('⏱️ 진행 중 (${duration.inHours}h ${duration.inMinutes % 60}m)');
         } else if (activity.durationMinutes != null) {
-          subtitle = _formatDuration(activity.durationMinutes!);
+          subtitleParts.add(_formatDuration(activity.durationMinutes));
         }
         break;
       case ActivityType.feeding:
         if (activity.amountMl != null) {
-          subtitle = '${activity.amountMl}ml';
+          // 소수점 제거
+          subtitleParts.add('${activity.amountMl!.toInt()}ml');
         }
         break;
       case ActivityType.diaper:
-        subtitle = activity.diaperType == 'dirty' ? '대변' : '소변';
+        subtitleParts.add(activity.diaperType == 'dirty' ? '대변' : '소변');
         break;
       default:
         break;
     }
+
+    // 메모 미리보기 추가 (15자 제한)
+    if (activity.notes != null && activity.notes!.isNotEmpty) {
+      final String truncated = activity.notes!.length > 15
+          ? '${activity.notes!.substring(0, 15)}...'
+          : activity.notes!;
+      subtitleParts.add('📝 $truncated');
+    }
+
+    subtitle = subtitleParts.join(' • ');
 
     return Dismissible(
       key: Key(activity.id),
@@ -1097,83 +1143,126 @@ class _RecordsScreenState extends State<RecordsScreen> {
       onDismissed: (direction) async {
         await _deleteActivity(activity);
       },
-      child: InkWell(
-        onTap: () => _navigateToDetailScreen(activity),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 12),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8, left: 16, right: 16),
+        child: IntrinsicHeight(
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-          // 시간
-          SizedBox(
-            width: 50,
-            child: Text(
-              timeStr,
-              style: const TextStyle(
-                color: AppTheme.textSecondary,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-
-          // 타임라인 라인
-          Column(
-            children: [
+              // 🆕 좌측 컬러바
               Container(
-                width: 32,
-                height: 32,
+                width: 4,
                 decoration: BoxDecoration(
-                  color: isOngoing ? color : color.withOpacity(0.2),
-                  shape: BoxShape.circle,
-                  border: isOngoing
-                      ? Border.all(color: color, width: 2)
-                      : null,
+                  color: color,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(8),
+                    bottomLeft: Radius.circular(8),
+                  ),
                 ),
-                child: Center(
-                  child: Text(emoji, style: const TextStyle(fontSize: 14)),
+              ),
+
+              // 메인 카드 컨텐츠
+              Expanded(
+                child: InkWell(
+                  onTap: () => _navigateToDetailScreen(activity),
+                  borderRadius: const BorderRadius.only(
+                    topRight: Radius.circular(8),
+                    bottomRight: Radius.circular(8),
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.surfaceCard.withOpacity(0.5),
+                      borderRadius: const BorderRadius.only(
+                        topRight: Radius.circular(8),
+                        bottomRight: Radius.circular(8),
+                      ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 시간 - ConstrainedBox로 overflow 방지
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(minWidth: 40, maxWidth: 50),
+                          child: Text(
+                            timeStr,
+                            style: const TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(width: 8),
+
+                        // 타임라인 아이콘 - 고정 크기
+                        SizedBox(
+                          width: 32,
+                          child: Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: isOngoing ? color : color.withOpacity(0.2),
+                              shape: BoxShape.circle,
+                              border: isOngoing
+                                  ? Border.all(color: color, width: 2)
+                                  : null,
+                            ),
+                            child: Center(
+                              child: Text(emoji, style: const TextStyle(fontSize: 14)),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(width: 8),
+
+                        // 내용 - Expanded로 남은 공간 채우기
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: isOngoing ? color : AppTheme.textPrimary,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              if (subtitle != null)
+                                Text(
+                                  subtitle,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: isOngoing ? color : AppTheme.textSecondary,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+
+                        // 편집 버튼 - 고정 크기
+                        SizedBox(
+                          width: 32,
+                          child: IconButton(
+                            icon: const Icon(Icons.more_horiz, color: AppTheme.textTertiary, size: 20),
+                            onPressed: () => _navigateToDetailScreen(activity),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
-
-          const SizedBox(width: 12),
-
-          // 내용
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: isOngoing ? color : AppTheme.textPrimary,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                if (subtitle != null)
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      color: isOngoing ? color : AppTheme.textSecondary,
-                      fontSize: 13,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-
-          // 편집 버튼
-          IconButton(
-            icon: const Icon(Icons.more_horiz, color: AppTheme.textTertiary, size: 20),
-            onPressed: () => _navigateToDetailScreen(activity),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-          ),
-        ],
-      ),
         ),
       ),
     );
