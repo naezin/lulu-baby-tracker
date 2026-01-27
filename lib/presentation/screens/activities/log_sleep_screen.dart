@@ -5,8 +5,11 @@ import '../../../data/models/activity_model.dart';
 import '../../../data/services/local_storage_service.dart';
 import '../../../data/services/widget_service.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../../../core/utils/insight_calculator.dart';
+import '../../../core/utils/smart_cta_decider.dart';
 import '../../widgets/log_screen_template.dart';
 import '../../widgets/lulu_time_picker.dart';
+import '../../widgets/feedback/celebration_feedback.dart';
 import '../../providers/home_data_provider.dart';
 import '../../providers/sweet_spot_provider.dart';
 import '../../providers/baby_provider.dart';
@@ -458,34 +461,39 @@ class _LogSleepScreenState extends State<LogSleepScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
 
-        // Calculate feedback data
-        final totalToday = await _calculateTodaySleepTotal();
-        final yesterdayTotal = await _calculateYesterdaySleepTotal();
-        final diff = totalToday - yesterdayTotal;
+        // 🎉 캐시 무효화 (새 기록 추가됨)
+        InsightCalculator.invalidateCache();
 
-        final l10n = AppLocalizations.of(context);
-        final insights = [
-          l10n.translate('sleep_today_total')
-              ?.replaceAll('{hours}', (totalToday ~/ 60).toString())
-              .replaceAll('{minutes}', (totalToday % 60).toString())
-              ?? '⏱️ Total sleep today: ${totalToday ~/ 60} hr ${totalToday % 60} min',
-          if (diff > 0)
-            l10n.translate('sleep_yesterday_diff_plus')?.replaceAll('{diff}', diff.toString())
-                ?? '📈 +$diff min from yesterday'
-          else if (diff < 0)
-            l10n.translate('sleep_yesterday_diff_minus')?.replaceAll('{diff}', diff.abs().toString())
-                ?? '📉 ${diff.abs()} min from yesterday',
-          l10n.translate('sleep_this_record')?.replaceAll('{minutes}',
-              _endTime != null ? _endTime!.difference(_startTime).inMinutes.toString() : l10n.translate('sleep_in_progress_label') ?? 'in progress')
-              ?? '🎯 This record: ${_endTime != null ? "${_endTime!.difference(_startTime).inMinutes} min" : "in progress"}',
-        ];
-
-        showPostRecordFeedback(
-          context: context,
-          title: l10n.translate('sleep_record_complete') ?? 'Sleep Record Complete! 😴',
-          insights: insights,
-          themeColor: _themeColor,
+        // InsightCalculator로 오늘의 인사이트 계산
+        final insightCalc = InsightCalculator(_storage);
+        final todayData = await insightCalc.calculateTodayInsight();
+        final insightMessage = insightCalc.generateInsightMessage(
+          ActivityType.sleep,
+          todayData,
         );
+
+        // SmartCTA 결정
+        final smartCTA = SmartCTADecider.decide(
+          lastActivity: ActivityType.sleep,
+          todayData: todayData,
+        );
+
+        // CelebrationFeedback 표시
+        await CelebrationFeedback.show(
+          context: context,
+          activityType: ActivityType.sleep,
+          activity: activity,
+          insightMessage: insightMessage,
+          ctaText: smartCTA?.text,
+          onCTAPressed: smartCTA != null
+              ? () => Navigator.pushNamed(context, smartCTA.route)
+              : null,
+        );
+
+        // BottomSheet이 닫힌 후 화면 닫기
+        if (mounted) {
+          Navigator.pop(context);
+        }
       }
     } catch (e) {
       setState(() => _isLoading = false);

@@ -19,6 +19,7 @@ import 'presentation/providers/locale_provider.dart';
 import 'presentation/providers/unit_preferences_provider.dart';
 import 'presentation/providers/baby_provider.dart';
 import 'presentation/providers/feed_sleep_provider.dart';
+import 'presentation/providers/ongoing_sleep_provider.dart';  // 🆕
 import 'presentation/screens/activities/log_feeding_screen.dart';
 import 'presentation/screens/activities/log_sleep_screen.dart';
 import 'presentation/screens/activities/log_diaper_screen.dart';
@@ -199,6 +200,19 @@ class LuluApp extends StatelessWidget {
         // Sweet Spot Provider
         ChangeNotifierProvider(
           create: (_) => SweetSpotProvider(),
+        ),
+
+        // 🆕 Ongoing Sleep Provider (SweetSpotProvider에 의존)
+        ChangeNotifierProxyProvider<SweetSpotProvider, OngoingSleepProvider>(
+          create: (context) => OngoingSleepProvider(
+            storage: di.sl<LocalStorageService>(),
+            sweetSpotProvider: context.read<SweetSpotProvider>(),
+          ),
+          update: (context, sweetSpotProvider, previous) =>
+              previous ?? OngoingSleepProvider(
+                storage: di.sl<LocalStorageService>(),
+                sweetSpotProvider: sweetSpotProvider,
+              ),
         ),
 
         // 🆕 Home Data Provider (v2.0)

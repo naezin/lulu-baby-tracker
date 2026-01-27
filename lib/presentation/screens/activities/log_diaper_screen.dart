@@ -5,10 +5,13 @@ import '../../../data/models/activity_model.dart';
 import '../../../data/services/local_storage_service.dart';
 import '../../../data/services/widget_service.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../../../core/utils/insight_calculator.dart';
+import '../../../core/utils/smart_cta_decider.dart';
 import '../../providers/home_data_provider.dart';
 import '../../providers/baby_provider.dart';
 import '../../widgets/log_screen_template.dart';
 import '../../widgets/lulu_time_picker.dart';
+import '../../widgets/feedback/celebration_feedback.dart';
 
 /// 배변 기록 화면
 class LogDiaperScreen extends StatefulWidget {
@@ -330,27 +333,39 @@ class _LogDiaperScreenState extends State<LogDiaperScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
 
-        // Calculate feedback data
-        final todayCount = await _calculateTodayDiaperCount();
+        // 🎉 캐시 무효화
+        InsightCalculator.invalidateCache();
 
-        final l10n = AppLocalizations.of(context);
-        final insights = [
-          l10n.translate('diaper_today_count')?.replaceAll('{count}', todayCount.toString())
-              ?? '🧷 Today\'s changes: $todayCount',
-          if (_diaperType == 'wet')
-            l10n.translate('diaper_wet_only') ?? '💧 Wet only',
-          if (_diaperType == 'dirty')
-            l10n.translate('diaper_dirty_only') ?? '💩 Dirty',
-          if (_diaperType == 'both')
-            l10n.translate('diaper_both') ?? '💧💩 Wet and dirty',
-        ];
-
-        showPostRecordFeedback(
-          context: context,
-          title: l10n.translate('diaper_record_complete') ?? 'Diaper Record Complete!',
-          insights: insights,
-          themeColor: _themeColor,
+        // InsightCalculator로 오늘의 인사이트 계산
+        final insightCalc = InsightCalculator(_storage);
+        final todayData = await insightCalc.calculateTodayInsight();
+        final insightMessage = insightCalc.generateInsightMessage(
+          ActivityType.diaper,
+          todayData,
         );
+
+        // SmartCTA 결정
+        final smartCTA = SmartCTADecider.decide(
+          lastActivity: ActivityType.diaper,
+          todayData: todayData,
+        );
+
+        // CelebrationFeedback 표시
+        await CelebrationFeedback.show(
+          context: context,
+          activityType: ActivityType.diaper,
+          activity: activity,
+          insightMessage: insightMessage,
+          ctaText: smartCTA?.text,
+          onCTAPressed: smartCTA != null
+              ? () => Navigator.pushNamed(context, smartCTA.route)
+              : null,
+        );
+
+        // BottomSheet이 닫힌 후 화면 닫기
+        if (mounted) {
+          Navigator.pop(context);
+        }
       }
     } catch (e) {
       setState(() => _isLoading = false);

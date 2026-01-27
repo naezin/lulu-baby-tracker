@@ -270,6 +270,7 @@ class LogOptionButton extends StatelessWidget {
 }
 
 /// 📊 저장 후 피드백 표시 함수
+@Deprecated('Use CelebrationFeedback.show() instead')
 void showPostRecordFeedback({
   required BuildContext context,
   required String title,

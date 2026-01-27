@@ -16,6 +16,7 @@ import '../../providers/home_data_provider.dart';
 import '../../providers/smart_coach_provider.dart';
 import '../../providers/baby_provider.dart';
 import '../../providers/feed_sleep_provider.dart';
+import '../../providers/ongoing_sleep_provider.dart';  // 🆕
 import '../../widgets/smart_coach/today_timeline_section.dart';
 import '../activities/log_sleep_screen.dart';
 import '../activities/log_feeding_screen.dart';
@@ -62,6 +63,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadSweetSpotData();
 
+      // 🆕 Restore ongoing sleep from storage
+      final ongoingSleepProvider = context.read<OngoingSleepProvider>();
+      ongoingSleepProvider.restoreOngoingSleep();
     });
   }
 

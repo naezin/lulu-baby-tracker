@@ -74,6 +74,26 @@ class LocalStorageService {
     }).toList();
   }
 
+  /// 날짜 범위로 활동 가져오기
+  /// [startDate]와 [endDate] 사이의 활동을 반환 (양쪽 끝 포함)
+  /// InsightCalculator에서 사용
+  Future<List<ActivityModel>> getActivitiesByDateRange({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    final allActivities = await getActivities();
+
+    // 시작일은 00:00:00으로, 종료일은 23:59:59로 정규화
+    final normalizedStart = DateTime(startDate.year, startDate.month, startDate.day);
+    final normalizedEnd = DateTime(endDate.year, endDate.month, endDate.day, 23, 59, 59);
+
+    return allActivities.where((activity) {
+      final activityDate = DateTime.parse(activity.timestamp);
+      return activityDate.isAfter(normalizedStart.subtract(const Duration(seconds: 1))) &&
+          activityDate.isBefore(normalizedEnd.add(const Duration(seconds: 1)));
+    }).toList();
+  }
+
   /// 특정 타입의 활동 가져오기
   Future<List<ActivityModel>> getActivitiesByType(ActivityType type) async {
     final allActivities = await getActivities();
@@ -115,26 +135,51 @@ class LocalStorageService {
 
   /// 활동 업데이트
   Future<void> updateActivity(ActivityModel activity) async {
-    final activities = await getActivities();
-    final index = activities.indexWhere((a) => a.id == activity.id);
+    print('📝 [Storage] Updating activity: ${activity.id}');
 
-    if (index != -1) {
-      activities[index] = activity;
+    try {
+      final activities = await getActivities();
+      final index = activities.indexWhere((a) => a.id == activity.id);
 
-      final prefs = await SharedPreferences.getInstance();
-      final jsonList = activities.map((a) => a.toJson()).toList();
-      await prefs.setString(_activitiesKey, jsonEncode(jsonList));
+      if (index != -1) {
+        activities[index] = activity;
+
+        final prefs = await SharedPreferences.getInstance();
+        final jsonList = activities.map((a) => a.toJson()).toList();
+        await prefs.setString(_activitiesKey, jsonEncode(jsonList));
+        print('✅ [Storage] Activity updated successfully');
+      } else {
+        print('⚠️ [Storage] Activity not found for update: ${activity.id}');
+        // 없으면 새로 저장
+        await saveActivity(activity);
+      }
+    } catch (e) {
+      print('❌ [Storage] Failed to update activity: $e');
+      rethrow;
     }
   }
 
   /// 활동 삭제
   Future<void> deleteActivity(String activityId) async {
-    final activities = await getActivities();
-    activities.removeWhere((a) => a.id == activityId);
+    print('🗑️ [Storage] Deleting activity: $activityId');
 
-    final prefs = await SharedPreferences.getInstance();
-    final jsonList = activities.map((a) => a.toJson()).toList();
-    await prefs.setString(_activitiesKey, jsonEncode(jsonList));
+    try {
+      final activities = await getActivities();
+      final originalLength = activities.length;
+      activities.removeWhere((a) => a.id == activityId);
+
+      if (activities.length < originalLength) {
+        final prefs = await SharedPreferences.getInstance();
+        final jsonList = activities.map((a) => a.toJson()).toList();
+        await prefs.setString(_activitiesKey, jsonEncode(jsonList));
+        print('✅ [Storage] Activity deleted successfully');
+      } else {
+        print('⚠️ [Storage] Activity not found for deletion: $activityId');
+      }
+    } catch (e) {
+      print('❌ [Storage] Failed to delete activity: $e');
+      rethrow;
+    }
   }
 
   /// 모든 데이터 삭제

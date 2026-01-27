@@ -386,4 +386,80 @@ class ActivityModel {
         return entity.ActivityType.health;
     }
   }
+
+  /// 🆕 불변 객체 복사 메서드
+  /// endTime 변경 시 durationMinutes 자동 재계산
+  ActivityModel copyWith({
+    String? id,
+    String? babyId,
+    ActivityType? type,
+    String? timestamp,
+    String? endTime,
+    int? durationMinutes,
+    String? notes,
+    String? sleepLocation,
+    String? sleepQuality,
+    String? feedingType,
+    double? amountMl,
+    double? amountOz,
+    String? breastSide,
+    String? diaperType,
+    String? playActivityType,
+    List<String>? developmentTags,
+    double? temperatureCelsius,
+    String? temperatureUnit,
+    String? medicationType,
+    String? medicationName,
+    double? dosageAmount,
+    String? dosageUnit,
+    DateTime? nextDoseTime,
+    double? weightKg,
+    double? lengthCm,
+    double? headCircumferenceCm,
+  }) {
+    // 🔑 핵심: endTime이 변경되면 duration 자동 재계산
+    int? newDuration = durationMinutes ?? this.durationMinutes;
+
+    final effectiveEndTime = endTime ?? this.endTime;
+    final effectiveTimestamp = timestamp ?? this.timestamp;
+
+    if (effectiveEndTime != null && effectiveTimestamp != null) {
+      try {
+        final start = DateTime.parse(effectiveTimestamp);
+        final end = DateTime.parse(effectiveEndTime);
+        newDuration = end.difference(start).inMinutes;
+      } catch (e) {
+        print('⚠️ [ActivityModel] Duration calculation failed: $e');
+      }
+    }
+
+    return ActivityModel(
+      id: id ?? this.id,
+      babyId: babyId ?? this.babyId,
+      type: type ?? this.type,
+      timestamp: effectiveTimestamp,
+      endTime: effectiveEndTime,
+      durationMinutes: newDuration,
+      notes: notes ?? this.notes,
+      sleepLocation: sleepLocation ?? this.sleepLocation,
+      sleepQuality: sleepQuality ?? this.sleepQuality,
+      feedingType: feedingType ?? this.feedingType,
+      amountMl: amountMl ?? this.amountMl,
+      amountOz: amountOz ?? this.amountOz,
+      breastSide: breastSide ?? this.breastSide,
+      diaperType: diaperType ?? this.diaperType,
+      playActivityType: playActivityType ?? this.playActivityType,
+      developmentTags: developmentTags ?? this.developmentTags,
+      temperatureCelsius: temperatureCelsius ?? this.temperatureCelsius,
+      temperatureUnit: temperatureUnit ?? this.temperatureUnit,
+      medicationType: medicationType ?? this.medicationType,
+      medicationName: medicationName ?? this.medicationName,
+      dosageAmount: dosageAmount ?? this.dosageAmount,
+      dosageUnit: dosageUnit ?? this.dosageUnit,
+      nextDoseTime: nextDoseTime ?? this.nextDoseTime,
+      weightKg: weightKg ?? this.weightKg,
+      lengthCm: lengthCm ?? this.lengthCm,
+      headCircumferenceCm: headCircumferenceCm ?? this.headCircumferenceCm,
+    );
+  }
 }

@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../../../core/utils/insight_calculator.dart';
+import '../../../core/utils/smart_cta_decider.dart';
 import '../../../data/models/play_activity_model.dart';
 import '../../../data/models/activity_model.dart';
 import '../../../data/services/local_storage_service.dart';
 import '../../../data/services/widget_service.dart';
 import '../../widgets/log_screen_template.dart';
 import '../../widgets/lulu_time_picker.dart';
+import '../../widgets/feedback/celebration_feedback.dart';
 import '../../providers/baby_provider.dart';
 
 /// 놀이 활동 기록 화면
@@ -420,23 +423,39 @@ class _LogPlayScreenState extends State<LogPlayScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
 
-        final l10n = AppLocalizations.of(context);
-        final todayCount = await _calculateTodayPlayCount();
+        // 🎉 캐시 무효화
+        InsightCalculator.invalidateCache();
 
-        final insights = [
-          l10n.translate('play_today_count')?.replaceAll('{count}', todayCount.toString())
-              ?? '🎯 Today\'s activities: $todayCount',
-          l10n.translate('play_duration_minutes')?.replaceAll('{minutes}', _durationMinutes.toString())
-              ?? '⏱️ ${_durationMinutes} min',
-          '🌟 ${_selectedType!.developmentTags.map((t) => t.emoji).join(" ")}',
-        ];
-
-        showPostRecordFeedback(
-          context: context,
-          title: l10n.translate('play_record_complete') ?? '놀이 활동 기록 완료! 🎉',
-          insights: insights,
-          themeColor: _themeColor,
+        // InsightCalculator로 오늘의 인사이트 계산
+        final insightCalc = InsightCalculator(_storage);
+        final todayData = await insightCalc.calculateTodayInsight();
+        final insightMessage = insightCalc.generateInsightMessage(
+          ActivityType.play,
+          todayData,
         );
+
+        // SmartCTA 결정
+        final smartCTA = SmartCTADecider.decide(
+          lastActivity: ActivityType.play,
+          todayData: todayData,
+        );
+
+        // CelebrationFeedback 표시
+        await CelebrationFeedback.show(
+          context: context,
+          activityType: ActivityType.play,
+          activity: activity,
+          insightMessage: insightMessage,
+          ctaText: smartCTA?.text,
+          onCTAPressed: smartCTA != null
+              ? () => Navigator.pushNamed(context, smartCTA.route)
+              : null,
+        );
+
+        // BottomSheet이 닫힌 후 화면 닫기
+        if (mounted) {
+          Navigator.pop(context);
+        }
       }
     } catch (e) {
       setState(() => _isLoading = false);

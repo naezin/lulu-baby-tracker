@@ -5,11 +5,14 @@ import '../../../data/models/activity_model.dart';
 import '../../../data/services/local_storage_service.dart';
 import '../../../data/services/widget_service.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../../../core/utils/insight_calculator.dart';
+import '../../../core/utils/smart_cta_decider.dart';
 import '../../providers/home_data_provider.dart';
 import '../../providers/baby_provider.dart';
 import '../../providers/smart_coach_provider.dart';
 import '../../widgets/log_screen_template.dart';
 import '../../widgets/lulu_time_picker.dart';
+import '../../widgets/feedback/celebration_feedback.dart';
 
 /// 수유 기록 화면
 class LogFeedingScreen extends StatefulWidget {
@@ -388,33 +391,39 @@ class _LogFeedingScreenState extends State<LogFeedingScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
 
-        // Calculate feedback data
-        final todayCount = await _calculateTodayFeedingCount();
+        // 🎉 캐시 무효화
+        InsightCalculator.invalidateCache();
 
-        final l10n = AppLocalizations.of(context);
-        final insights = [
-          l10n.translate('feeding_today_count')?.replaceAll('{count}', todayCount.toString())
-              ?? '🍼 Today\'s feedings: $todayCount',
-          if (_feedingType == 'bottle')
-            l10n.translate('feeding_bottle_amount')
-                ?.replaceAll('{ml}', _amountMl.toInt().toString())
-                .replaceAll('{oz}', (_amountMl * 0.033814).toStringAsFixed(1))
-                ?? '📊 ${_amountMl.toInt()}ml (${(_amountMl * 0.033814).toStringAsFixed(1)}oz)',
-          if (_feedingType == 'breast')
-            (_breastSide == 'both'
-                ? l10n.translate('feeding_breast_both')
-                : _breastSide == 'left'
-                    ? l10n.translate('feeding_breast_left')
-                    : l10n.translate('feeding_breast_right'))
-                ?? '🤱 ${_breastSide == "both" ? "Both sides" : _breastSide == "left" ? "Left" : "Right"}',
-        ];
-
-        showPostRecordFeedback(
-          context: context,
-          title: l10n.translate('feeding_record_complete') ?? 'Feeding Record Complete! 🍼',
-          insights: insights,
-          themeColor: _themeColor,
+        // InsightCalculator로 오늘의 인사이트 계산
+        final insightCalc = InsightCalculator(_storage);
+        final todayData = await insightCalc.calculateTodayInsight();
+        final insightMessage = insightCalc.generateInsightMessage(
+          ActivityType.feeding,
+          todayData,
         );
+
+        // SmartCTA 결정
+        final smartCTA = SmartCTADecider.decide(
+          lastActivity: ActivityType.feeding,
+          todayData: todayData,
+        );
+
+        // CelebrationFeedback 표시
+        await CelebrationFeedback.show(
+          context: context,
+          activityType: ActivityType.feeding,
+          activity: activity,
+          insightMessage: insightMessage,
+          ctaText: smartCTA?.text,
+          onCTAPressed: smartCTA != null
+              ? () => Navigator.pushNamed(context, smartCTA.route)
+              : null,
+        );
+
+        // BottomSheet이 닫힌 후 화면 닫기
+        if (mounted) {
+          Navigator.pop(context);
+        }
       }
     } catch (e) {
       setState(() => _isLoading = false);
