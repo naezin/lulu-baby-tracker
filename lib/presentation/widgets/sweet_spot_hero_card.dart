@@ -5,6 +5,7 @@ import '../../core/utils/sweet_spot_calculator.dart';
 import '../../data/services/daily_summary_service.dart';
 import '../providers/home_data_provider.dart';
 import '../providers/sweet_spot_provider.dart';
+import '../providers/feed_sleep_provider.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import 'notification_toggle.dart';
@@ -61,8 +62,12 @@ class _SweetSpotHeroCardState extends State<SweetSpotHeroCard>
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<SweetSpotProvider, HomeDataProvider>(
-      builder: (context, sweetSpotProvider, homeDataProvider, child) {
+    return Consumer3<SweetSpotProvider, HomeDataProvider, FeedSleepProvider>(
+      builder: (context, sweetSpotProvider, homeDataProvider, feedSleepProvider, child) {
+        // 🌙 야간 모드 체크 (17시 이후)
+        final now = DateTime.now();
+        final isNightMode = now.hour >= 17;
+
         // SweetSpotProvider에서 Sweet Spot 데이터 가져오기 (우선순위)
         final sweetSpotFromProvider = sweetSpotProvider.currentSweetSpot;
         final sweetSpotFromHome = homeDataProvider.sweetSpot;
@@ -74,9 +79,11 @@ class _SweetSpotHeroCardState extends State<SweetSpotHeroCard>
         final currentBabyName = sweetSpotProvider.currentBaby?.name ?? widget.babyName;
 
         print('🎨 [SweetSpotHeroCard] build() called');
+        print('   isNightMode: $isNightMode (${now.hour}시)');
         print('   sweetSpot: ${sweetSpot != null ? "EXISTS" : "NULL"}');
         print('   dailySummary: ${dailySummary != null ? "sleep=${dailySummary.totalSleepMinutes}min, feeding=${dailySummary.feedingCount}, diaper=${dailySummary.diaperCount}" : "NULL"}');
         print('   currentBabyName: $currentBabyName');
+        print('   feedSleepCorrelation: ${feedSleepProvider.hasData ? "EXISTS" : "NULL"}');
 
         // 🔧 Empty State 조건 단순화: 수면 기록이 없으면 바로 Empty State 표시
         final hasNoSleepData = dailySummary == null || dailySummary.totalSleepMinutes == 0;
@@ -99,6 +106,18 @@ class _SweetSpotHeroCardState extends State<SweetSpotHeroCard>
                 },
               ),
             ),
+          );
+        }
+
+        // 🌙 야간 모드: 막수 가이드 표시
+        if (isNightMode && feedSleepProvider.hasData) {
+          print('🌙 [SweetSpotHeroCard] Night mode - showing last feeding guide');
+          return _buildNightModeCard(
+            context,
+            feedSleepProvider,
+            dailySummary,
+            notificationState,
+            homeDataProvider,
           );
         }
 
@@ -674,4 +693,334 @@ class _DotPatternPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+/// 🌙 야간 모드 카드 (막수 가이드)
+extension _NightModeCard on _SweetSpotHeroCardState {
+  /// 야간 모드용 간소화된 Stats Row
+  Widget _buildNightModeStatsRow(
+    BuildContext context,
+    DailySummary? summary,
+    bool isKorean,
+  ) {
+    // 수면 시간 (시간 단위)
+    final sleepHours = summary != null && summary.totalSleepMinutes > 0
+        ? (summary.totalSleepMinutes / 60).toStringAsFixed(1)
+        : '--';
+
+    // 수유량 (ml)
+    final feedingMl = summary != null && summary.totalFeedingMl > 0
+        ? summary.totalFeedingMl.toInt().toString()
+        : '--';
+
+    // 기저귀 횟수
+    final diaperCount = summary != null && summary.diaperCount > 0
+        ? summary.diaperCount.toString()
+        : '--';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.15),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildStatItem(
+            emoji: '💤',
+            value: '${sleepHours}h',
+            label: isKorean ? '총 수면' : 'Sleep',
+          ),
+          _buildStatDivider(),
+          _buildStatItem(
+            emoji: '🍼',
+            value: '${feedingMl}ml',
+            label: isKorean ? '수유' : 'Feed',
+          ),
+          _buildStatDivider(),
+          _buildStatItem(
+            emoji: '🧷',
+            value: '${diaperCount}${isKorean ? "회" : "x"}',
+            label: isKorean ? '기저귀' : 'Diapers',
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  Widget _buildNightModeCard(
+    BuildContext context,
+    FeedSleepProvider feedSleepProvider,
+    DailySummary? dailySummary,
+    notificationState,
+    HomeDataProvider provider,
+  ) {
+    final l10n = AppLocalizations.of(context);
+    final isKorean = l10n.locale.languageCode == 'ko';
+    final correlation = feedSleepProvider.correlation!;
+    final isReliable = feedSleepProvider.isReliable;
+
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: GestureDetector(
+          onTap: () => HapticFeedback.mediumImpact(),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  const Color(0xFF6B5B95), // 보라색 (야간 테마)
+                  const Color(0xFF6B5B95).withOpacity(0.8),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(32),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF6B5B95).withOpacity(0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(32),
+              child: Stack(
+                children: [
+                  // Subtle pattern overlay
+                  Positioned.fill(
+                    child: Opacity(
+                      opacity: 0.05,
+                      child: CustomPaint(
+                        painter: _DotPatternPainter(),
+                      ),
+                    ),
+                  ),
+
+                  // Main content
+                  Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Header: Status chip + Notification toggle
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.3),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Text('🌙', style: TextStyle(fontSize: 16)),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    isKorean ? '막수 타임' : 'Last Feeding',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: -0.2,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            NotificationToggle(
+                              state: notificationState,
+                              onTap: () => _handleNotificationToggle(context, provider, l10n),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Main message
+                        Text(
+                          isKorean
+                              ? '😴 잘 자는 막수를 드릴 시간이에요'
+                              : '😴 Time for a good night\'s feeding',
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                height: 1.3,
+                              ),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // 권장 수유량 & 간격
+                        Container(
+                          padding: const EdgeInsets.all(18),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.2),
+                              width: 1,
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.local_dining, color: Colors.white, size: 22),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    isKorean ? '데이터 기반 추천' : 'Data-based Recommendation',
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.9),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      children: [
+                                        Text('🍼', style: const TextStyle(fontSize: 24)),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          '${correlation.optimalAmountMl.toInt()}ml',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 22,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: -0.5,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          isKorean ? '권장 수유량' : 'Amount',
+                                          style: TextStyle(
+                                            color: Colors.white.withOpacity(0.8),
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Container(
+                                    width: 1,
+                                    height: 60,
+                                    color: Colors.white.withOpacity(0.3),
+                                  ),
+                                  Expanded(
+                                    child: Column(
+                                      children: [
+                                        Text('⏰', style: const TextStyle(fontSize: 24)),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          '${correlation.optimalGapMinutes}${isKorean ? "분" : "min"}',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 22,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: -0.5,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          isKorean ? '수유 후 간격' : 'Gap',
+                                          style: TextStyle(
+                                            color: Colors.white.withOpacity(0.8),
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // 신뢰도 배지
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: isReliable
+                                ? Colors.green.withOpacity(0.2)
+                                : Colors.orange.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isReliable
+                                  ? Colors.green.withOpacity(0.4)
+                                  : Colors.orange.withOpacity(0.4),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                isReliable ? Icons.check_circle : Icons.info,
+                                size: 16,
+                                color: isReliable ? Colors.greenAccent : Colors.orangeAccent,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                isReliable
+                                    ? (isKorean
+                                        ? '${correlation.dataPoints}일 데이터 기반 - 신뢰도 높음'
+                                        : '${correlation.dataPoints} days data - High confidence')
+                                    : (isKorean
+                                        ? '${correlation.dataPoints}일 데이터 - 더 많은 데이터가 필요해요'
+                                        : '${correlation.dataPoints} days data - Need more data'),
+                                style: TextStyle(
+                                  color: isReliable ? Colors.greenAccent : Colors.orangeAccent,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Stats row (Today's Snapshot) - 야간 모드용 간소화 버전
+                        _buildNightModeStatsRow(context, dailySummary, isKorean),
+
+                        // Notification footer (조건부)
+                        if (notificationState.isEnabled) ...[
+                          const SizedBox(height: 16),
+                          _buildNotificationFooter(context, notificationState, isKorean),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
