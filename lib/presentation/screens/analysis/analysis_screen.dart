@@ -50,8 +50,8 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   @override
   void initState() {
     super.initState();
-    _loadAnalysis();
 
+    // BabyProvider 초기화를 기다린 후 데이터 로드
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadAnalysis();
     });
@@ -68,16 +68,31 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     try {
       // 현재 아기 정보 로드
       final babyProvider = Provider.of<BabyProvider>(context, listen: false);
-      _baby = babyProvider.currentBaby;
+
+      // BabyProvider가 아직 초기화되지 않았으면 LocalStorage에서 직접 로드
+      if (babyProvider.currentBaby == null) {
+        debugPrint('⏳ [AnalysisScreen] BabyProvider not initialized, loading from LocalStorage...');
+        final babies = await _storage.getAllBabies();
+        _baby = babies.isNotEmpty ? babies.first : null;
+      } else {
+        _baby = babyProvider.currentBaby;
+      }
+
+      debugPrint('📊 [AnalysisScreen] _loadAnalysis called');
+      debugPrint('   currentBaby: ${_baby?.name ?? "null"}');
+      debugPrint('   babyId: ${_baby?.id ?? "null"}');
 
       // ✅ 아기가 없으면 분석 불가 상태로 처리
       if (_baby == null) {
+        debugPrint('⚠️ [AnalysisScreen] No baby found - showing Empty State');
         setState(() {
           _isLoading = false;
           _errorMessage = 'no_baby_registered'; // i18n key
         });
         return;
       }
+
+      debugPrint('✅ [AnalysisScreen] Baby loaded successfully: ${_baby!.name}');
 
       // ✅ 실제 아기 나이 계산
       final birthDate = DateTime.parse(_baby!.birthDate);
@@ -239,88 +254,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppTheme.lavenderMist))
-          : RefreshIndicator(
-              onRefresh: _loadAnalysis,
-              color: AppTheme.lavenderMist,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 🎉 하이라이트 카드
-                    if (_highlightMessage != null)
-                      _buildHighlightCard(),
-
-                    const SizedBox(height: 24),
-
-                    // 📅 조산아 교정 나이 카드
-                    if (_baby != null && _baby!.isPremature && _baby!.dueDate != null)
-                      CorrectedAgeCard(baby: _baby!),
-
-                    if (_baby != null && _baby!.isPremature && _baby!.dueDate != null)
-                      const SizedBox(height: 16),
-
-                    // 💗 저체중아 특별 케어 카드
-                    if (_birthWeight != null && _birthWeight! < 2.5)
-                      _buildLowBirthWeightCare(),
-
-                    if (_birthWeight != null && _birthWeight! < 2.5)
-                      const SizedBox(height: 16),
-
-                    // ❓ 수면 인사이트
-                    _buildSleepInsightCard(l10n),
-
-                    const SizedBox(height: 16),
-
-                    // ❓ 야간 기상 인사이트
-                    _buildWakeUpInsightCard(l10n),
-
-                    const SizedBox(height: 16),
-
-                    // ❓ 수유 인사이트
-                    _buildFeedingInsightCard(l10n),
-
-                    const SizedBox(height: 16),
-
-                    // ❓ 패턴 인사이트
-                    _buildPatternInsightCard(l10n),
-
-                    const SizedBox(height: 24),
-
-                    // 😴 수면 히트맵 - 7일 또는 30일
-                    _buildSleepHeatmapSection(l10n),
-
-                    const SizedBox(height: 24),
-
-                    // 📈 WHO 성장 곡선 (교정 나이 사용)
-                    if (_baby != null && _currentWeight != null && _baby!.gender != null)
-                      WHOGrowthChart(
-                        currentWeight: _currentWeight!,
-                        ageInMonths: _baby!.isPremature
-                            ? PrematureBabyCalculator.calculateCorrectedAgeInMonths(_baby!)
-                            : _baby!.ageInMonths,
-                        isBoy: _baby!.gender == 'male',
-                        babyName: _baby!.name,
-                      ),
-
-                    const SizedBox(height: 24),
-
-                    // 📊 성장 곡선 차트 (fl_chart 버전)
-                    _buildGrowthCurveSection(l10n),
-
-                    const SizedBox(height: 24),
-
-                    // 📋 PDF 리포트 섹션
-                    _buildPdfReportSection(l10n),
-
-                    const SizedBox(height: 100),
-                  ],
-                ),
-              ),
-            ),
+      body: _buildBody(context, l10n),
     );
   }
 
@@ -1130,6 +1064,182 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
           weightKg: _currentWeight,
           weightPercentile: 50, // TODO: 실제 백분위수 계산
           measurementDate: DateTime.now(),
+        ),
+      ),
+    );
+  }
+
+  /// 📊 Body 분리: 로딩/Empty State/정상 UI 관리
+  Widget _buildBody(BuildContext context, AppLocalizations l10n) {
+    // 1. 로딩 중
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          color: AppTheme.lavenderMist,
+        ),
+      );
+    }
+
+    // 2. 아기 미등록 (Empty State)
+    if (_baby == null) {
+      return _buildNoBabyState(context);
+    }
+
+    // 3. 정상 UI
+    return RefreshIndicator(
+      onRefresh: _loadAnalysis,
+      color: AppTheme.lavenderMist,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 🎉 하이라이트 카드
+            if (_highlightMessage != null) _buildHighlightCard(),
+
+            const SizedBox(height: 24),
+
+            // 📅 조산아 교정 나이 카드
+            if (_baby != null && _baby!.isPremature && _baby!.dueDate != null)
+              CorrectedAgeCard(baby: _baby!),
+
+            if (_baby != null && _baby!.isPremature && _baby!.dueDate != null)
+              const SizedBox(height: 16),
+
+            // 💗 저체중아 특별 케어 카드
+            if (_birthWeight != null && _birthWeight! < 2.5)
+              _buildLowBirthWeightCare(),
+
+            if (_birthWeight != null && _birthWeight! < 2.5)
+              const SizedBox(height: 16),
+
+            // ❓ 수면 인사이트
+            _buildSleepInsightCard(l10n),
+
+            const SizedBox(height: 16),
+
+            // ❓ 야간 기상 인사이트
+            _buildWakeUpInsightCard(l10n),
+
+            const SizedBox(height: 16),
+
+            // ❓ 수유 인사이트
+            _buildFeedingInsightCard(l10n),
+
+            const SizedBox(height: 16),
+
+            // ❓ 패턴 인사이트
+            _buildPatternInsightCard(l10n),
+
+            const SizedBox(height: 24),
+
+            // 😴 수면 히트맵 - 7일 또는 30일
+            _buildSleepHeatmapSection(l10n),
+
+            const SizedBox(height: 24),
+
+            // 📈 WHO 성장 곡선 (교정 나이 사용)
+            if (_baby != null && _currentWeight != null && _baby!.gender != null)
+              WHOGrowthChart(
+                currentWeight: _currentWeight!,
+                ageInMonths: _baby!.ageInMonths,
+                isBoy: _baby!.gender == 'male',
+                babyName: _baby!.name,
+              ),
+
+            const SizedBox(height: 24),
+
+            // 📊 성장 곡선 차트 (fl_chart 버전)
+            _buildGrowthCurveSection(l10n),
+
+            const SizedBox(height: 24),
+
+            // 📋 PDF 리포트 섹션
+            _buildPdfReportSection(l10n),
+
+            const SizedBox(height: 100),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 🚫 Empty State: 아기 미등록 시 표시
+  Widget _buildNoBabyState(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // 아이콘
+            Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                color: AppTheme.lavenderMist.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.baby_changing_station_outlined,
+                size: 64,
+                color: AppTheme.lavenderMist.withOpacity(0.7),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // 제목
+            Text(
+              l10n.translate('analysis_no_baby_title') ?? '등록된 아기가 없어요',
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textPrimary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+
+            const SizedBox(height: 12),
+
+            // 설명
+            Text(
+              l10n.translate('analysis_no_baby_subtitle') ??
+                  '온보딩을 완료하면 아기의 분석 결과를 볼 수 있어요',
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppTheme.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+
+            const SizedBox(height: 32),
+
+            // CTA 버튼
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pushNamed(context, '/onboarding');
+              },
+              icon: const Icon(Icons.add_circle_outline),
+              label: Text(
+                l10n.translate('start_onboarding') ?? '시작하기',
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.lavenderMist,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
