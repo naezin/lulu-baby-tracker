@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -14,10 +15,30 @@ import '../../providers/home_data_provider.dart';
 import '../../providers/sweet_spot_provider.dart';
 import '../../providers/baby_provider.dart';
 import '../../providers/smart_coach_provider.dart';
+import '../../providers/ongoing_sleep_provider.dart';
+
+/// 수면 기록 모드
+enum SleepRecordMode {
+  /// 새 수면 기록 (과거 기록) - 기존 _isOngoing = false
+  newRecord,
+
+  /// 진행 중인 수면 종료 - 기존 _isOngoing = true + OngoingSleepProvider 연동
+  endOngoing,
+}
 
 /// 수면 기록 화면
 class LogSleepScreen extends StatefulWidget {
-  const LogSleepScreen({super.key});
+  /// 수면 기록 모드
+  final SleepRecordMode mode;
+
+  /// 진행 중인 수면 데이터 - endOngoing 모드에서 사용
+  final ActivityModel? ongoingSleep;
+
+  const LogSleepScreen({
+    super.key,
+    this.mode = SleepRecordMode.newRecord, // 기본값: 새 기록
+    this.ongoingSleep,
+  });
 
   @override
   State<LogSleepScreen> createState() => _LogSleepScreenState();
@@ -35,6 +56,25 @@ class _LogSleepScreenState extends State<LogSleepScreen> {
   final _notesController = TextEditingController();
   bool _isOngoing = false;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // 모드에 따른 초기화
+    if (widget.mode == SleepRecordMode.endOngoing) {
+      _isOngoing = true; // 기존 플래그 활용
+
+      if (widget.ongoingSleep != null) {
+        // 진행 중인 수면의 시작 시간 설정 (읽기 전용)
+        _startTime = DateTime.parse(widget.ongoingSleep!.timestamp);
+        // 종료 시간 기본값: 현재 시간
+        _endTime = DateTime.now();
+      }
+    } else {
+      _isOngoing = false;
+    }
+  }
 
   @override
   void dispose() {
@@ -387,75 +427,96 @@ class _LogSleepScreenState extends State<LogSleepScreen> {
   }
 
   Future<void> _saveSleep() async {
+    if (_isLoading) return;
+
     setState(() => _isLoading = true);
 
     try {
       final babyProvider = Provider.of<BabyProvider>(context, listen: false);
-      final babyId = babyProvider.currentBaby?.id ?? 'unknown';
+      final baby = babyProvider.currentBaby;
 
-      // 🆕 디버깅 로그 추가
-      print('🔍 [LogSleepScreen] === 저장 시점 디버깅 ===');
-      print('   currentBaby: ${babyProvider.currentBaby?.name}');
-      print('   currentBabyId: $babyId');
+      if (baby == null) {
+        if (mounted) {
+          final l10n = AppLocalizations.of(context);
+          final isKorean = l10n.locale.languageCode == 'ko';
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(isKorean ? '아기 정보를 찾을 수 없습니다' : 'Baby not found'),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+        return;
+      }
 
-      final activity = ActivityModel.sleep(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        babyId: babyId,
-        startTime: _startTime,
-        endTime: _endTime,
-        location: _location,
-        quality: _quality,
-        notes: _notesController.text.trim().isEmpty
-            ? null
-            : _notesController.text.trim(),
-      );
+      ActivityModel activity;
 
-      print('   저장할 activity.babyId: ${activity.babyId}');
+      // 모드별 분기
+      if (widget.mode == SleepRecordMode.endOngoing) {
+        // ===== 진행 중 수면 종료 모드 =====
+        final ongoingSleepProvider = Provider.of<OngoingSleepProvider>(
+          context,
+          listen: false,
+        );
 
-      await _storage.saveActivity(activity);
+        // OngoingSleepProvider로 종료 (endTime은 내부에서 처리)
+        await ongoingSleepProvider.endSleep(
+          quality: _quality,
+          notes: _notesController.text.trim(),
+        );
 
-      // 🆕 저장 후 확인
-      final savedActivities = await _storage.getActivities();
-      final justSaved = savedActivities.where((a) => a.id == activity.id).firstOrNull;
-      print('   저장된 activity.babyId: ${justSaved?.babyId}');
-      print('🔍 [LogSleepScreen] === 디버깅 끝 ===');
+        // 저장된 활동 가져오기 (Celebration용)
+        activity = ongoingSleepProvider.lastCompletedSleep!;
+      } else {
+        // ===== 새 수면 기록 모드 (기존 로직) =====
+        final duration = _endTime != null
+            ? _endTime!.difference(_startTime).inMinutes
+            : 0;
 
+        activity = ActivityModel.sleep(
+          id: 'sleep_${DateTime.now().millisecondsSinceEpoch}',
+          babyId: baby.id,
+          startTime: _startTime,
+          endTime: _endTime,
+          location: _location,
+          quality: _quality,
+          notes: _notesController.text.trim().isEmpty
+              ? null
+              : _notesController.text.trim(),
+        );
+
+        await _storage.saveActivity(activity);
+      }
+
+      // 위젯 업데이트
       await _widgetService.updateAllWidgets();
 
       // SweetSpotProvider 업데이트 - 수면이 종료된 경우 기상 시각 업데이트
-      if (_endTime != null && mounted) {
+      if (activity.endTime != null && mounted) {
         final provider = Provider.of<SweetSpotProvider>(context, listen: false);
-        provider.onSleepActivityRecorded(wakeUpTime: _endTime!);
-        print('✅ [LogSleepScreen] SweetSpot updated with wake time: $_endTime');
+        final wakeTime = DateTime.parse(activity.endTime!);
+        provider.onSleepActivityRecorded(wakeUpTime: wakeTime);
       }
 
       // HomeDataProvider 업데이트 - Today's Snapshot 새로고침
       if (mounted) {
-        final babyProvider = Provider.of<BabyProvider>(context, listen: false);
         final homeDataProvider = Provider.of<HomeDataProvider>(context, listen: false);
-        final currentBaby = babyProvider.currentBaby;
-        if (currentBaby != null) {
-          await homeDataProvider.refreshDailySummary(currentBaby.id);
-          print('✅ [LogSleepScreen] HomeDataProvider daily summary refreshed for baby ${currentBaby.id}');
-        }
+        await homeDataProvider.refreshDailySummary(baby.id);
       }
 
       // SmartCoachProvider 업데이트 - 오늘의 일정 새로고침
       if (mounted) {
-        final babyProvider = Provider.of<BabyProvider>(context, listen: false);
         final smartCoachProvider = Provider.of<SmartCoachProvider>(context, listen: false);
-        final currentBaby = babyProvider.currentBaby;
-        if (currentBaby != null) {
-          await smartCoachProvider.refresh(
-            userId: currentBaby.id,
-            babyName: currentBaby.name,
-            ageInMonths: currentBaby.ageInMonths,
-            lastWakeUpTime: _endTime,
-            lastFeedingTime: null,
-            isKorean: true,
-          );
-          print('✅ [LogSleepScreen] SmartCoachProvider timeline refreshed');
-        }
+        await smartCoachProvider.refresh(
+          userId: baby.id,
+          babyName: baby.name,
+          ageInMonths: baby.ageInMonths,
+          lastWakeUpTime: activity.endTime != null
+              ? DateTime.parse(activity.endTime!)
+              : null,
+          lastFeedingTime: null,
+          isKorean: true,
+        );
       }
 
       if (mounted) {

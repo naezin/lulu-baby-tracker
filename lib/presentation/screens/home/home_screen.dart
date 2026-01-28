@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -699,7 +700,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       case 'sleep':
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const LogSleepScreen()),
+          MaterialPageRoute(
+            builder: (_) => const LogSleepScreen(
+              mode: SleepRecordMode.newRecord,
+            ),
+          ),
         );
         break;
       case 'feeding':
@@ -897,7 +902,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => const LogSleepScreen(),
+                    builder: (_) => const LogSleepScreen(
+                      mode: SleepRecordMode.newRecord,
+                    ),
                   ),
                 );
               },
@@ -1367,7 +1374,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 Navigator.pop(context);
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const LogSleepScreen()),
+                  MaterialPageRoute(
+                    builder: (_) => const LogSleepScreen(
+                      mode: SleepRecordMode.newRecord,
+                    ),
+                  ),
                 );
               },
             ),
@@ -1461,101 +1472,142 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   /// 🌙 "지금 재우기" - 즉시 수면 시작
   Future<void> _startSleepNow(BuildContext context) async {
-    print('🌙 [HomeScreen] _startSleepNow() called');
+    if (kDebugMode) {
+      debugPrint('🌙 [HomeScreen] _startSleepNow() called');
+    }
     HapticFeedback.mediumImpact();
 
     try {
-      print('📝 [HomeScreen] Creating sleep activity...');
       final babyProvider = Provider.of<BabyProvider>(context, listen: false);
+      final ongoingSleepProvider = Provider.of<OngoingSleepProvider>(context, listen: false);
       final babyId = babyProvider.currentBaby?.id ?? 'unknown';
+      final l10n = AppLocalizations.of(context);
+      final isKorean = l10n.locale.languageCode == 'ko';
 
-      // 현재 시각에 진행 중인 수면 기록 생성
-      final activity = ActivityModel.sleep(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+      if (kDebugMode) {
+        debugPrint('📝 [HomeScreen] Starting sleep via OngoingSleepProvider...');
+      }
+
+      // OngoingSleepProvider를 통해 수면 시작
+      await ongoingSleepProvider.startSleep(
         babyId: babyId,
-        startTime: DateTime.now(),
-        endTime: null, // 진행 중
-        location: null,
-        quality: null,
-        notes: null,
+        notes: isKorean ? 'Sweet Spot에서 시작' : 'Started from Sweet Spot',
       );
 
-      print('💾 [HomeScreen] Saving activity to storage...');
-      await _storage.saveActivity(activity);
-      print('✅ [HomeScreen] Activity saved successfully');
-
-      print('📱 [HomeScreen] Updating widgets...');
-      await _widgetService.updateAllWidgets();
-      print('✅ [HomeScreen] Widgets updated successfully');
+      if (kDebugMode) {
+        debugPrint('✅ [HomeScreen] Sleep started successfully');
+      }
 
       if (!mounted) {
-        print('⚠️ [HomeScreen] Widget not mounted after saving, exiting');
+        if (kDebugMode) {
+          debugPrint('⚠️ [HomeScreen] Widget not mounted after starting sleep, exiting');
+        }
         return;
       }
 
-      // SweetSpotProvider 업데이트 - 수면 시작 시각을 마지막 기상 시각으로 설정하지 않음
-      // (수면이 종료된 후에 기상 시각을 업데이트해야 함)
-      print('🔄 [HomeScreen] Sweet Spot will update when sleep ends');
+      // 위젯 업데이트
+      if (kDebugMode) {
+        debugPrint('📱 [HomeScreen] Updating widgets...');
+      }
+      await _widgetService.updateAllWidgets();
 
       HapticFeedback.heavyImpact();
 
-      print('📢 [HomeScreen] Showing success feedback...');
-      // 성공 피드백
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.bedtime, color: Colors.white),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Text(
-                  '수면이 시작되었습니다.\n기록에서 확인하거나 종료할 수 있습니다.',
-                  style: TextStyle(fontSize: 14),
+      // 🆕 Undo Toast (4초 동안 취소 가능)
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Text('😴', style: TextStyle(fontSize: 18)),
+                const SizedBox(width: 12),
+                Text(
+                  isKorean ? '수면이 시작되었어요' : 'Sleep started',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: isKorean ? '취소' : 'Undo',
+              textColor: Colors.amber,
+              onPressed: () async {
+                try {
+                  if (kDebugMode) {
+                    debugPrint('🔙 [HomeScreen] Undoing sleep...');
+                  }
+                  await ongoingSleepProvider.cancelSleep();
+                  await _widgetService.updateAllWidgets();
+
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          isKorean ? '수면 기록이 취소되었어요' : 'Sleep cancelled',
+                        ),
+                        duration: const Duration(seconds: 2),
+                        backgroundColor: const Color(0xFF5A4A85),
+                      ),
+                    );
+                  }
+
+                  if (kDebugMode) {
+                    debugPrint('✅ [HomeScreen] Sleep cancelled successfully');
+                  }
+                } catch (e) {
+                  if (kDebugMode) {
+                    debugPrint('❌ [HomeScreen] Failed to cancel sleep: $e');
+                  }
+                }
+              },
+            ),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            backgroundColor: const Color(0xFF2D3351),
+            margin: const EdgeInsets.all(16),
           ),
-          backgroundColor: AppTheme.lavenderMist,
-          duration: const Duration(seconds: 3),
-          action: SnackBarAction(
-            label: '기록 보기',
-            textColor: Colors.white,
-            onPressed: () {
-              print('🔍 [HomeScreen] Navigating to activity detail...');
-              // 기록 탭으로 이동
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ActivityDetailScreen(activity: activity),
-                ),
-              );
-            },
-          ),
-        ),
-      );
+        );
+      }
 
       // 홈 화면 새로고침
       if (mounted) {
-        print('🔄 [HomeScreen] Refreshing home screen...');
+        if (kDebugMode) {
+          debugPrint('🔄 [HomeScreen] Refreshing home screen...');
+        }
         setState(() {});
-        print('✅ [HomeScreen] Home screen refreshed');
-      } else {
-        print('⚠️ [HomeScreen] Widget not mounted for setState');
       }
 
-      print('🎉 [HomeScreen] _startSleepNow() completed successfully!');
+      if (kDebugMode) {
+        debugPrint('🎉 [HomeScreen] _startSleepNow() completed successfully!');
+      }
     } catch (e, stackTrace) {
-      print('❌ [HomeScreen] Error in _startSleepNow(): $e');
-      print('📍 [HomeScreen] Stack trace: $stackTrace');
+      if (kDebugMode) {
+        debugPrint('❌ [HomeScreen] Error in _startSleepNow(): $e');
+        debugPrint('📍 [HomeScreen] Stack trace: $stackTrace');
+      }
 
       if (!context.mounted) {
-        print('⚠️ [HomeScreen] Context not mounted, cannot show error');
+        if (kDebugMode) {
+          debugPrint('⚠️ [HomeScreen] Context not mounted, cannot show error');
+        }
         return;
       }
 
+      final l10n = AppLocalizations.of(context);
+      final isKorean = l10n.locale.languageCode == 'ko';
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('수면 시작 실패: $e'),
+          content: Text(
+            isKorean
+              ? '수면 시작 중 오류가 발생했습니다'
+              : 'Error starting sleep',
+          ),
           backgroundColor: AppTheme.errorSoft,
           duration: const Duration(seconds: 4),
         ),

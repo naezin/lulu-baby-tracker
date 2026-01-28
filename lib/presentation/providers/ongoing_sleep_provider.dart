@@ -39,7 +39,9 @@ class OngoingSleepProvider with ChangeNotifier {
     try {
       return DateTime.parse(_ongoingSleep!.timestamp);
     } catch (e) {
-      debugPrint('❌ [OngoingSleep] Failed to parse sleep start time: $e');
+      if (kDebugMode) {
+        debugPrint('❌ [OngoingSleep] Failed to parse sleep start time: $e');
+      }
       return null;
     }
   }
@@ -89,12 +91,16 @@ class OngoingSleepProvider with ChangeNotifier {
     String? location,
     String? notes,
   }) async {
-    debugPrint('🛏️ [OngoingSleep] Starting sleep...');
+    if (kDebugMode) {
+      debugPrint('🛏️ [OngoingSleep] Starting sleep...');
+    }
 
     try {
       // 이미 진행 중인 수면이 있으면 에러
       if (_ongoingSleep != null) {
-        debugPrint('⚠️ [OngoingSleep] Already has ongoing sleep');
+        if (kDebugMode) {
+          debugPrint('⚠️ [OngoingSleep] Already has ongoing sleep');
+        }
         throw Exception('Already has ongoing sleep');
       }
 
@@ -116,9 +122,13 @@ class OngoingSleepProvider with ChangeNotifier {
       _ongoingSleep = activity;
       notifyListeners();
 
-      debugPrint('✅ [OngoingSleep] Sleep started: ${activity.id}');
+      if (kDebugMode) {
+        debugPrint('✅ [OngoingSleep] Sleep started: ${activity.id}');
+      }
     } catch (e) {
-      debugPrint('❌ [OngoingSleep] Failed to start sleep: $e');
+      if (kDebugMode) {
+        debugPrint('❌ [OngoingSleep] Failed to start sleep: $e');
+      }
       rethrow;
     }
   }
@@ -132,11 +142,15 @@ class OngoingSleepProvider with ChangeNotifier {
     String? quality,
     String? notes,
   }) async {
-    debugPrint('⏰ [OngoingSleep] Ending sleep...');
+    if (kDebugMode) {
+      debugPrint('⏰ [OngoingSleep] Ending sleep...');
+    }
 
     try {
       if (_ongoingSleep == null) {
-        debugPrint('⚠️ [OngoingSleep] No ongoing sleep to end');
+        if (kDebugMode) {
+          debugPrint('⚠️ [OngoingSleep] No ongoing sleep to end');
+        }
         throw Exception('No ongoing sleep to end');
       }
 
@@ -163,10 +177,14 @@ class OngoingSleepProvider with ChangeNotifier {
       _ongoingSleep = null;
       notifyListeners();
 
-      debugPrint('✅ [OngoingSleep] Sleep ended: ${completedSleep.id}');
-      debugPrint('   Duration: ${completedSleep.durationMinutes} minutes');
+      if (kDebugMode) {
+        debugPrint('✅ [OngoingSleep] Sleep ended: ${completedSleep.id}');
+        debugPrint('   Duration: ${completedSleep.durationMinutes} minutes');
+      }
     } catch (e) {
-      debugPrint('❌ [OngoingSleep] Failed to end sleep: $e');
+      if (kDebugMode) {
+        debugPrint('❌ [OngoingSleep] Failed to end sleep: $e');
+      }
       rethrow;
     }
   }
@@ -175,11 +193,15 @@ class OngoingSleepProvider with ChangeNotifier {
   /// - 진행 중인 수면 삭제 (기록하지 않음)
   /// - LocalStorage에서 삭제
   Future<void> cancelSleep() async {
-    debugPrint('❌ [OngoingSleep] Cancelling sleep...');
+    if (kDebugMode) {
+      debugPrint('❌ [OngoingSleep] Cancelling sleep...');
+    }
 
     try {
       if (_ongoingSleep == null) {
-        debugPrint('⚠️ [OngoingSleep] No ongoing sleep to cancel');
+        if (kDebugMode) {
+          debugPrint('⚠️ [OngoingSleep] No ongoing sleep to cancel');
+        }
         return;
       }
 
@@ -190,9 +212,13 @@ class OngoingSleepProvider with ChangeNotifier {
       _ongoingSleep = null;
       notifyListeners();
 
-      debugPrint('✅ [OngoingSleep] Sleep cancelled');
+      if (kDebugMode) {
+        debugPrint('✅ [OngoingSleep] Sleep cancelled');
+      }
     } catch (e) {
-      debugPrint('❌ [OngoingSleep] Failed to cancel sleep: $e');
+      if (kDebugMode) {
+        debugPrint('❌ [OngoingSleep] Failed to cancel sleep: $e');
+      }
       rethrow;
     }
   }
@@ -201,7 +227,9 @@ class OngoingSleepProvider with ChangeNotifier {
   /// - LocalStorage에서 endTime이 없는 sleep 활동 찾기
   /// - 오늘 시작된 수면만 복원 (어제 이전 수면은 무시)
   Future<void> restoreOngoingSleep() async {
-    debugPrint('🔄 [OngoingSleep] Restoring ongoing sleep...');
+    if (kDebugMode) {
+      debugPrint('🔄 [OngoingSleep] Restoring ongoing sleep...');
+    }
 
     try {
       final today = DateTime.now();
@@ -219,7 +247,9 @@ class OngoingSleepProvider with ChangeNotifier {
           .toList();
 
       if (ongoingSleep.isEmpty) {
-        debugPrint('   No ongoing sleep found');
+        if (kDebugMode) {
+          debugPrint('   No ongoing sleep found');
+        }
         _ongoingSleep = null;
         notifyListeners();
         return;
@@ -232,11 +262,15 @@ class OngoingSleepProvider with ChangeNotifier {
       _ongoingSleep = ongoingSleep.first;
       notifyListeners();
 
-      debugPrint('✅ [OngoingSleep] Restored ongoing sleep: ${_ongoingSleep!.id}');
-      debugPrint('   Started at: ${_ongoingSleep!.timestamp}');
-      debugPrint('   Elapsed: $formattedElapsedTime');
+      if (kDebugMode) {
+        debugPrint('✅ [OngoingSleep] Restored ongoing sleep: ${_ongoingSleep!.id}');
+        debugPrint('   Started at: ${_ongoingSleep!.timestamp}');
+        debugPrint('   Elapsed: $formattedElapsedTime');
+      }
     } catch (e) {
-      debugPrint('❌ [OngoingSleep] Failed to restore ongoing sleep: $e');
+      if (kDebugMode) {
+        debugPrint('❌ [OngoingSleep] Failed to restore ongoing sleep: $e');
+      }
       _ongoingSleep = null;
       notifyListeners();
     }

@@ -20,6 +20,7 @@ import 'presentation/providers/unit_preferences_provider.dart';
 import 'presentation/providers/baby_provider.dart';
 import 'presentation/providers/feed_sleep_provider.dart';
 import 'presentation/providers/ongoing_sleep_provider.dart';  // 🆕
+import 'presentation/providers/sleep_analysis_provider.dart';  // 🆕 Day 3
 import 'presentation/screens/activities/log_feeding_screen.dart';
 import 'presentation/screens/activities/log_sleep_screen.dart';
 import 'presentation/screens/activities/log_diaper_screen.dart';
@@ -72,6 +73,14 @@ Future<void> main() async {
     );
   } catch (e) {
     debugPrint('⚠️ DI initialization: $e');
+  }
+
+  // 🆕 Data Migration v2 (useCorrectedAge 필드 추가)
+  try {
+    final storage = di.sl<LocalStorageService>();
+    await storage.migrateToV2();
+  } catch (e) {
+    debugPrint('⚠️ Migration v2 failed: $e');
   }
 
   // Initialize widget service (only on non-web platforms)
@@ -228,6 +237,11 @@ class LuluApp extends StatelessWidget {
         // Feed-Sleep Correlation Provider
         ChangeNotifierProvider(
           create: (_) => FeedSleepProvider(),
+        ),
+
+        // 🆕 Sleep Analysis Provider (Day 3)
+        ChangeNotifierProvider(
+          create: (_) => SleepAnalysisProvider(),
         ),
       ],
       child: Consumer<LocaleProvider>(

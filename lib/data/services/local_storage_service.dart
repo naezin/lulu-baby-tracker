@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/activity_model.dart';
 import '../models/baby_model.dart';
@@ -9,6 +10,7 @@ class LocalStorageService {
   static const String _currentBabyKey = 'current_baby';
   static const String _currentBabyIdKey = 'current_baby_id';  // 🆕 다중 아기 지원
   static const String _allBabiesKey = 'all_babies';  // 🆕 모든 아기 목록
+  static const String _migrationVersionKey = 'migration_version';
 
   /// 활동 저장
   Future<void> saveActivity(ActivityModel activity) async {
@@ -49,7 +51,9 @@ class LocalStorageService {
     // 마이그레이션된 데이터 저장
     if (jsonList.any((json) => json['babyId'] == null)) {
       await _saveAllActivities(activities);
-      print('✅ [LocalStorage] Migrated ${activities.length} activities with babyId');
+      if (kDebugMode) {
+        print('✅ [LocalStorage] Migrated ${activities.length} activities with babyId');
+      }
     }
 
     return activities;
@@ -135,7 +139,9 @@ class LocalStorageService {
 
   /// 활동 업데이트
   Future<void> updateActivity(ActivityModel activity) async {
-    print('📝 [Storage] Updating activity: ${activity.id}');
+    if (kDebugMode) {
+      print('📝 [Storage] Updating activity: ${activity.id}');
+    }
 
     try {
       final activities = await getActivities();
@@ -147,21 +153,29 @@ class LocalStorageService {
         final prefs = await SharedPreferences.getInstance();
         final jsonList = activities.map((a) => a.toJson()).toList();
         await prefs.setString(_activitiesKey, jsonEncode(jsonList));
-        print('✅ [Storage] Activity updated successfully');
+        if (kDebugMode) {
+          print('✅ [Storage] Activity updated successfully');
+        }
       } else {
-        print('⚠️ [Storage] Activity not found for update: ${activity.id}');
+        if (kDebugMode) {
+          print('⚠️ [Storage] Activity not found for update: ${activity.id}');
+        }
         // 없으면 새로 저장
         await saveActivity(activity);
       }
     } catch (e) {
-      print('❌ [Storage] Failed to update activity: $e');
+      if (kDebugMode) {
+        print('❌ [Storage] Failed to update activity: $e');
+      }
       rethrow;
     }
   }
 
   /// 활동 삭제
   Future<void> deleteActivity(String activityId) async {
-    print('🗑️ [Storage] Deleting activity: $activityId');
+    if (kDebugMode) {
+      print('🗑️ [Storage] Deleting activity: $activityId');
+    }
 
     try {
       final activities = await getActivities();
@@ -172,12 +186,18 @@ class LocalStorageService {
         final prefs = await SharedPreferences.getInstance();
         final jsonList = activities.map((a) => a.toJson()).toList();
         await prefs.setString(_activitiesKey, jsonEncode(jsonList));
-        print('✅ [Storage] Activity deleted successfully');
+        if (kDebugMode) {
+          print('✅ [Storage] Activity deleted successfully');
+        }
       } else {
-        print('⚠️ [Storage] Activity not found for deletion: $activityId');
+        if (kDebugMode) {
+          print('⚠️ [Storage] Activity not found for deletion: $activityId');
+        }
       }
     } catch (e) {
-      print('❌ [Storage] Failed to delete activity: $e');
+      if (kDebugMode) {
+        print('❌ [Storage] Failed to delete activity: $e');
+      }
       rethrow;
     }
   }
@@ -186,6 +206,70 @@ class LocalStorageService {
   Future<void> clearAll() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
+  }
+
+  // ==================== Account Deletion Methods (GDPR/CCPA) ====================
+
+  /// 모든 활동 데이터 삭제
+  Future<void> clearAllActivities() async {
+    if (kDebugMode) {
+      print('🗑️ [Storage] Clearing all activities');
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_activitiesKey);
+  }
+
+  /// 모든 아기 데이터 삭제
+  Future<void> clearAllBabies() async {
+    if (kDebugMode) {
+      print('🗑️ [Storage] Clearing all babies');
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_currentBabyKey);
+    await prefs.remove(_currentBabyIdKey);
+    await prefs.remove(_allBabiesKey);
+  }
+
+  /// 사용자 설정 삭제
+  Future<void> clearUserPreferences() async {
+    if (kDebugMode) {
+      print('🗑️ [Storage] Clearing user preferences');
+    }
+    final prefs = await SharedPreferences.getInstance();
+    // 앱 설정 관련 키들 삭제 (필요시 추가)
+    await prefs.remove('language');
+    await prefs.remove('theme');
+    await prefs.remove('notifications_enabled');
+  }
+
+  /// 캐시 데이터 삭제
+  Future<void> clearCache() async {
+    if (kDebugMode) {
+      print('🗑️ [Storage] Clearing cache');
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_migrationVersionKey);
+    // 기타 캐시 키들 삭제 (필요시 추가)
+  }
+
+  /// 모든 데이터 삭제 (계정 삭제용)
+  /// clearAll()과 동일하지만 명시적으로 GDPR/CCPA 준수 목적
+  Future<void> clearAllData() async {
+    if (kDebugMode) {
+      print('🗑️ [Storage] Clearing ALL data for account deletion');
+    }
+    await clearAllActivities();
+    await clearAllBabies();
+    await clearUserPreferences();
+    await clearCache();
+
+    // 마지막으로 모든 키 삭제 (안전 장치)
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+
+    if (kDebugMode) {
+      print('✅ [Storage] All local data cleared');
+    }
   }
 
   /// 통계 데이터
@@ -286,7 +370,9 @@ class LocalStorageService {
           .map((json) => BabyModel.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      print('⚠️ [LocalStorage] Error parsing babies: $e');
+      if (kDebugMode) {
+        print('⚠️ [LocalStorage] Error parsing babies: $e');
+      }
       return [];
     }
   }
@@ -326,6 +412,82 @@ class LocalStorageService {
         await deleteBaby();
         await prefs.remove(_currentBabyIdKey);
       }
+    }
+  }
+
+  // ==================== Data Migration ====================
+
+  /// 현재 마이그레이션 버전 확인
+  Future<int> getMigrationVersion() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_migrationVersionKey) ?? 0;
+  }
+
+  /// 마이그레이션 버전 업데이트
+  Future<void> setMigrationVersion(int version) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_migrationVersionKey, version);
+  }
+
+  /// 🆕 Migration v2: useCorrectedAge 필드 추가
+  /// 기존 조산아 데이터에 useCorrectedAge = true 기본값 적용
+  Future<void> migrateToV2() async {
+    final currentVersion = await getMigrationVersion();
+    if (currentVersion >= 2) {
+      if (kDebugMode) {
+        print('✅ [Migration] Already at version 2 or higher');
+      }
+      return;
+    }
+
+    if (kDebugMode) {
+      print('🔄 [Migration] Starting migration to v2...');
+    }
+
+    try {
+      // 1. 현재 아기 마이그레이션
+      final currentBaby = await getBaby();
+      if (currentBaby != null) {
+        // useCorrectedAge 필드가 없으면 기본값 적용
+        // fromJson에서 이미 처리되지만, 명시적으로 저장
+        final migrated = currentBaby.copyWith(
+          useCorrectedAge: currentBaby.isPremature ? true : currentBaby.useCorrectedAge,
+          updatedAt: DateTime.now().toIso8601String(),
+        );
+        await saveBaby(migrated);
+
+        if (kDebugMode) {
+          print('✅ [Migration] Migrated current baby: ${currentBaby.name}');
+        }
+      }
+
+      // 2. 모든 아기 마이그레이션
+      final allBabies = await getAllBabies();
+      if (allBabies.isNotEmpty) {
+        final migratedBabies = allBabies.map((baby) {
+          return baby.copyWith(
+            useCorrectedAge: baby.isPremature ? true : baby.useCorrectedAge,
+            updatedAt: DateTime.now().toIso8601String(),
+          );
+        }).toList();
+        await saveAllBabies(migratedBabies);
+
+        if (kDebugMode) {
+          print('✅ [Migration] Migrated ${migratedBabies.length} babies');
+        }
+      }
+
+      // 3. 마이그레이션 버전 업데이트
+      await setMigrationVersion(2);
+
+      if (kDebugMode) {
+        print('✅ [Migration] Successfully migrated to v2');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ [Migration] Failed to migrate to v2: $e');
+      }
+      rethrow;
     }
   }
 }

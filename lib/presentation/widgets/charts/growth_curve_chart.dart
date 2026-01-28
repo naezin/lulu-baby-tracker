@@ -18,6 +18,47 @@ class GrowthDataPoint {
   });
 }
 
+/// 성장 차트 기간 선택
+enum GrowthPeriod {
+  threeMonths,  // 최근 3개월
+  sixMonths,    // 최근 6개월
+  oneYear,      // 최근 1년
+  twoYears,     // 최근 2년
+  all,          // 전체
+}
+
+extension GrowthPeriodExtension on GrowthPeriod {
+  String displayName(bool isKorean) {
+    switch (this) {
+      case GrowthPeriod.threeMonths:
+        return isKorean ? '3개월' : '3 Months';
+      case GrowthPeriod.sixMonths:
+        return isKorean ? '6개월' : '6 Months';
+      case GrowthPeriod.oneYear:
+        return isKorean ? '1년' : '1 Year';
+      case GrowthPeriod.twoYears:
+        return isKorean ? '2년' : '2 Years';
+      case GrowthPeriod.all:
+        return isKorean ? '전체' : 'All';
+    }
+  }
+
+  int get monthsRange {
+    switch (this) {
+      case GrowthPeriod.threeMonths:
+        return 3;
+      case GrowthPeriod.sixMonths:
+        return 6;
+      case GrowthPeriod.oneYear:
+        return 12;
+      case GrowthPeriod.twoYears:
+        return 24;
+      case GrowthPeriod.all:
+        return 999; // 모든 데이터
+    }
+  }
+}
+
 /// WHO 성장 곡선 차트
 ///
 /// WHO 표준 백분위수 곡선(p3, p15, p50, p85, p97)과
@@ -34,6 +75,9 @@ class GrowthCurveChart extends StatefulWidget {
   final String title;
   final String unit;
   final double? height;
+  final bool isKorean;
+  final GrowthPeriod selectedPeriod;
+  final Function(GrowthPeriod)? onPeriodChanged;
 
   const GrowthCurveChart({
     Key? key,
@@ -43,6 +87,9 @@ class GrowthCurveChart extends StatefulWidget {
     required this.title,
     required this.unit,
     this.height,
+    this.isKorean = true,
+    this.selectedPeriod = GrowthPeriod.all,
+    this.onPeriodChanged,
   }) : super(key: key);
 
   @override
@@ -51,6 +98,56 @@ class GrowthCurveChart extends StatefulWidget {
 
 class _GrowthCurveChartState extends State<GrowthCurveChart> {
   int? _touchedIndex;
+
+  /// 기간에 따라 필터링된 아기 데이터
+  List<GrowthDataPoint> get _filteredBabyData {
+    if (widget.selectedPeriod == GrowthPeriod.all) {
+      return widget.babyData;
+    }
+
+    final now = DateTime.now();
+    final cutoffDate = DateTime(
+      now.year,
+      now.month - widget.selectedPeriod.monthsRange,
+      now.day,
+    );
+
+    return widget.babyData
+        .where((dataPoint) => dataPoint.dateTime.isAfter(cutoffDate))
+        .toList();
+  }
+
+  /// 차트 X축 범위 (월령)
+  double get _maxX {
+    if (widget.babyData.isEmpty) return 24;
+
+    final latestAge = widget.babyData
+        .map((d) => d.ageInMonths)
+        .reduce((a, b) => a > b ? a : b);
+
+    switch (widget.selectedPeriod) {
+      case GrowthPeriod.threeMonths:
+        return (latestAge + 1).toDouble();
+      case GrowthPeriod.sixMonths:
+        return (latestAge + 1).toDouble();
+      case GrowthPeriod.oneYear:
+        return (latestAge + 1).toDouble();
+      case GrowthPeriod.twoYears:
+        return 24;
+      case GrowthPeriod.all:
+        return (latestAge + 3).toDouble().clamp(12, 24);
+    }
+  }
+
+  double get _minX {
+    if (_filteredBabyData.isEmpty) return 0;
+
+    final oldestAge = _filteredBabyData
+        .map((d) => d.ageInMonths)
+        .reduce((a, b) => a < b ? a : b);
+
+    return (oldestAge - 1).toDouble().clamp(0, double.infinity);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -100,23 +197,80 @@ class _GrowthCurveChartState extends State<GrowthCurveChart> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          widget.title,
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.title,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  SizedBox(height: LuluSpacing.xs),
+                  Text(
+                    widget.isKorean ? 'WHO 표준 성장 곡선' : 'WHO Growth Standards',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white.withOpacity(0.7),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-        SizedBox(height: LuluSpacing.xs),
-        Text(
-          'WHO 표준 성장 곡선',
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.white.withOpacity(0.7),
-          ),
-        ),
+        if (widget.onPeriodChanged != null) ...[
+          SizedBox(height: LuluSpacing.md),
+          _buildPeriodSelector(),
+        ],
       ],
+    );
+  }
+
+  Widget _buildPeriodSelector() {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: GrowthPeriod.values.map((period) {
+        final isSelected = period == widget.selectedPeriod;
+        return GestureDetector(
+          onTap: () => widget.onPeriodChanged?.call(period),
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 6,
+            ),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? Color(0xFF9D8CD6).withOpacity(0.3)
+                  : Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isSelected
+                    ? Color(0xFF9D8CD6)
+                    : Colors.white.withOpacity(0.2),
+                width: isSelected ? 2 : 1,
+              ),
+            ),
+            child: Text(
+              period.displayName(widget.isKorean),
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                color: isSelected
+                    ? Color(0xFF9D8CD6)
+                    : Colors.white.withOpacity(0.8),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 
@@ -193,8 +347,8 @@ class _GrowthCurveChartState extends State<GrowthCurveChart> {
             color: Colors.white.withOpacity(0.1),
           ),
         ),
-        minX: 0,
-        maxX: 24,
+        minX: _minX,
+        maxX: _maxX,
         minY: _calculateMinY(standardData),
         maxY: _calculateMaxY(standardData),
         lineBarsData: [
@@ -223,7 +377,7 @@ class _GrowthCurveChartState extends State<GrowthCurveChart> {
         getTooltipItems: (List<LineBarSpot> touchedSpots) {
           return touchedSpots.map((LineBarSpot touchedSpot) {
             if (touchedSpot.barIndex == 5) { // 아기 데이터 라인
-              final dataPoint = widget.babyData[touchedSpot.spotIndex];
+              final dataPoint = _filteredBabyData[touchedSpot.spotIndex];
               final service = GrowthPercentileService();
               final percentile = service.calculatePercentile(
                 ageInMonths: dataPoint.ageInMonths,
@@ -232,10 +386,13 @@ class _GrowthCurveChartState extends State<GrowthCurveChart> {
                 gender: widget.gender,
               );
 
+              final monthsText = widget.isKorean ? '개월' : ' mo';
+              final percentileText = widget.isKorean ? '백분위' : 'th %ile';
+
               return LineTooltipItem(
-                '${dataPoint.ageInMonths}개월\n'
+                '${dataPoint.ageInMonths}$monthsText\n'
                 '${dataPoint.value.toStringAsFixed(1)}${widget.unit}\n'
-                '${percentile != null ? "${percentile.toStringAsFixed(1)}백분위" : ""}',
+                '${percentile != null ? "${percentile.toStringAsFixed(1)}$percentileText" : ""}',
                 TextStyle(
                   color: Color(0xFFD4AF6A),
                   fontWeight: FontWeight.bold,
@@ -371,7 +528,7 @@ class _GrowthCurveChartState extends State<GrowthCurveChart> {
   }
 
   LineChartBarData _buildBabyDataLine() {
-    final spots = widget.babyData.map((dataPoint) {
+    final spots = _filteredBabyData.map((dataPoint) {
       return FlSpot(
         dataPoint.ageInMonths.toDouble(),
         dataPoint.value,

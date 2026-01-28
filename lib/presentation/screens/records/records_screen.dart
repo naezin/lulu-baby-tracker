@@ -342,7 +342,9 @@ class _RecordsScreenState extends State<RecordsScreen> {
     Widget screen;
     switch (type) {
       case ActivityType.sleep:
-        screen = const LogSleepScreen();
+        screen = const LogSleepScreen(
+          mode: SleepRecordMode.newRecord,
+        );
         break;
       case ActivityType.feeding:
         screen = const LogFeedingScreen();

@@ -74,8 +74,8 @@ class SweetSpotProvider extends ChangeNotifier {
       return;
     }
 
-    // 교정 월령 사용 (조산아 고려)
-    final ageInMonths = _currentBaby!.correctedAgeInMonths;
+    // effectiveAgeInMonths 사용 (조산아 useCorrectedAge 설정 고려)
+    final ageInMonths = _currentBaby!.effectiveAgeInMonths.toInt();
 
     // 오늘 발생한 낮잠 횟수 계산 (실제로는 Activity 기록에서 가져와야 함)
     final napNumber = _estimateNapNumber();
@@ -85,6 +85,10 @@ class SweetSpotProvider extends ChangeNotifier {
       lastWakeUpTime: _lastSleepActivity!,
       napNumber: napNumber,
     );
+
+    if (kDebugMode) {
+      print('✅ [SweetSpotProvider] Using ${_currentBaby!.isPremature && _currentBaby!.useCorrectedAge ? "corrected" : "actual"} age: $ageInMonths months');
+    }
 
     notifyListeners();
   }
@@ -97,7 +101,7 @@ class SweetSpotProvider extends ChangeNotifier {
       return;
     }
 
-    final ageInMonths = _currentBaby!.correctedAgeInMonths;
+    final ageInMonths = _currentBaby!.effectiveAgeInMonths.toInt();
 
     _dailySchedule = SweetSpotCalculator.calculateDailyNapSchedule(
       ageInMonths: ageInMonths,
@@ -342,30 +346,6 @@ class SweetSpotProvider extends ChangeNotifier {
     _countdownTimer?.cancel();
     _countdownTimer = null;
     super.dispose();
-  }
-}
-
-/// BabyModel 확장 (교정 월령 계산)
-extension BabyModelExtension on BabyModel {
-  int get correctedAgeInMonths {
-    final now = DateTime.now();
-    final birthDate = DateTime.parse(this.birthDate);
-    final dueDate = this.dueDate != null ? DateTime.parse(this.dueDate!) : birthDate;
-
-    // 조산 주수 계산
-    final prematureWeeks = dueDate.difference(birthDate).inDays ~/ 7;
-
-    // 교정 나이 = 실제 나이 - 조산 주수
-    final correctedBirthDate = birthDate.add(Duration(days: prematureWeeks * 7));
-    final monthsDiff = _calculateMonths(correctedBirthDate, now);
-
-    return monthsDiff > 0 ? monthsDiff : 0;
-  }
-
-  int _calculateMonths(DateTime start, DateTime end) {
-    int months = (end.year - start.year) * 12 + end.month - start.month;
-    if (end.day < start.day) months--;
-    return months;
   }
 }
 

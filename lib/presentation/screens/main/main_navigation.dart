@@ -136,7 +136,11 @@ class _MainNavigationState extends State<MainNavigation> {
                     Navigator.pop(context);
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const LogSleepScreen()),
+                      MaterialPageRoute(
+                        builder: (_) => const LogSleepScreen(
+                          mode: SleepRecordMode.newRecord,
+                        ),
+                      ),
                     );
                   },
                 ),

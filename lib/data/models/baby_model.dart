@@ -8,6 +8,7 @@ class BabyModel {
   final String birthDate; // ISO 8601 format
   final String? dueDate; // ISO 8601 format (조산아의 경우)
   final bool isPremature;
+  final bool useCorrectedAge; // 교정 연령 사용 여부
   final String? gender; // 'male', 'female', 'other'
   final String? photoUrl;
 
@@ -28,6 +29,7 @@ class BabyModel {
     required this.birthDate,
     this.dueDate,
     required this.isPremature,
+    this.useCorrectedAge = true, // 기본값: 조산아면 교정 적용
     this.gender,
     this.photoUrl,
     this.birthWeightKg,
@@ -47,6 +49,7 @@ class BabyModel {
       birthDate: json['birthDate'] as String,
       dueDate: json['dueDate'] as String?,
       isPremature: json['isPremature'] as bool? ?? false,
+      useCorrectedAge: json['useCorrectedAge'] as bool? ?? true, // 마이그레이션 기본값
       gender: json['gender'] as String?,
       photoUrl: json['photoUrl'] as String?,
       birthWeightKg: json['birthWeightKg'] as double?,
@@ -69,6 +72,7 @@ class BabyModel {
       'birthDate': birthDate,
       'dueDate': dueDate,
       'isPremature': isPremature,
+      'useCorrectedAge': useCorrectedAge,
       'gender': gender,
       'photoUrl': photoUrl,
       'birthWeightKg': birthWeightKg,
@@ -81,13 +85,6 @@ class BabyModel {
     };
   }
 
-  // Helper: 생후 개월 수 계산
-  int get ageInMonths {
-    final birth = DateTime.parse(birthDate);
-    final now = DateTime.now();
-    return ((now.year - birth.year) * 12 + now.month - birth.month);
-  }
-
   // Helper: 생후 일수 계산
   int get ageInDays {
     final birth = DateTime.parse(birthDate);
@@ -95,24 +92,69 @@ class BabyModel {
     return now.difference(birth).inDays;
   }
 
-  /// 교정 월령 (조산아용) - 조산아가 아니면 일반 월령 반환
-  int get correctedAgeInMonths {
-    if (!isPremature || dueDate == null) {
-      return ageInMonths;
-    }
+  /// 조산 주수 계산
+  int get pretermWeeks {
+    if (dueDate == null || !isPremature) return 0;
 
     final birth = DateTime.parse(birthDate);
     final due = DateTime.parse(dueDate!);
-    final prematureWeeks = due.difference(birth).inDays ~/ 7;
+    final diffDays = due.difference(birth).inDays;
 
-    final correctedBirthDate = birth.add(Duration(days: prematureWeeks * 7));
+    return diffDays > 0 ? (diffDays / 7).ceil() : 0;
+  }
+
+  /// WHO 표준 월령 계산 (정확한 방식)
+  double _calculateAgeInMonths(DateTime birthDateTime) {
     final now = DateTime.now();
 
-    int months = (now.year - correctedBirthDate.year) * 12 +
-                 now.month - correctedBirthDate.month;
-    if (now.day < correctedBirthDate.day) months--;
+    // 월 단위 계산
+    int months = (now.year - birthDateTime.year) * 12 +
+                 (now.month - birthDateTime.month);
 
-    return months > 0 ? months : 0;
+    // 일수 비율 계산 (더 정확한 방식)
+    if (now.day < birthDateTime.day) {
+      months--;
+      // 이전 달의 남은 일수 + 현재 달의 일수
+      final prevMonth = DateTime(now.year, now.month, 0);
+      final daysInPrevMonth = prevMonth.day;
+      final daysPassed = (daysInPrevMonth - birthDateTime.day) + now.day;
+      return months + (daysPassed / daysInPrevMonth);
+    } else {
+      final daysPassed = now.day - birthDateTime.day;
+      final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
+      return months + (daysPassed / daysInMonth);
+    }
+  }
+
+  /// 실제 월령 (정수)
+  int get ageInMonths {
+    final birth = DateTime.parse(birthDate);
+    final now = DateTime.now();
+    return ((now.year - birth.year) * 12 + now.month - birth.month);
+  }
+
+  /// 실제 월령 (소수점, WHO 표준)
+  double get actualAgeInMonths {
+    final birth = DateTime.parse(birthDate);
+    return _calculateAgeInMonths(birth);
+  }
+
+  /// 교정 월령 (소수점, WHO 표준)
+  double get correctedAgeInMonths {
+    if (!isPremature || !useCorrectedAge) return actualAgeInMonths;
+
+    final birth = DateTime.parse(birthDate);
+    final correctedBirth = birth.add(Duration(days: pretermWeeks * 7));
+
+    final correctedAge = _calculateAgeInMonths(correctedBirth);
+    return correctedAge > 0 ? correctedAge : 0;
+  }
+
+  /// Sweet Spot 계산에 사용할 월령
+  double get effectiveAgeInMonths {
+    return (isPremature && useCorrectedAge)
+        ? correctedAgeInMonths
+        : actualAgeInMonths;
   }
 
   BabyModel copyWith({
@@ -122,6 +164,7 @@ class BabyModel {
     String? birthDate,
     String? dueDate,
     bool? isPremature,
+    bool? useCorrectedAge,
     String? gender,
     String? photoUrl,
     double? birthWeightKg,
@@ -139,6 +182,7 @@ class BabyModel {
       birthDate: birthDate ?? this.birthDate,
       dueDate: dueDate ?? this.dueDate,
       isPremature: isPremature ?? this.isPremature,
+      useCorrectedAge: useCorrectedAge ?? this.useCorrectedAge,
       gender: gender ?? this.gender,
       photoUrl: photoUrl ?? this.photoUrl,
       birthWeightKg: birthWeightKg ?? this.birthWeightKg,

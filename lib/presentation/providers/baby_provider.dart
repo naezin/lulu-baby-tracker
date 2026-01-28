@@ -100,4 +100,23 @@ class BabyProvider extends ChangeNotifier {
 
     return months > 0 ? months : 0;
   }
+
+  /// 교정 연령 사용 여부 토글
+  Future<void> toggleCorrectedAge(bool value) async {
+    if (_currentBaby == null) return;
+
+    final updated = _currentBaby!.copyWith(
+      useCorrectedAge: value,
+      updatedAt: DateTime.now().toIso8601String(),
+    );
+
+    await _localStorage.updateBaby(updated);
+    _currentBaby = updated;
+
+    if (kDebugMode) {
+      print('✅ [BabyProvider] Toggled corrected age: $value');
+    }
+
+    notifyListeners();
+  }
 }

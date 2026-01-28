@@ -155,6 +155,14 @@ class ActivityModel {
     String? quality,
     String? notes,
   }) {
+    // Validation
+    if (babyId.isEmpty) {
+      throw ArgumentError('babyId cannot be empty');
+    }
+    if (id.isEmpty) {
+      throw ArgumentError('id cannot be empty');
+    }
+
     final duration = endTime?.difference(startTime).inMinutes;
 
     return ActivityModel(
@@ -181,6 +189,14 @@ class ActivityModel {
     String? breastSide,
     String? notes,
   }) {
+    // Validation
+    if (babyId.isEmpty) {
+      throw ArgumentError('babyId cannot be empty');
+    }
+    if (id.isEmpty) {
+      throw ArgumentError('id cannot be empty');
+    }
+
     return ActivityModel(
       id: id,
       babyId: babyId, // 🆕
@@ -202,6 +218,14 @@ class ActivityModel {
     required String diaperType,
     String? notes,
   }) {
+    // Validation
+    if (babyId.isEmpty) {
+      throw ArgumentError('babyId cannot be empty');
+    }
+    if (id.isEmpty) {
+      throw ArgumentError('id cannot be empty');
+    }
+
     return ActivityModel(
       id: id,
       babyId: babyId, // 🆕
@@ -223,6 +247,14 @@ class ActivityModel {
     List<String>? developmentTags,
     String? notes,
   }) {
+    // Validation
+    if (babyId.isEmpty) {
+      throw ArgumentError('babyId cannot be empty');
+    }
+    if (id.isEmpty) {
+      throw ArgumentError('id cannot be empty');
+    }
+
     return ActivityModel(
       id: id,
       babyId: babyId, // 🆕
@@ -245,6 +277,14 @@ class ActivityModel {
     required String unit, // 'celsius' or 'fahrenheit'
     String? notes,
   }) {
+    // Validation
+    if (babyId.isEmpty) {
+      throw ArgumentError('babyId cannot be empty');
+    }
+    if (id.isEmpty) {
+      throw ArgumentError('id cannot be empty');
+    }
+
     return ActivityModel(
       id: id,
       babyId: babyId, // 🆕
@@ -270,6 +310,14 @@ class ActivityModel {
     int? hoursUntilNextDose,
     String? notes,
   }) {
+    // Validation
+    if (babyId.isEmpty) {
+      throw ArgumentError('babyId cannot be empty');
+    }
+    if (id.isEmpty) {
+      throw ArgumentError('id cannot be empty');
+    }
+
     DateTime? nextDose;
     if (hoursUntilNextDose != null) {
       nextDose = time.add(Duration(hours: hoursUntilNextDose));

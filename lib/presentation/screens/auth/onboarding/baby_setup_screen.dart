@@ -7,6 +7,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../data/models/baby_model.dart';
 import '../../../../data/services/local_storage_service.dart';
 import '../../../../data/services/widget_service.dart';
+import '../../../widgets/common/medical_disclaimer.dart';
 
 /// 👶 Baby Setup Screen (Onboarding)
 /// Collect baby information with special care mode for low birth weight
@@ -30,6 +31,7 @@ class _BabySetupScreenState extends State<BabySetupScreen> {
   bool _showSpecialCarePrompt = false;
   int _currentStep = 0;
   bool _isAddingAnotherBaby = false;  // 🆕 다른 아기 추가 중인지 플래그
+  bool _ageConfirmed = false;  // 🆕 연령 확인 체크박스
 
   @override
   void dispose() {
@@ -445,10 +447,44 @@ class _BabySetupScreenState extends State<BabySetupScreen> {
                   ),
                 ],
               ),
+
+              // 🆕 Medical Disclaimer
+              const SizedBox(height: 24),
+              const MedicalDisclaimer(),
+
+              // 🆕 Age Gate
+              const SizedBox(height: 16),
+              _buildAgeConfirmationCheckbox(l10n),
             ],
           ),
         ),
       ],
+    );
+  }
+
+  /// 🆕 연령 확인 체크박스
+  Widget _buildAgeConfirmationCheckbox(AppLocalizations l10n) {
+    return InkWell(
+      onTap: () => setState(() => _ageConfirmed = !_ageConfirmed),
+      child: Row(
+        children: [
+          Checkbox(
+            value: _ageConfirmed,
+            onChanged: (value) => setState(() => _ageConfirmed = value ?? false),
+            activeColor: AppTheme.lavenderMist,
+          ),
+          Expanded(
+            child: Text(
+              l10n.translate('age_confirmation') ??
+                  'I confirm I am 18+ and the parent/legal guardian',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.white.withOpacity(0.8),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -624,6 +660,16 @@ class _BabySetupScreenState extends State<BabySetupScreen> {
         }
       }
     } else if (_currentStep == 2) {
+      // 🆕 Step 2에서는 연령 확인 필수
+      if (!_ageConfirmed) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please confirm you are 18+ and the parent/legal guardian'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
       // Special care step 완료 → 첫 번째 아기 저장 후 Step 4로
       _finishSetup();
     } else {

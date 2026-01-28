@@ -7,6 +7,7 @@ import '../../../data/models/baby_model.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../providers/baby_provider.dart';
 import '../../widgets/lulu_time_picker.dart';
+import '../../widgets/common/medical_disclaimer.dart';  // 🆕 Day 2 - Legal Compliance
 
 /// 체온 및 투약 기록 화면
 class LogHealthScreen extends StatefulWidget {
@@ -145,6 +146,16 @@ class _TemperatureTabState extends State<_TemperatureTab> {
     } else {
       return temp >= 100.4;
     }
+  }
+
+  /// 🆕 신생아 고열 체크 (3개월 미만 + 38°C 이상)
+  bool get _isNewbornHighFever {
+    if (!_isFever || _babyProfile == null) return false;
+
+    final birthDate = DateTime.parse(_babyProfile!.birthDate);
+    final ageInMonths = DateTime.now().difference(birthDate).inDays ~/ 30;
+
+    return ageInMonths < 3;
   }
 
   @override
@@ -322,6 +333,12 @@ class _TemperatureTabState extends State<_TemperatureTab> {
                       ],
                     ),
                   ),
+                ],
+
+                // 🆕 신생아 고열 경고 (3개월 미만)
+                if (_isNewbornHighFever) ...[
+                  const SizedBox(height: 16),
+                  const HighFeverDisclaimer(),
                 ],
 
                 const SizedBox(height: 16),

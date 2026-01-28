@@ -17,6 +17,9 @@ import '../../widgets/charts/sleep_heatmap.dart';
 import '../../widgets/growth_share_card.dart';
 import 'services/insight_generator.dart';
 import '../profile/baby_profile_screen.dart';
+import '../../../data/services/sleep_pattern_analyzer.dart';  // 🆕 Day 4
+import '../../widgets/analysis/heatmap_interpretation_card.dart';  // 🆕 Day 4
+import '../../widgets/common/medical_disclaimer.dart';  // 🆕 Day 2 - Legal Compliance
 
 /// 📊 Analysis Screen - 질문 기반 통합 분석 화면
 /// 핵심 원칙: "차트가 아닌 답변을 보여준다"
@@ -30,10 +33,12 @@ class AnalysisScreen extends StatefulWidget {
 class _AnalysisScreenState extends State<AnalysisScreen> {
   final _storage = LocalStorageService();
   final _insightGenerator = InsightGenerator();
+  final _patternAnalyzer = SleepPatternAnalyzer();  // 🆕 Day 4
 
   bool _isLoading = true;
   String _selectedPeriod = 'week'; // week, month
   String? _errorMessage; // ✅ 에러 메시지 상태 추가
+  GrowthPeriod _selectedGrowthPeriod = GrowthPeriod.all; // 🆕 성장 차트 기간 선택
 
   // 분석 데이터
   WeeklySleepInsight? _sleepInsight;
@@ -845,6 +850,16 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                   },
                 ),
               ),
+              const SizedBox(height: 24),
+              // 🆕 Day 4: 히트맵 해석 카드
+              HeatmapInterpretationCard(
+                insight: _patternAnalyzer.analyzePattern(
+                  sleepActivities: snapshot.data!,
+                  isKorean: l10n.locale.languageCode == 'ko',
+                  babyAgeInMonths: _baby?.ageInMonths,
+                ),
+                isKorean: l10n.locale.languageCode == 'ko',
+              ),
             ],
           ),
         );
@@ -996,15 +1011,24 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
               ),
               const SizedBox(height: 20),
               SizedBox(
-                height: 300,
+                height: 400,
                 child: GrowthCurveChart(
                   metric: GrowthMetric.weight,
                   gender: _baby!.gender == 'male' ? Gender.male : Gender.female,
                   babyData: growthDataPoints,
-                  title: '체중 (Weight)',
+                  title: l10n.locale.languageCode == 'ko' ? '체중' : 'Weight',
                   unit: 'kg',
+                  isKorean: l10n.locale.languageCode == 'ko',
+                  selectedPeriod: _selectedGrowthPeriod,
+                  onPeriodChanged: (period) {
+                    setState(() {
+                      _selectedGrowthPeriod = period;
+                    });
+                  },
                 ),
               ),
+              const SizedBox(height: 16),
+              const GrowthChartDisclaimer(),
             ],
           ),
         );
