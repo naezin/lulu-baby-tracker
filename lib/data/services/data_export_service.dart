@@ -241,8 +241,8 @@ class DataExportService {
         if (activity.feedingType != null) {
           details.add('Type: ${activity.feedingType}');
         }
-        if (activity.feedingAmount != null) {
-          details.add('Amount: ${activity.feedingAmount}ml');
+        if (activity.amountMl != null) {
+          details.add('Amount: ${activity.amountMl}ml');
         }
         break;
       case ActivityType.diaper:
@@ -251,8 +251,8 @@ class DataExportService {
         }
         break;
       case ActivityType.health:
-        if (activity.temperature != null) {
-          details.add('Temp: ${activity.temperature}°${activity.temperatureUnit == 'celsius' ? 'C' : 'F'}');
+        if (activity.temperatureCelsius != null) {
+          details.add('Temp: ${activity.temperatureCelsius}°${activity.temperatureUnit == 'celsius' ? 'C' : 'F'}');
         }
         if (activity.weightKg != null) {
           details.add('Weight: ${activity.weightKg}kg');
@@ -262,8 +262,8 @@ class DataExportService {
         }
         break;
       case ActivityType.play:
-        if (activity.playType != null) {
-          details.add('Type: ${activity.playType}');
+        if (activity.playActivityType != null) {
+          details.add('Type: ${activity.playActivityType}');
         }
         break;
     }

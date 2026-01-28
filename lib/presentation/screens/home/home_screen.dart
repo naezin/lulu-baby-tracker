@@ -169,7 +169,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       babyId: baby.id,
       babyName: baby.name,
       lastWakeUpTime: lastWakeTime ?? DateTime.now().subtract(const Duration(hours: 1)),
-      ageInMonths: baby.correctedAgeInMonths,
+      ageInMonths: baby.correctedAgeInMonths.round(),
       l10n: l10n,
     );
     print('✅ [HomeScreen] HomeDataProvider initialized');
@@ -178,7 +178,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     await smartCoachProvider.loadTimeline(
       userId: baby.id,
       babyName: baby.name,
-      ageInMonths: baby.correctedAgeInMonths,
+      ageInMonths: baby.correctedAgeInMonths.round(),
       lastWakeUpTime: lastWakeTime,
       lastFeedingTime: lastFeedingTime,
       isKorean: isKorean,

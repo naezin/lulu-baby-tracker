@@ -84,7 +84,10 @@ class AccountDeletionService {
 
       // 계정 생성일
       final user = _supabase.auth.currentUser;
-      final createdAt = user?.createdAt ?? DateTime.now();
+      final createdAtString = user?.createdAt;
+      final createdAt = createdAtString != null
+        ? DateTime.parse(createdAtString.toString())
+        : DateTime.now();
 
       return AccountDataSummary(
         babyCount: babyCount,
